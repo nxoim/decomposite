@@ -33,14 +33,14 @@ fun slide(
 fun cleanFadeAndSlide(
     animationSpec: FiniteAnimationSpec<Float> = tween(),
     orientation: Orientation = Orientation.Horizontal,
-    targetOffset: Int = 64
+    targetOffsetDp: Int = 64
 )= stackAnimator(animationSpec = animationSpec) { progress, direction, content ->
     content(
         Modifier.graphicsLayer {
             if (orientation == Orientation.Vertical) {
-                translationY = targetOffset * progress
+                translationY = (targetOffsetDp * density) * progress
             } else {
-                translationX = targetOffset * progress
+                translationX = (targetOffsetDp * density) * progress
             }
 
             alpha = if (direction.isFront) (1f - progress * 2) else (1f + progress * 2)
