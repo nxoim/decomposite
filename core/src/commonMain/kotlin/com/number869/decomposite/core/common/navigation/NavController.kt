@@ -136,6 +136,20 @@ class NavController<C : Any>(
         }
     }
 
+    fun navigateBackTo(destination: C, type: ContentType, onComplete: (isSuccess: Boolean) -> Unit = { }) {
+        when (type) {
+            ContentType.Contained -> {
+                val indexOfDestination = screenStack.backStack.indexOfFirst { it.configuration == destination }
+                screenNavigation.popTo(indexOfDestination) { onComplete(it) }
+            }
+
+            ContentType.Overlay -> {
+                val indexOfDestination = overlayStack.backStack.indexOfFirst { it.configuration == destination }
+                overlayNavigation.popTo(indexOfDestination) { onComplete(it) }
+            }
+        }
+    }
+
     fun <D> close(destination: D, type: ContentType, onComplete: () -> Unit = { }) {
         when (type) {
             ContentType.Contained -> {
@@ -211,6 +225,10 @@ class NavController<C : Any>(
 
         snackNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys) { onComplete() }
     }
+}
+
+sealed interface NavigateActionType {
+//    data object
 }
 
 @Immutable
