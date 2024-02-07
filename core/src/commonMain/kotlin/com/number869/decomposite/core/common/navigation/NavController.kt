@@ -136,6 +136,19 @@ class NavController<C : Any>(
         }
     }
 
+    fun replaceCurrentScreen(destination: C, type: ContentType = ContentType.Contained, onComplete: () -> Unit = {}) {
+        when (type) {
+            ContentType.Contained -> screenNavigation.replaceCurrent(destination) { onComplete() }
+            ContentType.Overlay -> overlayNavigation.replaceCurrent(destination) { onComplete() }
+        }
+    }
+    fun replaceAll(destination: C, type: ContentType = ContentType.Contained, onComplete: () -> Unit = {}) {
+        when (type) {
+            ContentType.Contained -> screenNavigation.replaceAll(destination) { onComplete() }
+            ContentType.Overlay -> overlayNavigation.replaceAll(destination) { onComplete() }
+        }
+    }
+
     fun openInSnack(
         key: String,
         animation: StackAnimator? = fade(tween(200)) + scale(tween(200)),
