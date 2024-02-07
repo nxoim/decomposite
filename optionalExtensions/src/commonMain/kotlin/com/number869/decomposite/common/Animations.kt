@@ -2,20 +2,23 @@ package com.number869.decomposite.common
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.util.lerp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.animation.*
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimatable
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimation
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.arkivanov.essenty.backhandler.BackHandler
+import com.number869.decomposite.common.predictiveBack.alternativePredictiveBackAnimatable
+import com.number869.decomposite.core.common.navigation.NavController
+
+internal fun <T> softSpring() = spring<T>(1.8f, 2500f)
 
 fun slide(
-    animationSpec: FiniteAnimationSpec<Float> = tween(),
+    animationSpec: FiniteAnimationSpec<Float> = softSpring(),
     orientation: Orientation = Orientation.Horizontal,
     targetOffset: Int = 64
 )= stackAnimator(animationSpec = animationSpec) { factor, _, content ->
@@ -31,7 +34,7 @@ fun slide(
 }
 
 fun cleanFadeAndSlide(
-    animationSpec: FiniteAnimationSpec<Float> = tween(),
+    animationSpec: FiniteAnimationSpec<Float> = softSpring(),
     orientation: Orientation = Orientation.Horizontal,
     targetOffsetDp: Int = 64
 )= stackAnimator(animationSpec = animationSpec) { progress, direction, content ->
@@ -53,34 +56,38 @@ fun <C : Any, T : Any> scaleFadePredictiveBackAnimation(
     backHandler: BackHandler,
     onBack: () -> Unit,
     cleanFade: Boolean = false,
-    minimumScale: Float = 0.9f,
-    maxHorizontalOffsetDp: Int = 32,
+    minimumScale: Float = 0.85f,
+    maxHorizontalOffsetDp: Int = 42,
+    fullAlphaTransitionFraction: Float = 1f,
     fallbackAnimation: StackAnimation<C, T> = stackAnimation { _ ->
-        fade(tween(200)) + scale(tween(200), minimumScale, minimumScale)
+        fade(softSpring()) + scale(softSpring(), minimumScale, minimumScale)
     }
 ): StackAnimation<C, T> {
-    val customCurve = CubicBezierEasing(1f, 0.2f, 0.1f, 1f)
+    val customCurve = CubicBezierEasing(1f, 0.2f, 0.0f, 1f)
 
     return predictiveBackAnimation(
         backHandler = backHandler,
         fallbackAnimation = fallbackAnimation,
         selector = { initialBackEvent, _, _ ->
-            predictiveBackAnimatable(
+            alternativePredictiveBackAnimatable(
                 initialBackEvent = initialBackEvent,
-                exitModifier = { gestureProgress, swipeEdge ->
+                exitModifier = {
                     Modifier.graphicsLayer {
                         val progress = if (cleanFade)
-                            gestureProgress * 2f
+                            it.animatedGestureProgress * 2f
                         else
-                            gestureProgress
+                            it.animatedGestureProgress
 
-                        alpha = 1f - if (cleanFade) progress else customCurve.transform(progress)
+                        alpha = 1f - customCurve.transform(progress * fullAlphaTransitionFraction)
 
                         val scale = minimumScale + (1f - minimumScale) * (1f - progress)
+                        // what
+                        val prbndbdubd = lerp(-fullAlphaTransitionFraction, 1f, progress) + fullAlphaTransitionFraction * (1f - progress)
+
                         val offsetX = if (swipeEdge == BackEvent.SwipeEdge.LEFT) {
-                            (maxHorizontalOffsetDp * density) * progress
+                            (maxHorizontalOffsetDp * density) * prbndbdubd
                         } else {
-                            -(maxHorizontalOffsetDp * density) * progress
+                            -(maxHorizontalOffsetDp * density) * prbndbdubd
                         }
 
                         scaleX = scale
@@ -89,20 +96,21 @@ fun <C : Any, T : Any> scaleFadePredictiveBackAnimation(
                         translationX = offsetX
                     }
                 },
-                enterModifier = { gestureProgress, swipeEdge ->
+                enterModifier = {
                     Modifier.graphicsLayer {
                         val progress = if (cleanFade)
-                            lerp(-1f, 1f, gestureProgress)
+                            lerp(-(1f / fullAlphaTransitionFraction), 1f, it.animatedGestureProgress)
                         else
-                            gestureProgress
+                            it.animatedGestureProgress
 
-                        alpha = if (cleanFade) progress else customCurve.transform(progress)
+                        alpha = customCurve.transform(progress * fullAlphaTransitionFraction)
 
                         val scale = minimumScale + (1f - minimumScale) * progress
+                        val prbndbdubd = lerp(-fullAlphaTransitionFraction, 1f, progress) + fullAlphaTransitionFraction * (1f - progress)
                         val offsetX = if (swipeEdge == BackEvent.SwipeEdge.LEFT) {
-                            -(maxHorizontalOffsetDp * density) * (1f - progress)
+                            -(maxHorizontalOffsetDp * density) * (1f - prbndbdubd)
                         } else {
-                            (maxHorizontalOffsetDp * density) * (1f - progress)
+                            (maxHorizontalOffsetDp * density) * (1f - prbndbdubd)
                         }
 
                         scaleX = scale
@@ -116,3 +124,22 @@ fun <C : Any, T : Any> scaleFadePredictiveBackAnimation(
         onBack = onBack,
     )
 }
+
+@OptIn(ExperimentalDecomposeApi::class)
+fun <C : Any, T : Any> NavController<C>.scaleFadePredictiveBackAnimation(
+    cleanFade: Boolean = false,
+    minimumScale: Float = 0.85f,
+    maxHorizontalOffsetDp: Int = 42,
+    fullAlphaTransitionFraction: Float = 3f,
+    fallbackAnimation: StackAnimation<C, T> = stackAnimation { _ ->
+        fade(softSpring()) + scale(softSpring(), minimumScale, minimumScale)
+    }
+) = scaleFadePredictiveBackAnimation(
+    backHandler = this::backHandler.get(),
+    onBack = { navigateBack() },
+    cleanFade = cleanFade,
+    minimumScale = minimumScale,
+    maxHorizontalOffsetDp = maxHorizontalOffsetDp,
+    fullAlphaTransitionFraction = fullAlphaTransitionFraction,
+    fallbackAnimation = fallbackAnimation
+)

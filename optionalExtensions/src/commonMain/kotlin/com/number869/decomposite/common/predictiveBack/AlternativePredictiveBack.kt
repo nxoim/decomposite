@@ -2,7 +2,6 @@ package com.number869.decomposite.common.predictiveBack
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,6 +13,7 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.materialPredictiveBackAnimatable
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimatable
 import com.arkivanov.essenty.backhandler.BackEvent
+import com.number869.decomposite.common.softSpring
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 @ExperimentalDecomposeApi
 fun alternativePredictiveBackAnimatable(
     initialBackEvent: BackEvent,
-    animationSpec: FiniteAnimationSpec<Float> = spring(1.8f, 2500f),
+    animationSpec: FiniteAnimationSpec<Float> = softSpring(),
     exitModifier: BackEvent.(AnimationData) -> Modifier,
     enterModifier: BackEvent.(AnimationData) -> Modifier,
 ): PredictiveBackAnimatable = AlternativePredictiveBackAnimatable(
