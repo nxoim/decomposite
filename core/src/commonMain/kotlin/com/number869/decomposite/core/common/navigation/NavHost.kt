@@ -1,10 +1,7 @@
 package com.number869.decomposite.core.common.navigation
 
 import androidx.compose.animation.core.tween
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
@@ -37,25 +34,29 @@ inline fun <reified C : Any> NavHost(
     startingDestination: C,
     navControllerStore: NavControllerStore = LocalNavControllerStore.current,
     parentsComponentContext: ComponentContext = LocalComponentContext.current,
-    startingNavControllerInstance: NavController<C> = navControllerStore.getOrCreate {
-        NavController(startingDestination, serializer(), parentsComponentContext)
-    },
-    containedContentAnimation: StackAnimation<C, DecomposeChildInstance<C>> = stackAnimation(scale() + fade()),
-    overlayingContentAnimation: StackAnimation<C, DecomposeChildInstance<C>> = predictiveBackAnimation(
-        backHandler = parentsComponentContext::backHandler.get(),
-        onBack = { startingNavControllerInstance.navigateBack() },
-        fallbackAnimation = OverlayStackNavigationAnimation { _ ->
-            fade(tween(200)) + scale(tween(200))
+    startingNavControllerInstance: NavController<C> = remember {
+        navControllerStore.getOrCreate {
+            NavController(startingDestination, serializer(), parentsComponentContext)
         }
-    ),
-    crossinline routedContent: @Composable (content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
+    },
+    crossinline containedContentAnimation: NavController<C>.() -> StackAnimation<C, DecomposeChildInstance<C>> = { stackAnimation(scale() + fade()) },
+    crossinline overlayingContentAnimation: NavController<C>.() -> StackAnimation<C, DecomposeChildInstance<C>> = {
+        predictiveBackAnimation(
+            backHandler = parentsComponentContext::backHandler.get(),
+            onBack = { startingNavControllerInstance.navigateBack() },
+            fallbackAnimation = OverlayStackNavigationAnimation { _ ->
+                fade(tween(200)) + scale(tween(200))
+            }
+        )
+    },
+    crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
     crossinline router: @Composable (destination: C) -> Unit
 ) {
-    routedContent { modifier ->
+    startingNavControllerInstance.routedContent { modifier ->
         Children(
             startingNavControllerInstance.screenStack,
             modifier,
-            containedContentAnimation
+            startingNavControllerInstance.containedContentAnimation()
         ) {
             if (it != startingNavControllerInstance.overlayStack.backStack) CompositionLocalProvider(
                 LocalComponentContext provides it.instance.componentContext,
@@ -69,7 +70,7 @@ inline fun <reified C : Any> NavHost(
         Children(
             startingNavControllerInstance.overlayStack,
             Modifier,
-            overlayingContentAnimation
+            startingNavControllerInstance.overlayingContentAnimation()
         ) { child ->
             CompositionLocalProvider(
                 LocalComponentContext provides child.instance.componentContext,

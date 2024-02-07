@@ -10,7 +10,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
-import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.star.another.AnotherStarScreen
 import com.number869.decomposite.ui.screens.star.home.StarHomeScreen
 
@@ -20,10 +19,7 @@ fun StarNavHost() {
     NavHost<StarDestinations>(
         startingDestination = StarDestinations.Home,
         routedContent = {
-            // this doesn't throw an error because it's initialized before contained
-            // content executes
-            val navController = navController<StarDestinations>()
-            val currentScreen by navController.currentScreen.collectAsState()
+            val currentScreen by currentScreen.collectAsState()
 
             Scaffold(
                 topBar = {
@@ -31,7 +27,7 @@ fun StarNavHost() {
                         title = { Text("Star") },
                         navigationIcon = {
                             AnimatedVisibility(currentScreen != StarDestinations.Home) {
-                                IconButton(onClick = { navController.navigateBack() }) {
+                                IconButton(onClick = { navigateBack() }) {
                                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                                 }
                             }

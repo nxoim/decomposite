@@ -136,6 +136,59 @@ class NavController<C : Any>(
         }
     }
 
+    fun navigateBackTo(destination: C, type: ContentType, onComplete: (isSuccess: Boolean) -> Unit = { }) {
+        when (type) {
+            ContentType.Contained -> {
+                val indexOfDestination = screenStack.backStack.indexOfFirst { it.configuration == destination }
+                screenNavigation.popTo(indexOfDestination) { onComplete(it) }
+            }
+
+            ContentType.Overlay -> {
+                val indexOfDestination = overlayStack.backStack.indexOfFirst { it.configuration == destination }
+                overlayNavigation.popTo(indexOfDestination) { onComplete(it) }
+            }
+        }
+    }
+
+    fun <D> close(destination: D, type: ContentType, onComplete: () -> Unit = { }) {
+        when (type) {
+            ContentType.Contained -> {
+                val stackWithoutThisKeyAsArrayOfKeys = screenStack.backStack
+                    .filterNot { it.configuration as D == destination }
+                    .map { it.configuration as Any }
+                    .toTypedArray()
+
+                screenNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
+                    onComplete()
+                }
+            }
+
+            ContentType.Overlay -> {
+                val stackWithoutThisKeyAsArrayOfKeys = overlayStack.backStack
+                    .filterNot { it.configuration as D == destination }
+                    .map { it.configuration as Any }
+                    .toTypedArray()
+
+                overlayNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
+                    onComplete()
+                }
+            }
+        }
+    }
+
+    fun replaceCurrentScreen(destination: C, type: ContentType = ContentType.Contained, onComplete: () -> Unit = {}) {
+        when (type) {
+            ContentType.Contained -> screenNavigation.replaceCurrent(destination) { onComplete() }
+            ContentType.Overlay -> overlayNavigation.replaceCurrent(destination) { onComplete() }
+        }
+    }
+    fun replaceAll(destination: C, type: ContentType = ContentType.Contained, onComplete: () -> Unit = {}) {
+        when (type) {
+            ContentType.Contained -> screenNavigation.replaceAll(destination) { onComplete() }
+            ContentType.Overlay -> overlayNavigation.replaceAll(destination) { onComplete() }
+        }
+    }
+
     fun openInSnack(
         key: String,
         animation: StackAnimator? = fade(tween(200)) + scale(tween(200)),
@@ -172,6 +225,10 @@ class NavController<C : Any>(
 
         snackNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys) { onComplete() }
     }
+}
+
+sealed interface NavigateActionType {
+//    data object
 }
 
 @Immutable

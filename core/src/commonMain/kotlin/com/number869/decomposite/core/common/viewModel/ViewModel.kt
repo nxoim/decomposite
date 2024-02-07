@@ -8,6 +8,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 
+@Stable
+@Composable
+inline fun <reified T : ViewModel> viewModel(key: String = ""): T {
+    val localComponentContext = LocalComponentContext.current
+    val viewModelStore = LocalViewModelStore.current
+    val viewModelKey = key + T::class.toString()
+    val vm = remember(viewModelKey) { viewModelStore.get<T>(viewModelKey) }
+
+    LaunchedEffect(null) {
+        localComponentContext.lifecycle.subscribe(
+            onDestroy = {
+                vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
+            }
+        )
+    }
+
+    return vm
+}
+
 /**
  * Android-like view model instancer. Will get or create a view model instance. Provide
  * [key] if you have multiple instances of the same view model else it will get the first created one.
@@ -19,10 +38,7 @@ import kotlinx.coroutines.cancelChildren
  */
 @Stable
 @Composable
-inline fun <reified T : ViewModel> viewModel(
-    key: String = "",
-    crossinline viewModel: () -> T
-): T {
+inline fun <reified T : ViewModel> viewModel(key: String = "", crossinline viewModel: () -> T): T {
     val localComponentContext = LocalComponentContext.current
     val viewModelStore = LocalViewModelStore.current
     val viewModelKey = key + T::class.toString()

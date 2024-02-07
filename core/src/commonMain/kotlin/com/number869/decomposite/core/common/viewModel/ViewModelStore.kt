@@ -8,6 +8,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 class ViewModelStore {
     val store = hashMapOf<Any, Any>()
 
+    inline fun <reified T : ViewModel> get(key: String) = store[key] as T
+
     inline fun <reified T : ViewModel> getOrCreateViewModel(key: Any, crossinline creator: () -> T): T {
         return store.getOrPut(key) { creator() } as T
     }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.number869.decomposite.common.scaleFadePredictiveBackAnimation
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.NavigationRoot
 import com.number869.decomposite.core.common.navigation.navController
@@ -36,7 +37,8 @@ fun RootNavHost() = NavHost<RootDestinations>(
         Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
             it(Modifier.padding(scaffoldPadding))
         }
-    }
+    },
+    containedContentAnimation = { scaleFadePredictiveBackAnimation() }
 ) {
     when (it) { // nested
         RootDestinations.Star -> StarNavHost()
