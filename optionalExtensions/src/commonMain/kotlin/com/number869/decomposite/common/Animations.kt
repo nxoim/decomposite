@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.util.lerp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.animation.*
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimatable
@@ -51,13 +52,14 @@ fun cleanFadeAndSlide(
 fun <C : Any, T : Any> scaleFadePredictiveBackAnimation(
     backHandler: BackHandler,
     onBack: () -> Unit,
-    minimumScale: Float = 0.8f,
-    maxHorizontalOffsetDp: Int = 16,
+    cleanFade: Boolean = false,
+    minimumScale: Float = 0.9f,
+    maxHorizontalOffsetDp: Int = 32,
     fallbackAnimation: StackAnimation<C, T> = stackAnimation { _ ->
         fade(tween(200)) + scale(tween(200), minimumScale, minimumScale)
     }
 ): StackAnimation<C, T> {
-    val customCurve = CubicBezierEasing(1f, 0.1f, 0.2f, 1.05f)
+    val customCurve = CubicBezierEasing(1f, 0.2f, 0.1f, 1f)
 
     return predictiveBackAnimation(
         backHandler = backHandler,
@@ -65,9 +67,14 @@ fun <C : Any, T : Any> scaleFadePredictiveBackAnimation(
         selector = { initialBackEvent, _, _ ->
             predictiveBackAnimatable(
                 initialBackEvent = initialBackEvent,
-                exitModifier = { progress, swipeEdge ->
+                exitModifier = { gestureProgress, swipeEdge ->
                     Modifier.graphicsLayer {
-                        alpha = 1f - customCurve.transform(progress)
+                        val progress = if (cleanFade)
+                            gestureProgress * 2f
+                        else
+                            gestureProgress
+
+                        alpha = 1f - if (cleanFade) progress else customCurve.transform(progress)
 
                         val scale = minimumScale + (1f - minimumScale) * (1f - progress)
                         val offsetX = if (swipeEdge == BackEvent.SwipeEdge.LEFT) {
@@ -82,9 +89,14 @@ fun <C : Any, T : Any> scaleFadePredictiveBackAnimation(
                         translationX = offsetX
                     }
                 },
-                enterModifier = { progress, swipeEdge ->
+                enterModifier = { gestureProgress, swipeEdge ->
                     Modifier.graphicsLayer {
-                        alpha = customCurve.transform(progress)
+                        val progress = if (cleanFade)
+                            lerp(-1f, 1f, gestureProgress)
+                        else
+                            gestureProgress
+
+                        alpha = if (cleanFade) progress else customCurve.transform(progress)
 
                         val scale = minimumScale + (1f - minimumScale) * progress
                         val offsetX = if (swipeEdge == BackEvent.SwipeEdge.LEFT) {
