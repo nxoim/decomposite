@@ -74,6 +74,13 @@ internal class AlternativePredictiveBackAnimatable(
         }
     }
 
+    override suspend fun cancel() {
+        coroutineScope {
+            launch { animatedGestureProgress.animateTo(0f, animationSpec) }
+            launch { postGestureReleaseAnimationProgress.animateTo(0f, animationSpec) }
+        }
+    }
+
     override suspend fun finish() {
         coroutineScope {
             launch {
