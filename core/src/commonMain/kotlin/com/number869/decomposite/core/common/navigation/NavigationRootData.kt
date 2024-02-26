@@ -9,6 +9,7 @@ import com.number869.decomposite.core.common.ultils.LocalComponentContext
 import com.number869.decomposite.core.common.viewModel.LocalViewModelStore
 import com.number869.decomposite.core.common.viewModel.ViewModelStore
 
+@Immutable
 class NavigationRootData(
     val defaultComponentContext: DefaultComponentContext,
     val navStore: NavControllerStore,
@@ -43,6 +44,8 @@ class NavigationRoot {
     @Composable
     fun overlay(content: @Composable () -> Unit) {
         overlays.add(content)
+
+        DisposableEffect(Unit) { onDispose { overlays.remove(content) } }
     }
 }
 

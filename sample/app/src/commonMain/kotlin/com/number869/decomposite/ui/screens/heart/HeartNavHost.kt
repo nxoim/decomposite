@@ -10,6 +10,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
+import com.number869.decomposite.core.common.navigation.animations.animatedDestination
+import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.another.AnotherHeartScreen
 import com.number869.decomposite.ui.screens.heart.home.HeartHomeScreen
@@ -44,8 +46,9 @@ fun HeartNavHost() {
         }
     ) { destination ->
         when (destination) {
-            HeartDestinations.Home -> HeartHomeScreen()
-            is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
+            HeartDestinations.Home -> animatedDestination() { HeartHomeScreen() }
+
+            is HeartDestinations.AnotherHeart -> animatedDestination(iosLikeSlide()) { AnotherHeartScreen(destination.text) }
         }
     }
 }

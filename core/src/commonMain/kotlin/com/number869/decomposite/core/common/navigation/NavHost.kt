@@ -1,18 +1,12 @@
 package com.number869.decomposite.core.common.navigation
 
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.*
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimation
-import com.arkivanov.decompose.router.stack.backStack
-import com.number869.decomposite.core.common.ultils.ContentType
-import com.number869.decomposite.core.common.ultils.LocalComponentContext
-import com.number869.decomposite.core.common.ultils.LocalContentType
-import com.number869.decomposite.core.common.ultils.animation.OverlayStackNavigationAnimation
+import com.arkivanov.decompose.router.stack.items
+import com.number869.decomposite.core.common.navigation.animations.*
+import com.number869.decomposite.core.common.ultils.*
 import kotlinx.serialization.serializer
 
 /**
@@ -27,7 +21,6 @@ import kotlinx.serialization.serializer
  * You can provide your own animations for the content and overlaying content.
  * [containedContentAnimation] and [overlayingContentAnimation] are decompose animations.
  */
-@OptIn(ExperimentalDecomposeApi::class)
 @Stable
 @Composable
 inline fun <reified C : Any> NavHost(
@@ -39,62 +32,133 @@ inline fun <reified C : Any> NavHost(
             NavController(startingDestination, serializer(), parentsComponentContext)
         }
     },
-    crossinline containedContentAnimation: NavController<C>.() -> StackAnimation<C, DecomposeChildInstance<C>> = { stackAnimation(scale() + fade()) },
-    crossinline overlayingContentAnimation: NavController<C>.() -> StackAnimation<C, DecomposeChildInstance<C>> = {
-        predictiveBackAnimation(
-            backHandler = parentsComponentContext::backHandler.get(),
-            onBack = { startingNavControllerInstance.navigateBack() },
-            fallbackAnimation = OverlayStackNavigationAnimation { _ ->
-                fade(tween(200)) + scale(tween(200))
-            }
-        )
-    },
+    defaultAnimation: ContentAnimator = cleanSlideAndFade(),
     crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
-    crossinline router: @Composable (destination: C) -> Unit
+    crossinline router: @Composable NavigationItem.(child: C) -> Unit
 ) {
-    startingNavControllerInstance.routedContent { modifier ->
-        Children(
-            startingNavControllerInstance.screenStack,
-            modifier,
-            startingNavControllerInstance.containedContentAnimation()
-        ) {
-            if (it != startingNavControllerInstance.overlayStack.backStack) CompositionLocalProvider(
-                LocalComponentContext provides it.instance.componentContext,
-                LocalContentType provides ContentType.Contained,
-                content = { router(it.configuration) }
-            )
-        }
-    }
+    with(remember { SharedBackEventScope() }) {
+        var backHandlerEnabled by remember { mutableStateOf(false) }
 
-    LocalNavigationRoot.current.overlay {
-        Children(
-            startingNavControllerInstance.overlayStack,
-            Modifier,
-            startingNavControllerInstance.overlayingContentAnimation()
-        ) { child ->
-            CompositionLocalProvider(
-                LocalComponentContext provides child.instance.componentContext,
-                LocalContentType provides ContentType.Overlay
-            ) {
-                if (child.configuration != startingDestination) router(child.configuration)
+        CompositionLocalProvider(LocalContentAnimator provides defaultAnimation) {
+            CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
+                startingNavControllerInstance.routedContent { modifier ->
+                    CustomStackAnimator(
+                        startingNavControllerInstance.screenStack,
+                        modifier,
+                        sharedBackEventScope = this,
+                        onBackstackEmpty = { backHandlerEnabled = it }
+                    ) {
+                        CompositionLocalProvider(
+                            LocalComponentContext provides it.instance.componentContext
+                        ) {
+                            router(it.configuration)
+                        }
+                    }
+                }
             }
-        }
 
-        Children(
-            startingNavControllerInstance.snackStack,
-            animation = stackAnimation { child ->
-                startingNavControllerInstance.animationsForDestinations[child.configuration]
-            }
-        ) {
-            CompositionLocalProvider(
-                LocalComponentContext provides it.instance.componentContext
-            ) {
-                startingNavControllerInstance.contentOfSnacks[it.configuration]?.invoke()
+            LocalNavigationRoot.current.overlay {
+                CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
+                    CustomStackAnimator(
+                        startingNavControllerInstance.overlayStack,
+                        onBackstackEmpty = {
+                            backHandlerEnabled = if (it)
+                                it
+                            else
+                                startingNavControllerInstance.screenStack.items.size > 1
+                        },
+                        sharedBackEventScope = this,
+                        excludeStartingDestination = true
+                    ) {
+                        CompositionLocalProvider(
+                            LocalComponentContext provides it.instance.componentContext
+                        ) {
+                            runCatching { router(it.configuration) }
+                        }
+                    }
+                }
 
-                DisposableEffect(it) {
-                    onDispose { startingNavControllerInstance.removeSnackContents(it.configuration) }
+                // snacks dont need to be aware of gestures
+                CustomStackAnimator(
+                    startingNavControllerInstance.snackStack,
+                    onBackstackEmpty = {},
+                    sharedBackEventScope = SharedBackEventScope(),
+                    excludeStartingDestination = true
+                ) {
+                    CompositionLocalProvider(LocalComponentContext provides it.instance.componentContext) {
+                        animatedDestination(
+                            startingNavControllerInstance.animationsForDestinations[it.configuration] ?: emptyAnimation()
+                        ) {
+                            startingNavControllerInstance.contentOfSnacks[it.configuration]?.invoke()
+
+                            DisposableEffect(it) {
+                                onDispose { startingNavControllerInstance.removeSnackContents(it.configuration) }
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        BackGestureHandler(
+            enabled = backHandlerEnabled,
+            parentsComponentContext.backHandler,
+            onBackStarted = { onBackStarted(it) },
+            onBackProgressed = { onBackProgressed(it) },
+            onBackCancelled = { onBackCancelled() },
+            onBack = {
+                startingNavControllerInstance.navigateBack()
+                onBack()
+            }
+        )
+    }
+}
+
+@Composable
+inline fun <reified C : Any> NavHost(
+    startingDestination: C,
+    navControllerStore: NavControllerStore = LocalNavControllerStore.current,
+    parentsComponentContext: ComponentContext = LocalComponentContext.current,
+    startingNavControllerInstance: NavController<C> = remember {
+        navControllerStore.getOrCreate {
+            NavController(startingDestination, serializer(), parentsComponentContext)
+        }
+    },
+    crossinline animations: NavigationItem.(child: C) -> ContentAnimator,
+    crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
+    crossinline router: @Composable (child: C) -> Unit
+) {
+    NavHost(
+        startingDestination = startingDestination,
+        navControllerStore = navControllerStore,
+        startingNavControllerInstance = startingNavControllerInstance,
+        parentsComponentContext = parentsComponentContext,
+        routedContent = routedContent,
+    ) {
+        animatedDestination(animations(it)) { router(it) }
+    }
+}
+
+@Composable
+inline fun <reified C : Any> NavHost(
+    startingDestination: C,
+    navControllerStore: NavControllerStore = LocalNavControllerStore.current,
+    parentsComponentContext: ComponentContext = LocalComponentContext.current,
+    startingNavControllerInstance: NavController<C> = remember {
+        navControllerStore.getOrCreate {
+            NavController(startingDestination, serializer(), parentsComponentContext)
+        }
+    },
+    crossinline animations: NavigationItem.(child: C) -> ContentAnimator,
+    crossinline router: @Composable (child: C) -> Unit
+) {
+    NavHost(
+        startingDestination = startingDestination,
+        navControllerStore = navControllerStore,
+        startingNavControllerInstance = startingNavControllerInstance,
+        parentsComponentContext = parentsComponentContext,
+        routedContent = { it(Modifier) },
+    ) {
+        animatedDestination(animations(it)) { router(it) }
     }
 }

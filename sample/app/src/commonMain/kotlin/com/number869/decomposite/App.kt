@@ -1,5 +1,6 @@
 package com.number869.decomposite
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -9,9 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.number869.decomposite.common.scaleFadePredictiveBackAnimation
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.NavigationRoot
+import com.number869.decomposite.core.common.navigation.animations.animatedDestination
+import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.HeartNavHost
 import com.number869.decomposite.ui.screens.star.StarNavHost
@@ -33,16 +35,19 @@ fun App() {
 @Composable
 fun RootNavHost() = NavHost<RootDestinations>(
     startingDestination = RootDestinations.Star,
+    defaultAnimation = cleanSlideAndFade(
+        orientation = Orientation.Vertical,
+        targetOffsetDp = -16
+    ),
     routedContent = {
         Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
             it(Modifier.padding(scaffoldPadding))
         }
     },
-    containedContentAnimation = { scaleFadePredictiveBackAnimation() }
 ) {
     when (it) { // nested
-        RootDestinations.Star -> StarNavHost()
-        RootDestinations.Heart -> HeartNavHost()
+        RootDestinations.Star -> animatedDestination { StarNavHost() }
+        RootDestinations.Heart -> animatedDestination { HeartNavHost() }
     }
 }
 

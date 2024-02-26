@@ -1,22 +1,20 @@
 package com.number869.decomposite.core.common.navigation
 
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.extensions.compose.stack.animation.StackAnimator
-import com.arkivanov.decompose.extensions.compose.stack.animation.fade
-import com.arkivanov.decompose.extensions.compose.stack.animation.plus
-import com.arkivanov.decompose.extensions.compose.stack.animation.scale
 import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
+import com.number869.decomposite.core.common.navigation.animations.ContentAnimator
+import com.number869.decomposite.core.common.navigation.animations.fade
 import com.number869.decomposite.core.common.ultils.ContentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -34,10 +32,16 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Gets an existing navigation controller instance.
  */
+@ReadOnlyComposable
 @Composable
 inline fun <reified T : Any> navController(
     navStore: NavControllerStore = LocalNavControllerStore.current
-) = remember { navStore.get<T>() }
+) = navStore.get<T>()
+
+//@Composable
+//inline fun <reified T : Any> navController(
+//    navStore: NavControllerStore = LocalNavControllerStore.current
+//) = remember { navStore.get<T>() }
 
 inline fun <reified T : Any> getNavController(navStore: NavControllerStore) = navStore.get<T>()
 
@@ -55,7 +59,7 @@ class NavController<C : Any>(
     }.data
 
     val animationsForDestinations = instanceKeeper.getOrCreate("animationsForDestinations ${startingDestination::class}") {
-        AnimationsHolder(mutableMapOf<String, StackAnimator>())
+        AnimationsHolder(mutableMapOf<String, ContentAnimator>())
     }.data
 
     private val screenNavigation = StackNavigation<C>()
@@ -70,6 +74,7 @@ class NavController<C : Any>(
         handleBackButton = true,
         childFactory = { config, componentContext -> DecomposeChildInstance(config, componentContext) }
     )
+
     val overlayStack = childStack(
         source = overlayNavigation,
         serializer = serializer,
@@ -150,11 +155,11 @@ class NavController<C : Any>(
         }
     }
 
-    fun <D> close(destination: D, type: ContentType, onComplete: () -> Unit = { }) {
+    fun close(destination: C, type: ContentType, onComplete: () -> Unit = { }) {
         when (type) {
             ContentType.Contained -> {
                 val stackWithoutThisKeyAsArrayOfKeys = screenStack.backStack
-                    .filterNot { it.configuration as D == destination }
+                    .filterNot { it.configuration == destination }
                     .map { it.configuration as Any }
                     .toTypedArray()
 
@@ -165,7 +170,33 @@ class NavController<C : Any>(
 
             ContentType.Overlay -> {
                 val stackWithoutThisKeyAsArrayOfKeys = overlayStack.backStack
-                    .filterNot { it.configuration as D == destination }
+                    .filterNot { it.configuration == destination }
+                    .map { it.configuration as Any }
+                    .toTypedArray()
+
+                overlayNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
+                    onComplete()
+                }
+            }
+        }
+    }
+
+    fun close(destination: Child.Created<C, DecomposeChildInstance<C>>, type: ContentType, onComplete: () -> Unit = { }) {
+        when (type) {
+            ContentType.Contained -> {
+                val stackWithoutThisKeyAsArrayOfKeys = screenStack.backStack
+                    .filterNot { it == destination }
+                    .map { it.configuration as Any }
+                    .toTypedArray()
+
+                screenNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
+                    onComplete()
+                }
+            }
+
+            ContentType.Overlay -> {
+                val stackWithoutThisKeyAsArrayOfKeys = overlayStack.backStack
+                    .filterNot { it.configuration == destination }
                     .map { it.configuration as Any }
                     .toTypedArray()
 
@@ -191,7 +222,7 @@ class NavController<C : Any>(
 
     fun openInSnack(
         key: String,
-        animation: StackAnimator? = fade(tween(200)) + scale(tween(200)),
+        animation: ContentAnimator = fade(),
         displayDurationMillis: Duration = 5.seconds,
         content: @Composable BoxScope.() -> Unit
     ) {
@@ -199,7 +230,7 @@ class NavController<C : Any>(
             mutex.withLock {
                 // remember data about content. the content is removed from within
                 // the nav host using DisposableEffect for proper animations using
-                animation?.let { animationsForDestinations[key] = it }
+                animationsForDestinations[key] = animation
                 contentOfSnacks[key] = { Box(content = content, modifier = Modifier.fillMaxSize()) }
 
                 snackNavigation.push(key)
@@ -225,10 +256,6 @@ class NavController<C : Any>(
 
         snackNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys) { onComplete() }
     }
-}
-
-sealed interface NavigateActionType {
-//    data object
 }
 
 @Immutable

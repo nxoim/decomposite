@@ -33,7 +33,12 @@ fun StarHomeScreen() {
         )
 
         OutlinedButton(
-            onClick = { navController.navigate(StarDestinations.AnotherStar, ContentType.Overlay) }
+            onClick = {
+                navController.navigate(
+                    StarDestinations.AnotherStar,
+                    ContentType.Overlay
+                )
+            }
         ) {
             Text("See another star")
         }
