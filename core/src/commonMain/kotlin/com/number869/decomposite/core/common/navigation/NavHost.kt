@@ -2,7 +2,6 @@ package com.number869.decomposite.core.common.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.arkivanov.decompose.extensions.compose.stack.animation.*
 import com.arkivanov.decompose.router.stack.items
 import com.number869.decomposite.core.common.navigation.animations.*
 import com.number869.decomposite.core.common.ultils.*
@@ -12,12 +11,9 @@ import com.number869.decomposite.core.common.ultils.*
  * [router] is where you declare the content of each destination.
  * [routedContent] is where the content is displayed, where you put your scaffold, maybe something else.
  * When a host is created - a navigation controller is created for it, and it is accessible in [routedContent],
- * however you can make your own controller by requesting [LocalNavControllerStore]
- * and calling [NavControllerStore.getOrCreate] with the type of your destination.
- *
- *
- * You can provide your own animations for the content and overlaying content.
- * [containedContentAnimation] and [overlayingContentAnimation] are decompose animations.
+ * however you can make your own controller by calling [navController] and giving it a starting destination, or
+ * manually by requesting [LocalNavControllerStore] and calling [NavControllerStore.getOrCreate]
+ * with the type of your destination.
  */
 @Stable
 @Composable
