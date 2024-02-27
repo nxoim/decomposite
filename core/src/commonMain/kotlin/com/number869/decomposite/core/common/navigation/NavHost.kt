@@ -25,13 +25,7 @@ import kotlinx.serialization.serializer
 @Composable
 inline fun <reified C : Any> NavHost(
     startingDestination: C,
-    navControllerStore: NavControllerStore = LocalNavControllerStore.current,
-    parentsComponentContext: ComponentContext = LocalComponentContext.current,
-    startingNavControllerInstance: NavController<C> = remember {
-        navControllerStore.getOrCreate {
-            NavController(startingDestination, serializer(), parentsComponentContext)
-        }
-    },
+    startingNavControllerInstance: NavController<C> = navController(startingDestination),
     defaultAnimation: ContentAnimator = cleanSlideAndFade(),
     crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
     crossinline router: @Composable NavigationItem.(child: C) -> Unit
@@ -102,7 +96,7 @@ inline fun <reified C : Any> NavHost(
 
         BackGestureHandler(
             enabled = backHandlerEnabled,
-            parentsComponentContext.backHandler,
+            LocalComponentContext.current.backHandler,
             onBackStarted = { onBackStarted(it) },
             onBackProgressed = { onBackProgressed(it) },
             onBackCancelled = { onBackCancelled() },
@@ -117,22 +111,14 @@ inline fun <reified C : Any> NavHost(
 @Composable
 inline fun <reified C : Any> NavHost(
     startingDestination: C,
-    navControllerStore: NavControllerStore = LocalNavControllerStore.current,
-    parentsComponentContext: ComponentContext = LocalComponentContext.current,
-    startingNavControllerInstance: NavController<C> = remember {
-        navControllerStore.getOrCreate {
-            NavController(startingDestination, serializer(), parentsComponentContext)
-        }
-    },
+    startingNavControllerInstance: NavController<C> = navController(startingDestination),
     crossinline animations: NavigationItem.(child: C) -> ContentAnimator,
     crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
     crossinline router: @Composable (child: C) -> Unit
 ) {
     NavHost(
         startingDestination = startingDestination,
-        navControllerStore = navControllerStore,
         startingNavControllerInstance = startingNavControllerInstance,
-        parentsComponentContext = parentsComponentContext,
         routedContent = routedContent,
     ) {
         animatedDestination(animations(it)) { router(it) }
@@ -154,9 +140,7 @@ inline fun <reified C : Any> NavHost(
 ) {
     NavHost(
         startingDestination = startingDestination,
-        navControllerStore = navControllerStore,
         startingNavControllerInstance = startingNavControllerInstance,
-        parentsComponentContext = parentsComponentContext,
         routedContent = { it(Modifier) },
     ) {
         animatedDestination(animations(it)) { router(it) }
