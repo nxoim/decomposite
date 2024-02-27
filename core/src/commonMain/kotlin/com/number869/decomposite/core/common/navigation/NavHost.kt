@@ -2,12 +2,10 @@ package com.number869.decomposite.core.common.navigation
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.stack.animation.*
 import com.arkivanov.decompose.router.stack.items
 import com.number869.decomposite.core.common.navigation.animations.*
 import com.number869.decomposite.core.common.ultils.*
-import kotlinx.serialization.serializer
 
 /**
  * Navigation Host.
@@ -128,13 +126,7 @@ inline fun <reified C : Any> NavHost(
 @Composable
 inline fun <reified C : Any> NavHost(
     startingDestination: C,
-    navControllerStore: NavControllerStore = LocalNavControllerStore.current,
-    parentsComponentContext: ComponentContext = LocalComponentContext.current,
-    startingNavControllerInstance: NavController<C> = remember {
-        navControllerStore.getOrCreate {
-            NavController(startingDestination, serializer(), parentsComponentContext)
-        }
-    },
+    startingNavControllerInstance: NavController<C> = navController(startingDestination),
     crossinline animations: NavigationItem.(child: C) -> ContentAnimator,
     crossinline router: @Composable (child: C) -> Unit
 ) {
