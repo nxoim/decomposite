@@ -18,8 +18,7 @@ import com.number869.decomposite.core.common.ultils.*
 @Stable
 @Composable
 inline fun <reified C : Any> NavHost(
-    startingDestination: C,
-    startingNavControllerInstance: NavController<C> = navController(startingDestination),
+    startingNavControllerInstance: NavController<C>,
     defaultAnimation: ContentAnimator = cleanSlideAndFade(),
     crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
     crossinline router: @Composable NavigationItem.(child: C) -> Unit
@@ -105,14 +104,27 @@ inline fun <reified C : Any> NavHost(
 @Composable
 inline fun <reified C : Any> NavHost(
     startingDestination: C,
-    startingNavControllerInstance: NavController<C> = navController(startingDestination),
+    defaultAnimation: ContentAnimator = cleanSlideAndFade(),
+    crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
+    crossinline router: @Composable NavigationItem.(child: C) -> Unit
+) {
+    NavHost(
+        startingNavControllerInstance = navController<C>(startingDestination),
+        defaultAnimation = defaultAnimation,
+        routedContent = routedContent,
+        router = router
+    )
+}
+
+@Composable
+inline fun <reified C : Any> NavHost(
+    startingDestination: C,
     crossinline animations: NavigationItem.(child: C) -> ContentAnimator,
     crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
     crossinline router: @Composable (child: C) -> Unit
 ) {
     NavHost(
-        startingDestination = startingDestination,
-        startingNavControllerInstance = startingNavControllerInstance,
+        startingNavControllerInstance = navController<C>(startingDestination),
         routedContent = routedContent,
     ) {
         animatedDestination(animations(it)) { router(it) }
@@ -121,15 +133,14 @@ inline fun <reified C : Any> NavHost(
 
 @Composable
 inline fun <reified C : Any> NavHost(
-    startingDestination: C,
-    startingNavControllerInstance: NavController<C> = navController(startingDestination),
+    startingNavControllerInstance: NavController<C>,
     crossinline animations: NavigationItem.(child: C) -> ContentAnimator,
+    crossinline routedContent: @Composable NavController<C>.(content: (Modifier) -> Unit) -> Unit = { it(Modifier) },
     crossinline router: @Composable (child: C) -> Unit
 ) {
     NavHost(
-        startingDestination = startingDestination,
         startingNavControllerInstance = startingNavControllerInstance,
-        routedContent = { it(Modifier) },
+        routedContent = routedContent,
     ) {
         animatedDestination(animations(it)) { router(it) }
     }
