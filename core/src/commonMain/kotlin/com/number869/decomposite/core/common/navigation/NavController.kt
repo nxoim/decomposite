@@ -16,6 +16,7 @@ import com.arkivanov.essenty.instancekeeper.getOrCreate
 import com.number869.decomposite.core.common.navigation.animations.ContentAnimator
 import com.number869.decomposite.core.common.navigation.animations.fade
 import com.number869.decomposite.core.common.ultils.ContentType
+import com.number869.decomposite.core.common.ultils.LocalComponentContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -26,6 +27,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.serializer
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -37,6 +39,17 @@ import kotlin.time.Duration.Companion.seconds
 inline fun <reified T : Any> navController(
     navStore: NavControllerStore = LocalNavControllerStore.current
 ) = navStore.get<T>()
+
+@ReadOnlyComposable
+@Composable
+inline fun <reified C : Any> navController(
+    startingDestination: C,
+    serializer: KSerializer<C>? = null,
+    navStore: NavControllerStore = LocalNavControllerStore.current,
+    componentContext: ComponentContext = LocalComponentContext.current
+) = navStore.getOrCreate<C> {
+    NavController(startingDestination, serializer ?: serializer(), componentContext)
+}
 
 //@Composable
 //inline fun <reified T : Any> navController(
