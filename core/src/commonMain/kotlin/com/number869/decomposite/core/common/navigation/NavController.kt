@@ -3,10 +3,7 @@ package com.number869.decomposite.core.common.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
@@ -40,15 +37,16 @@ inline fun <reified T : Any> navController(
     navStore: NavControllerStore = LocalNavControllerStore.current
 ) = navStore.get<T>()
 
-@ReadOnlyComposable
 @Composable
 inline fun <reified C : Any> navController(
     startingDestination: C,
     serializer: KSerializer<C>? = null,
     navStore: NavControllerStore = LocalNavControllerStore.current,
     componentContext: ComponentContext = LocalComponentContext.current
-) = navStore.getOrCreate<C> {
-    NavController(startingDestination, serializer ?: serializer(), componentContext)
+) = remember {
+    navStore.getOrCreate<C> {
+        NavController(startingDestination, serializer ?: serializer(), componentContext)
+    }
 }
 
 //@Composable
