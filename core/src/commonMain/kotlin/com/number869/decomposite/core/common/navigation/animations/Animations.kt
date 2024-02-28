@@ -75,11 +75,8 @@ fun slide(
     )
 }
 
-/**
- * Fully progressive, perhaps not the best looking
- */
 fun iosLikeSlide(
-    backStackSlideFraction: Float = 0.75f,
+    backStackSlideFraction: Float = 0.25f,
     animationSpec: AnimationSpec<Float> = softSpring()
 ) = contentAnimator(animationSpec) { content ->
     if (renderUntil(untilIndexFromTop = 2)) Box(
@@ -91,9 +88,7 @@ fun iosLikeSlide(
             }
             .graphicsLayer {
                 val itemOffset = -size.width * gestureAnimationProgress
-                val backstackItemOffset = (size.width * backStackSlideFraction) * gestureAnimationProgress.coerceIn(0f, 1f)
-
-                if (animationStatus.location.top || animationStatus.location.outside) println(gestureAnimationProgress)
+                val backstackItemOffset = (size.width * (1f - backStackSlideFraction)) * gestureAnimationProgress.coerceIn(0f, 1f)
 
                 translationX = backstackItemOffset + itemOffset
             },
