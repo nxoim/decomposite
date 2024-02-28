@@ -33,8 +33,8 @@ class YourActivity : ComponentActivity() {
     // you can also instantiate it using di. with Koin, for example, you'd do:
     // yourKoin.loadModules(listOf(module { single { navigationRootData } })) 
     
-        override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+    	super.onCreate(savedInstanceState)
         setContent {
             NavigationRoot(navigationRootData) { YourContent() }
         }
@@ -72,8 +72,9 @@ NavHost<YourDestinations>(
     startingDestination = YourDestinations.Star,
     animations = {
         when (it) { 
-        RootDestinations.Star -> fade() + scale()
-        else -> fade()
+            RootDestinations.Star -> fade() + scale()
+            else -> fade()
+        }
     },
     routedContent = { // content that isn't in an overlay
         Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
@@ -125,20 +126,18 @@ fun YourScreen() {
     // get or create a view model
     val vm = viewModel("optional key") { SomeViewModel(someArgument = "some text") }
 
-	// just get a view model. 
-	// this does not create a view model
-	// due to reflection practically
-	// not existing in the wasm target as of yet
-	val vm = viewModel<SomeViewModel>("optionalKey")
+    // just get a view model. 
+    // this does not create a view model due to reflection practically
+    // not existing in the wasm target as of yet
+    val vm = viewModel<SomeViewModel>("optionalKey")
 }
 
 class SomeViewModel(someArgument: String) : ViewModel() {
-    // you can retain the view model until 
-    //the app gets destroyed by overriding 
+    // you can retain the view model until the app gets destroyed by overriding 
     // onDestroy and leaving it empty
     override fun onDestroy(removeFromViewModelStore: () -> Unit) {
-    // maybe still cancel the scope? maybe
-    viewModelScope.coroutineContext.cancelChildren()
+        // maybe still cancel the scope? maybe
+        viewModelScope.coroutineContext.cancelChildren()
     }
 }
 ```
