@@ -13,6 +13,8 @@ import com.arkivanov.decompose.hashString
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 import com.number869.decomposite.core.common.ultils.SharedBackEventScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @OptIn(InternalDecomposeApi::class)
 @Composable
@@ -26,6 +28,7 @@ fun <C : Any, T : Any> CustomStackAnimator(
 ) {
     val sourceStack by stackState.subscribeAsState()
     var cachedChildren by remember { mutableStateOf(listOf(stackState.value.active)) }
+    val mutex = remember { Mutex() }
 
     val holder = rememberSaveableStateHolder()
     holder.retainStates(sourceStack.getConfigurations())
@@ -34,7 +37,7 @@ fun <C : Any, T : Any> CustomStackAnimator(
         onBackstackEmpty(sourceStack.items.size > 1)
 
         val differences = sourceStack.items.filterNot { it in cachedChildren }
-        cachedChildren = cachedChildren + differences
+        mutex.withLock { cachedChildren = cachedChildren + differences }
     }
 
     Box(modifier) {
@@ -59,8 +62,9 @@ fun <C : Any, T : Any> CustomStackAnimator(
                 }
 
                 LaunchedEffect(navigationItem.requestedRemoval) {
-                    if (navigationItem.requestedRemoval == true)
+                    if (navigationItem.requestedRemoval == true) mutex.withLock {
                         cachedChildren = cachedChildren - child
+                    }
                 }
 
                 Box(Modifier.zIndex((-indexFromTop).toFloat())) { content(navigationItem, child) }
