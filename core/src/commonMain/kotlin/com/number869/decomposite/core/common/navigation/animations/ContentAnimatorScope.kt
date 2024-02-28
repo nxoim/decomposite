@@ -69,7 +69,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
         initialSwipeOffset.y - _backEvent.touchY
     )
 
-    var animationStatus by mutableStateOf(
+    private var _animationStatus by mutableStateOf(
         AnimationStatus(
             previousLocation = if (initial) ItemLocation.Top else ItemLocation.Outside,
             location = ItemLocation.Top,
@@ -77,6 +77,8 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
             type = if (initial) AnimationType.None else AnimationType.Passive
         )
     )
+
+    val animationStatus get() = _animationStatus
 
     private var allowAnimation by mutableStateOf(true)
 
@@ -113,8 +115,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
             }
 
             BackGestureEvent.None,
-            BackGestureEvent.OnBackCancelled
-            -> {
+            BackGestureEvent.OnBackCancelled -> {
                 updateStatus(AnimationType.Passive, Direction.Inward)
                 animateToTarget()
                 allowRemoval = false
@@ -173,7 +174,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
 
     private suspend fun updateStatus(type: AnimationType, direction: Direction, newItemLocation: ItemLocation? = null) {
         mutex.withLock {
-            animationStatus = AnimationStatus(
+            _animationStatus = AnimationStatus(
                 previousLocation = animationStatus.location,
                 location = newItemLocation ?: location,
                 direction = direction,
