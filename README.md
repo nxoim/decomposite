@@ -91,12 +91,12 @@ NavHost<YourDestinations>(
 
 Or you can create a navigation controller manually:
 ```kotlin
-    val navController = navController<YourDestinations>(startingDestination = YourDestinations.Star)
+val navController = navController<YourDestinations>(startingDestination = YourDestinations.Star)
     
-    NavHost<YourDestinations>(
-        startingNavControllerInstance = navController,
-        ...
-    )
+NavHost<YourDestinations>(
+    startingNavControllerInstance = navController,
+    ...
+)
 ```
 
 Navigation controller usage:
