@@ -17,11 +17,11 @@ import kotlinx.coroutines.sync.withLock
 data class NavigationItem(
     private val initialIndex: Int,
     private val initialIndexFromTop: Int,
-    val sharedBackEventScope: SharedBackEventScope
+    internal val sharedBackEventScope: SharedBackEventScope
 ) {
-    var index by mutableIntStateOf(initialIndex)
-    var indexFromTop by mutableIntStateOf(initialIndexFromTop)
-    var requestedRemoval by mutableStateOf<Boolean?>(null)
+    internal var index by mutableIntStateOf(initialIndex)
+    internal var indexFromTop by mutableIntStateOf(initialIndexFromTop)
+    internal var requestedRemoval by mutableStateOf<Boolean?>(null)
     internal fun updateIndex(index: Int, indexFromTop: Int) {
         this.index = index
         this.indexFromTop = indexFromTop
