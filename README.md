@@ -23,6 +23,11 @@ Uhm...
 There a few optional Extensions. For now they're all custom animations.
 
 # Examples/Getting Started
+In your version catalog add the "com.github.Number869.Decomposite:decomposite:preferredVersion" artifact. In your toml file that would be:
+```
+decomposite = { group = "com.github.Number869.Decomposite", name = "decomposite", version.ref = "decomposite" }
+```
+
 First you have to set up the app by creating a root of the app. This root sets up stores for view models and nav controllers, overlay stuff, and provides the root component context.
 
 On Android:
