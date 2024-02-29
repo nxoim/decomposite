@@ -80,7 +80,8 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
 
     val animationStatus get() = _animationStatus
 
-    internal var allowAnimation by mutableStateOf(true)
+    private var renderUntilIndex by mutableStateOf(Int.MAX_VALUE)
+    internal val allowAnimation get() = indexFromTop <= renderUntilIndex
 
     /**
      * Will allow the display of content if [untilIndexFromTop] is below or equal indexFromTop.
@@ -88,9 +89,10 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
      * stack or outside) - will always render
      */
     @Composable
-    fun renderUntil(untilIndexFromTop: Int) = remember(_indexFromTop) {
-        location.top || location.outside || (_indexFromTop <= untilIndexFromTop && animationStatus.animating)
-    }.also { allowAnimation = it }
+    fun renderUntil(untilIndexFromTop: Int) = remember(allowAnimation) {
+        renderUntilIndex = untilIndexFromTop
+        allowAnimation
+    }
 
     internal suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
         when (backGesture) {
