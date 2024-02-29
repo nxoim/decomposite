@@ -1,7 +1,6 @@
 rootProject.name = "Decomposite"
 
 include(":core")
-include(":optionalExtensions")
 include(":sample:app")
 
 pluginManagement {

@@ -64,7 +64,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(project(":core"))
-            implementation(project(":optionalExtensions"))
         }
 
         commonTest.dependencies {
@@ -81,7 +80,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.android)
             implementation(project(":core"))
-            implementation(project(":optionalExtensions"))
         }
 
         jvmMain.dependencies {
