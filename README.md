@@ -33,13 +33,12 @@ First you have to set up the app by creating a root of the app. This root sets u
 On Android:
 ```kotlin
 class YourActivity : ComponentActivity() {
-    // default component context is included with the decompose library
-    val navigationRootData = navigationRootData(defaultComponentContext())
-    // you can also instantiate it using di. with Koin, for example, you'd do:
-    // yourKoin.loadModules(listOf(module { single { navigationRootData } })) 
-    
     override fun onCreate(savedInstanceState: Bundle?) {
     	super.onCreate(savedInstanceState)
+
+        // default component context is included with the decompose library
+        val navigationRootData = navigationRootData(defaultComponentContext())
+
         setContent {
             NavigationRoot(navigationRootData) { YourContent() }
         }
