@@ -32,8 +32,7 @@ fun NavigationItem.animatedDestination(
 
     // launch animations if there's changes
     LaunchedEffect(this.index, this.indexFromTop) {
-        scope.updateCurrentIndex(index, indexFromTop)
-        scope.animateToTarget()
+        scope.updateCurrentIndexAndAnimate(index, indexFromTop)
     }
 
     LaunchedEffect(Unit) {

@@ -129,7 +129,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
         }
     }
 
-    internal suspend fun updateCurrentIndex(newIndex: Int, newIndexFromTop: Int) {
+    internal suspend fun updateCurrentIndexAndAnimate(newIndex: Int, newIndexFromTop: Int) {
         val direction = when {
             newIndexFromTop > _indexFromTop -> Direction.Inward
             newIndexFromTop < _indexFromTop -> Direction.Outward
@@ -146,29 +146,29 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
 
         index = newIndex
         _indexFromTop = newIndexFromTop
+
+        if (allowAnimation) animateToTarget()
     }
 
-    internal suspend fun animateToTarget() = coroutineScope {
-        if (allowAnimation) {
-            launch {
-                animationProgressAnimatable.animateTo(
-                    targetValue = _indexFromTop.toFloat(),
-                    animationSpec = animationSpec,
-                    initialVelocity = rawGestureProgress.velocity
-                )
+    private suspend fun animateToTarget() = coroutineScope {
+        launch {
+            animationProgressAnimatable.animateTo(
+                targetValue = _indexFromTop.toFloat(),
+                animationSpec = animationSpec,
+                initialVelocity = rawGestureProgress.velocity
+            )
 
-                updateStatus(AnimationType.None, Direction.None)
-                if (location.outside && allowRemoval) removalRequestChannel.emit(true)
-                _backEvent = BackEvent()
-            }
+            updateStatus(AnimationType.None, Direction.None)
+            if (location.outside && allowRemoval) removalRequestChannel.emit(true)
+            _backEvent = BackEvent()
+        }
 
-            launch {
-                gestureAnimationProgressAnimatable.animateTo(
-                    targetValue = _indexFromTop.toFloat(),
-                    animationSpec = animationSpec,
-                    initialVelocity = rawGestureProgress.velocity
-                )
-            }
+        launch {
+            gestureAnimationProgressAnimatable.animateTo(
+                targetValue = _indexFromTop.toFloat(),
+                animationSpec = animationSpec,
+                initialVelocity = rawGestureProgress.velocity
+            )
         }
     }
 
