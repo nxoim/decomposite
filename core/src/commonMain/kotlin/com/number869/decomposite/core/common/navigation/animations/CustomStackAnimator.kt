@@ -27,7 +27,7 @@ fun <C : Any, T : Any> CustomStackAnimator(
     content: @Composable NavigationItem.(child: Child.Created<C, T>) -> Unit,
 ) {
     val sourceStack by stackState.subscribeAsState()
-    var cachedChildren by remember { mutableStateOf(listOf(stackState.value.active)) }
+    var cachedChildren by remember { mutableStateOf(sourceStack.items) }
     val mutex = remember { Mutex() }
 
     val holder = rememberSaveableStateHolder()
