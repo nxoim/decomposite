@@ -37,8 +37,9 @@ fun NavigationItem.animatedDestination(
     }
 
     LaunchedEffect(Unit) {
+        val allowGestures = this@animatedDestination.index != 0 && scope.allowAnimation
         // trigger gestures in the animation scope
-         sharedBackEventScope.gestureActions.collectLatest {
+        if (allowGestures) sharedBackEventScope.gestureActions.collectLatest {
             scope.onBackGesture(it)
         }
     }

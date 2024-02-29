@@ -80,7 +80,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
 
     val animationStatus get() = _animationStatus
 
-    private var allowAnimation by mutableStateOf(true)
+    internal var allowAnimation by mutableStateOf(true)
 
     /**
      * Will allow the display of content if [untilIndexFromTop] is below or equal indexFromTop.
@@ -93,7 +93,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
     }.also { allowAnimation = it }
 
     internal suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
-        if (allowAnimation) when (backGesture) {
+        when (backGesture) {
             is BackGestureEvent.OnBackStarted -> {
                 // stop all animations
                 animationProgressAnimatable.stop()
