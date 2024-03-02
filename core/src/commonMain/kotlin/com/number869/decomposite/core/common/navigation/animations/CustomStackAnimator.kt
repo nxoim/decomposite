@@ -41,10 +41,12 @@ fun <C : Any, T : Any> CustomStackAnimator(
     }
 
     Box(modifier) {
-        val children = if (excludeStartingDestination)
-            cachedChildren.filterNot { it == sourceStack.items.first() }
-        else
-            cachedChildren
+        val children = remember(cachedChildren) {
+            if (excludeStartingDestination)
+                cachedChildren.filterNot { it == sourceStack.items.first() }
+            else
+                cachedChildren
+        }
 
         children.forEach { child ->
             val inStack = sourceStack.items.contains(child)
