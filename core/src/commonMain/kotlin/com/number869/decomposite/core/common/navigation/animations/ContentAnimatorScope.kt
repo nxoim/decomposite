@@ -35,7 +35,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
     internal var animationSpec by mutableStateOf<AnimationSpec<Float>>(softSpring())
     private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
     val indexFromTop get() = _indexFromTop
-    private var allowRemoval by mutableStateOf(false)
+    private var allowRemoval by mutableStateOf(true)
     internal val removalRequestChannel = MutableStateFlow(false)
     private var index by mutableIntStateOf(initialIndex)
     private val initial get() = index == 0
