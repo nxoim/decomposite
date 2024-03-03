@@ -107,6 +107,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
                 animationProgressAnimatable.stop()
                 gestureAnimationProgressAnimatable.stop()
 
+                // if item is about to be removed - this prevents it from happening
                 allowRemoval = false
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
                 _backEvent = backGesture.event
@@ -124,15 +125,16 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
 
             BackGestureEvent.None,
             BackGestureEvent.OnBackCancelled -> {
+                allowRemoval = false
                 updateStatus(AnimationType.Passive, Direction.Inward)
                 animateToTarget()
-                allowRemoval = false
+                allowRemoval = true
             }
 
             BackGestureEvent.OnBack -> {
                 updateStatus(AnimationType.None, Direction.None)
-                animateToTarget()
                 allowRemoval = true
+                animateToTarget()
             }
         }
     }
