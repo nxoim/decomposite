@@ -94,9 +94,9 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
     fun renderUntil(
         untilIndexFromTop: Int,
         onlyRenderBackIfAnimated: Boolean = true
-    ) = remember(index, indexFromTop, animationStatus.animating) {
+    ) = remember(index, indexFromTop, _animationStatus.animating) {
         renderUntilIndex = untilIndexFromTop
-        val disallowBackstackRender = !location.back || (allowAnimation && animationStatus.animating)
+        val disallowBackstackRender = !location.back || (allowAnimation && _animationStatus.animating)
         if (onlyRenderBackIfAnimated) disallowBackstackRender else allowAnimation
     }
 
@@ -132,8 +132,8 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
             }
 
             BackGestureEvent.OnBack -> {
-                updateStatus(AnimationType.None, Direction.None)
                 allowRemoval = true
+                updateStatus(AnimationType.Passive, Direction.Outward)
                 animateToTarget()
             }
         }
@@ -143,7 +143,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
         val direction = when {
             newIndexFromTop > _indexFromTop -> Direction.Inward
             newIndexFromTop < _indexFromTop -> Direction.Outward
-            else -> animationStatus.direction
+            else -> _animationStatus.direction
         }
 
         val newLocation = when {
@@ -185,7 +185,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
     private suspend fun updateStatus(type: AnimationType, direction: Direction, newItemLocation: ItemLocation? = null) {
         mutex.withLock {
             _animationStatus = AnimationStatus(
-                previousLocation = animationStatus.location,
+                previousLocation = _animationStatus.location,
                 location = newItemLocation ?: location,
                 direction = direction,
                 type = type
