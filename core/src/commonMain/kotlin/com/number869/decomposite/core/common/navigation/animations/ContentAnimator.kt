@@ -48,6 +48,11 @@ fun NavigationItem.animatedDestination(
     }
 }
 
+/**
+ * Usage of this operator will override the animation specifications of all animations with
+ * the ones declared in the last animation. That is necessary because the animator scope
+ * must be shared between the animations.
+ */
 operator fun ContentAnimator.plus(other: ContentAnimator) = ContentAnimator {
     this.content { other.content(this) { it() } }
 }
