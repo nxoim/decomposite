@@ -81,7 +81,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
     val animationStatus get() = _animationStatus
 
     private var renderUntilIndex by mutableStateOf(Int.MAX_VALUE)
-    internal val allowAnimation get() = indexFromTop <= renderUntilIndex
+    internal val allowAnimation get() = _indexFromTop <= renderUntilIndex
 
     /**
      * Controls content rendering based on its position in the stack and animation state.
@@ -94,7 +94,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
     fun renderUntil(
         untilIndexFromTop: Int,
         onlyRenderBackIfAnimated: Boolean = true
-    ) = remember(index, indexFromTop, _animationStatus.animating) {
+    ) = remember(index, _indexFromTop, _animationStatus.animating) {
         renderUntilIndex = untilIndexFromTop
         val disallowBackstackRender = !location.back || (allowAnimation && _animationStatus.animating)
         if (onlyRenderBackIfAnimated) disallowBackstackRender else allowAnimation
@@ -168,9 +168,15 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
                 initialVelocity = rawGestureProgress.velocity
             )
 
-            updateStatus(AnimationType.None, Direction.None)
-            if (location.outside && allowRemoval) removalRequestChannel.emit(true)
-            _backEvent = BackEvent()
+            launch {
+                // for a moment this block will be called upon OnBack because that's animateTo's
+                // intended behavior, meaning these will be called unintentionally, unintentionally
+                // updating animation status. adding a delay compensates for this
+                withFrameNanos {  }
+                updateStatus(AnimationType.None, Direction.None)
+                if (location.outside && allowRemoval) removalRequestChannel.emit(true)
+                _backEvent = BackEvent()
+            }
         }
 
         launch {
