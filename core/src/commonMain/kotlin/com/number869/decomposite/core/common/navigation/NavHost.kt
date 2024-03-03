@@ -70,7 +70,6 @@ inline fun <reified C : Any> NavHost(
                     startingNavControllerInstance.snackStack,
                     onBackstackEmpty = {},
                     sharedBackEventScope = SharedBackEventScope(),
-                    excludeStartingDestination = true
                 ) {
                     CompositionLocalProvider(LocalComponentContext provides it.instance.componentContext) {
                         animatedDestination(
