@@ -43,8 +43,7 @@ class NavigationRoot {
     val overlays = mutableStateListOf<@Composable () -> Unit>()
     @Composable
     fun overlay(content: @Composable () -> Unit) {
-        overlays.add(content)
-
+        remember { overlays.add(content) }
         DisposableEffect(Unit) { onDispose { overlays.remove(content) } }
     }
 }
