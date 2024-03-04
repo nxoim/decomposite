@@ -88,7 +88,7 @@ inline fun <reified C : Any> NavHost(
 
         BackGestureHandler(
             enabled = backHandlerEnabled,
-            LocalComponentContext.current.backHandler,
+            startingNavControllerInstance.backHandler,
             onBackStarted = { onBackStarted(it) },
             onBackProgressed = { onBackProgressed(it) },
             onBackCancelled = { onBackCancelled() },
