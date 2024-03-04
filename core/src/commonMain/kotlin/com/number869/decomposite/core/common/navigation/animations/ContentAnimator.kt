@@ -1,42 +1,31 @@
 package com.number869.decomposite.core.common.navigation.animations
 
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.staticCompositionLocalOf
-import com.number869.decomposite.core.common.ultils.rememberRetained
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.collectLatest
 
 /**
  * In reality is just a holder for content that's to be animated, 📮
  */
 @Immutable
-class ContentAnimator(val content: @Composable ContentAnimatorScope.(@Composable () -> Unit) -> Unit)
-
-fun contentAnimator(
-    animationSpec: AnimationSpec<Float> = softSpring(),
-    block: @Composable ContentAnimatorScope.(content: @Composable () -> Unit) -> Unit
-) = ContentAnimator { block(this.apply { this.animationSpec = animationSpec }, it) }
-
-val LocalContentAnimator = staticCompositionLocalOf { emptyAnimation() }
+class ContentAnimator(val animatedModifier: Modifier)
 
 @Composable
-fun NavigationItem.animatedDestination(
-    animation: ContentAnimator = LocalContentAnimator.current,
-    content: @Composable () -> Unit
-) {
-    val scope = rememberRetained { ContentAnimatorScope(this.index, this.indexFromTop) }
-
-    animation.content(scope, content)
-
+fun NavigationItem.contentAnimator(
+    animationSpec: AnimationSpec<Float> = softSpring(),
+    block: ContentAnimatorScope.() -> Modifier
+): ContentAnimator {
+    val scope = remember { ContentAnimatorScope(this.index, this.indexFromTop, animationSpec) }
     // launch animations if there's changes
     LaunchedEffect(this.index, this.indexFromTop) {
         scope.updateCurrentIndexAndAnimate(index, indexFromTop)
     }
 
     LaunchedEffect(Unit) {
-        val allowGestures = this@animatedDestination.index != 0 && scope.allowAnimation
+        val allowGestures = this@contentAnimator.index != 0 && scope.allowAnimation
         // trigger gestures in the animation scope
         if (allowGestures) sharedBackEventScope.gestureActions.collectLatest {
             scope.onBackGesture(it)
@@ -46,13 +35,31 @@ fun NavigationItem.animatedDestination(
     LaunchedEffect(Unit) {
         scope.removalRequestChannel.collect { if (index <= -1) requestRemoval(it) }
     }
+    return ContentAnimator(block(scope))
 }
+
+@Stable
+@Composable
+fun NavigationItem.LocalContentAnimator(): ProvidableCompositionLocal<ContentAnimator> {
+    val anim = emptyAnimation()
+    return staticCompositionLocalOf { anim }
+}
+
+//val LocalNavigationItem = staticCompositionLocalOf<NavigationItem> {
+//    error("No NavigationItem provided locally")
+//}
+
+@Composable
+fun NavigationItem.animatedDestination(
+    animation: ContentAnimator = LocalContentAnimator().current,
+    content: @Composable BoxScope.() -> Unit
+) = Box(animation.animatedModifier, content = content)
 
 /**
  * Usage of this operator will override the animation specifications of all animations with
  * the ones declared in the last animation. That is necessary because the animator scope
  * must be shared between the animations.
  */
-operator fun ContentAnimator.plus(other: ContentAnimator) = ContentAnimator {
-    this.content { other.content(this) { it() } }
-}
+operator fun ContentAnimator.plus(other: ContentAnimator) = ContentAnimator(
+    this.animatedModifier.then(other.animatedModifier)
+)

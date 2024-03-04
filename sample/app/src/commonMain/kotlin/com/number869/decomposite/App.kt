@@ -35,10 +35,12 @@ fun App() {
 @Composable
 fun RootNavHost() = NavHost<RootDestinations>(
     startingDestination = RootDestinations.Star,
-    defaultAnimation = cleanSlideAndFade(
-        orientation = Orientation.Vertical,
-        targetOffsetDp = -16
-    ),
+    defaultAnimation = {
+        cleanSlideAndFade(
+            orientation = Orientation.Vertical,
+            targetOffsetDp = -16
+        )
+    },
     routedContent = {
         Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
             it(Modifier.padding(scaffoldPadding))

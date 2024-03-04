@@ -30,9 +30,12 @@ data class NavigationItem(
 }
 
 @Immutable
-class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
+class ContentAnimatorScope(
+    initialIndex: Int,
+    initialIndexFromTop: Int,
+    private val animationSpec: AnimationSpec<Float>
+) {
     private val mutex = Mutex()
-    internal var animationSpec by mutableStateOf<AnimationSpec<Float>>(softSpring())
     private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
     val indexFromTop get() = _indexFromTop
     private var allowRemoval by mutableStateOf(true)
@@ -174,7 +177,7 @@ class ContentAnimatorScope(initialIndex: Int, initialIndexFromTop: Int) {
                 // updating animation status. adding a delay compensates for this
                 withFrameNanos {  }
                 updateStatus(AnimationType.None, Direction.None)
-                if (location.outside && allowRemoval) removalRequestChannel.emit(true)
+//                if (location.outside && allowRemoval) removalRequestChannel.emit(true)
                 _backEvent = BackEvent()
             }
         }
