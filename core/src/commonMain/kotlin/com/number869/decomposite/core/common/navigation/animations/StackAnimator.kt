@@ -68,10 +68,14 @@ fun <C : Any> StackAnimator(
 
         Box(modifier) {
             cachedChildren.fastForEach { cachedChild ->
-                key(cachedChild.configuration.hashString()) {
-                    val inStack = sourceStack.items.fastAny { it.configuration == cachedChild.configuration }
-                    val child = remember(inStack) {
-                        sourceStack.items.find { it.configuration == cachedChild.configuration } ?: cachedChild
+                val configuration = cachedChild.configuration
+
+                key(configuration.hashString()) {
+                    val inStack = sourceStack.items.fastAny { it.configuration == configuration }
+                    val child by remember {
+                        derivedStateOf {
+                            sourceStack.items.find { it.configuration == configuration } ?: cachedChild
+                        }
                     }
                     val index = if (inStack) sourceStack.items.indexOf(child) else -1
                     val indexFromTop = if (inStack) sourceStack.items.reversed().indexOf(child) else -1
@@ -79,7 +83,7 @@ fun <C : Any> StackAnimator(
                     val animData = remember {
                         getOrCreateAnimationData(
                             key = child.configuration,
-                            source = animations(child.configuration),
+                            source = animations(configuration),
                             initialIndex = index,
                             initialIndexFromTop = indexFromTop
                         )
@@ -89,14 +93,7 @@ fun <C : Any> StackAnimator(
                         derivedStateOf { indexFromTop <= (animData.renderUntils.min()) }
                     }
                     val animating by remember {
-                        derivedStateOf {
-                            animData.scopes.any { it.animationStatus.animating }
-                        }
-                    }
-
-                    LaunchedEffect(animating) {
-                        println("animating ${child.configuration} $animating")
-
+                        derivedStateOf { animData.scopes.any { it.animationStatus.animating } }
                     }
 
                     val readyForRemoval = !inStack && animData.scopes.fastAll { !it.animationStatus.animating }
@@ -120,10 +117,7 @@ fun <C : Any> StackAnimator(
                     }
 
                     LaunchedEffect(readyForRemoval) {
-                        if (readyForRemoval) {
-                            print(indexFromTop)
-                            removeFromCache(child)
-                        }
+                        if (readyForRemoval) removeFromCache(configuration)
                     }
 
                     LaunchedEffect(null) {
@@ -132,23 +126,15 @@ fun <C : Any> StackAnimator(
                                 // wrapped in run catching because sometimes it can happen
                                 // that attempts to update the gesture data in nonexistent scopes
                                 // will be made, which will throw an error
-                                runCatching { updateGestureDataInScopes(child.configuration, it) }
+                                runCatching { updateGestureDataInScopes(configuration, it) }
                             }
                         }
                     }
 
-                    val key = remember { child.configuration.hashString() + " StackAnimator SaveableStateHolder"}
+                    val key = remember { configuration.hashString() + " StackAnimator SaveableStateHolder"}
                     Box(
                         Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
-                        content = { holder.SaveableStateProvider(key) { content(child) }
-//                        Text(
-//                            animData.scopes.fastMap { it.animationStatus }.joinToString(),
-//                            color = Color.White,
-//                            modifier = Modifier.padding(
-//                                top = (indexFromTop * 10).coerceAtLeast(0).dp
-//                            )
-//                        )
-                        }
+                        content = { holder.SaveableStateProvider(key) { content(child) } }
                     )
                 }
             }
@@ -173,10 +159,13 @@ private class StackAnimatorScope<C : Any>(initialStack: List<Child.Created<C, De
         mutex.withLock { _cachedChildren = cachedChildren + differences }
     }
 
-    suspend fun removeFromCache(child: Child.Created<C, DecomposeChildInstance<C>>) {
+    suspend fun removeFromCache(target: C) {
         mutex.withLock {
+            val child = _cachedChildren.find { it.configuration == target }
+                ?: error("Upon removeFromCache() $target was not found in the _cachedChildren")
+
             _cachedChildren = cachedChildren - child
-            animationDataRegistry.remove(child.configuration)
+            animationDataRegistry.remove(target)
         }
     }
 
