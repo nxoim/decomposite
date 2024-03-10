@@ -4,20 +4,17 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import com.arkivanov.essenty.backhandler.BackEvent
 
-fun <T> softSpring() = spring<T>(1.8f, 2500f)
+fun softSpring() = spring(1.8f, 2500f, 0.0005f)
 
-@Composable
-fun NavigationItem.emptyAnimation() = contentAnimator(tween(0)) { Modifier }
+fun emptyAnimation() = contentAnimator(tween(0)) { Modifier }
 
-@Composable
-fun NavigationItem.fade(
+fun fade(
     clean: Boolean = true,
     animateUsingGestures: Boolean = true,
     animationSpec: AnimationSpec<Float> = spring()
@@ -33,15 +30,13 @@ fun NavigationItem.fade(
     }
 }
 
-@Composable
-fun NavigationItem.scale(
+fun scale(
     minimumScale: Float = 0.9f,
-    rotate: Boolean = true,
     animationSpec: AnimationSpec<Float> = softSpring()
 ) = contentAnimator(animationSpec) {
     Modifier.graphicsLayer {
         val scale = (gestureAnimationProgress - (minimumScale * gestureAnimationProgress)).let {
-            if (rotate) 1f + (-it * it) else it
+            1f + (-it * it)
         }
 
         scaleX = scale
@@ -49,8 +44,7 @@ fun NavigationItem.scale(
     }
 }
 
-@Composable
-fun NavigationItem.slide(
+fun slide(
     orientation: Orientation = Orientation.Horizontal,
     targetOffsetDp: Int = 64,
     dependOnSwipeEdge: Boolean = false,
@@ -70,11 +64,10 @@ fun NavigationItem.slide(
     }
 }
 
-@Composable
-fun NavigationItem.iosLikeSlide(
+fun iosLikeSlide(
     backStackSlideFraction: Float = 0.25f,
     animationSpec: AnimationSpec<Float> = softSpring()
-) = contentAnimator(animationSpec) {
+) = contentAnimator(animationSpec, renderUntil = 3) {
     Modifier
         .drawWithContent {
             val color = Color.Black.copy((gestureAnimationProgress * 0.2f).coerceIn(0f, 1f))
@@ -89,8 +82,7 @@ fun NavigationItem.iosLikeSlide(
         }
 }
 
-@Composable
-fun NavigationItem.cleanSlideAndFade(
+fun cleanSlideAndFade(
     orientation: Orientation = Orientation.Horizontal,
     targetOffsetDp: Int = 64,
     animateFadeUsingGestures: Boolean = false,

@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.PanoramaVertical
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -12,11 +13,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.NavigationRoot
-import com.number869.decomposite.core.common.navigation.animations.animatedDestination
 import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.HeartNavHost
 import com.number869.decomposite.ui.screens.star.StarNavHost
+import com.number869.decomposite.ui.screens.tikitoki.TikitokiScreen
 import com.number869.decomposite.ui.theme.SampleTheme
 import kotlinx.serialization.Serializable
 import org.koin.compose.getKoin
@@ -34,8 +35,8 @@ fun App() {
 
 @Composable
 fun RootNavHost() = NavHost<RootDestinations>(
-    startingDestination = RootDestinations.Star,
-    defaultAnimation = {
+    navController<RootDestinations>(RootDestinations.Star) ,
+    animations = {
         cleanSlideAndFade(
             orientation = Orientation.Vertical,
             targetOffsetDp = -16
@@ -48,8 +49,9 @@ fun RootNavHost() = NavHost<RootDestinations>(
     },
 ) {
     when (it) { // nested
-        RootDestinations.Star -> animatedDestination { StarNavHost() }
-        RootDestinations.Heart -> animatedDestination { HeartNavHost() }
+        RootDestinations.Star -> StarNavHost()
+        RootDestinations.Tikitoki -> TikitokiScreen()
+        RootDestinations.Heart -> HeartNavHost()
     }
 }
 
@@ -67,6 +69,12 @@ fun GlobalSampleNavBar() {
         )
 
         NavigationBarItem(
+            selected = currentScreen is RootDestinations.Tikitoki,
+            icon = { Icon(Icons.Default.PanoramaVertical, contentDescription = null) },
+            onClick = { navController.navigate(RootDestinations.Tikitoki)}
+        )
+
+        NavigationBarItem(
             selected = currentScreen is RootDestinations.Heart,
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
             onClick = { navController.navigate(RootDestinations.Heart) }
@@ -78,6 +86,9 @@ fun GlobalSampleNavBar() {
 sealed interface RootDestinations {
     @Serializable
     data object Star : RootDestinations
+
+    @Serializable
+    data object Tikitoki : RootDestinations
 
     @Serializable
     data object Heart : RootDestinations

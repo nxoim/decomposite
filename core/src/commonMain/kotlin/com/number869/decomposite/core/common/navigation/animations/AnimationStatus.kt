@@ -6,7 +6,7 @@ data class AnimationStatus(
     val direction: Direction,
     val type: AnimationType
 ) {
-    val animating = type != AnimationType.None
+    val animating = !type.none || !direction.none
 }
 
 enum class ItemLocation { Back, Top, Outside }
@@ -23,8 +23,10 @@ val ItemLocation.outside get() = this == ItemLocation.Outside
 enum class Direction { None, Inward, Outward }
 val Direction.inward get() = this == Direction.Inward
 val Direction.outward get() = this == Direction.Outward
+val Direction.none get() = this == Direction.None
 
 enum class AnimationType { None, Gestures, Passive }
 
 val AnimationType.gestures get() = this == AnimationType.Gestures
 val AnimationType.passive get() = this == AnimationType.Passive
+val AnimationType.none get() = this == AnimationType.None

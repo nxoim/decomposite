@@ -9,7 +9,7 @@ import com.arkivanov.essenty.backhandler.BackHandler
 @Composable
 fun BackGestureHandler(
     enabled: Boolean = true,
-    backHandler: BackHandler,
+    backHandler: BackHandler = LocalComponentContext.current.backHandler,
     onBackStarted: (BackEvent) -> Unit = {},
     onBackProgressed: (BackEvent) -> Unit = {},
     onBackCancelled: () -> Unit = {},

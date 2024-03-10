@@ -10,17 +10,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
-import com.number869.decomposite.core.common.navigation.animations.animatedDestination
+import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.star.another.AnotherStarScreen
 import com.number869.decomposite.ui.screens.star.home.StarHomeScreen
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StarNavHost() {
-    NavHost<StarDestinations>(
-        startingDestination = StarDestinations.Home,
+    NavHost(
+        navController<StarDestinations>(StarDestinations.Home),
+        animations = {
+            when (it) {
+                StarDestinations.AnotherStar -> iosLikeSlide()
+                else -> cleanSlideAndFade()
+            }
+        },
         routedContent = {
             Scaffold(
                 topBar = { StarTopAppBar() },
@@ -29,8 +34,8 @@ fun StarNavHost() {
         }
     ) { destination ->
         when (destination) {
-            StarDestinations.Home -> animatedDestination() { StarHomeScreen() }
-            StarDestinations.AnotherStar -> animatedDestination(iosLikeSlide()) { AnotherStarScreen() }
+            StarDestinations.Home -> StarHomeScreen()
+            StarDestinations.AnotherStar -> AnotherStarScreen()
         }
     }
 }

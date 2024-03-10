@@ -1,65 +1,52 @@
 package com.number869.decomposite.core.common.navigation.animations
 
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.JvmInline
+
+@JvmInline
+@Immutable
+value class ContentAnimations(val items: List<ContentAnimator>)
+
+@Immutable
+data class ContentAnimator(
+    val animationSpec: AnimationSpec<Float>,
+    val renderUntil: Int,
+    val requireVisibilityInBackstack: Boolean,
+    val animationModifier: ContentAnimatorScope.() -> Modifier
+)
 
 /**
- * In reality is just a holder for content that's to be animated, 📮
+ * [renderUntil] Controls content rendering based on it's position in the stack and animation state.
+ * Content at or above [renderUntil] is always rendered if it's the item is index 0 or -1 (top or outside).
+ *
+ * If [requireVisibilityInBackstack] is false (which is by default) - the top and outside items
+ * are rendered at all times while the backstack items are only rendered if they're being animated.
+ *
+ * If [requireVisibilityInBackstack] is set to false - will be visible even when it's not animated
+ * (note that if you're combining animations, like fade() + scale(), if one of them has [requireVisibilityInBackstack]
+ * set to false - ALL items will be visible while in backstack as if all animations have [requireVisibilityInBackstack]
+ * set to true).
  */
-@Immutable
-class ContentAnimator(val animatedModifier: Modifier)
-
-@Composable
-fun NavigationItem.contentAnimator(
+fun contentAnimator(
     animationSpec: AnimationSpec<Float> = softSpring(),
+    renderUntil: Int = 1,
+    requireVisibilityInBackstack: Boolean = false,
     block: ContentAnimatorScope.() -> Modifier
-): ContentAnimator {
-    val scope = remember { ContentAnimatorScope(this.index, this.indexFromTop, animationSpec) }
-    // launch animations if there's changes
-    LaunchedEffect(this.index, this.indexFromTop) {
-        scope.updateCurrentIndexAndAnimate(index, indexFromTop)
-    }
-
-    LaunchedEffect(Unit) {
-        val allowGestures = this@contentAnimator.index != 0 && scope.allowAnimation
-        // trigger gestures in the animation scope
-        if (allowGestures) sharedBackEventScope.gestureActions.collectLatest {
-            scope.onBackGesture(it)
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        scope.removalRequestChannel.collect { if (index <= -1) requestRemoval(it) }
-    }
-    return ContentAnimator(block(scope))
-}
+) = ContentAnimations(
+    listOf(
+        ContentAnimator(
+            animationSpec,
+            renderUntil,
+            requireVisibilityInBackstack,
+            block
+        )
+    )
+)
 
 @Stable
-@Composable
-fun NavigationItem.LocalContentAnimator(): ProvidableCompositionLocal<ContentAnimator> {
-    val anim = emptyAnimation()
-    return staticCompositionLocalOf { anim }
-}
-
-//val LocalNavigationItem = staticCompositionLocalOf<NavigationItem> {
-//    error("No NavigationItem provided locally")
-//}
-
-@Composable
-fun NavigationItem.animatedDestination(
-    animation: ContentAnimator = LocalContentAnimator().current,
-    content: @Composable BoxScope.() -> Unit
-) = Box(animation.animatedModifier, content = content)
-
-/**
- * Usage of this operator will override the animation specifications of all animations with
- * the ones declared in the last animation. That is necessary because the animator scope
- * must be shared between the animations.
- */
-operator fun ContentAnimator.plus(other: ContentAnimator) = ContentAnimator(
-    this.animatedModifier.then(other.animatedModifier)
+inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAnimations(
+    this.items + other.items
 )

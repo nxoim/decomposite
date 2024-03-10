@@ -6,28 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.number869.decomposite.core.common.ultils.BackGestureEvent
-import com.number869.decomposite.core.common.ultils.SharedBackEventScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
-@Immutable
-data class NavigationItem(
-    private val initialIndex: Int,
-    private val initialIndexFromTop: Int,
-    internal val sharedBackEventScope: SharedBackEventScope
-) {
-    internal var index by mutableIntStateOf(initialIndex)
-    internal var indexFromTop by mutableIntStateOf(initialIndexFromTop)
-    internal var requestedRemoval by mutableStateOf<Boolean?>(null)
-    internal fun updateIndex(index: Int, indexFromTop: Int) {
-        this.index = index
-        this.indexFromTop = indexFromTop
-    }
-    internal fun requestRemoval(request: Boolean?) { requestedRemoval = request }
-}
 
 @Immutable
 class ContentAnimatorScope(
@@ -39,7 +21,6 @@ class ContentAnimatorScope(
     private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
     val indexFromTop get() = _indexFromTop
     private var allowRemoval by mutableStateOf(true)
-    internal val removalRequestChannel = MutableStateFlow(false)
     private var index by mutableIntStateOf(initialIndex)
     private val initial get() = index == 0
 
@@ -83,26 +64,6 @@ class ContentAnimatorScope(
 
     val animationStatus get() = _animationStatus
 
-    private var renderUntilIndex by mutableStateOf(Int.MAX_VALUE)
-    internal val allowAnimation get() = _indexFromTop <= renderUntilIndex
-
-    /**
-     * Controls content rendering based on its position in the stack and animation state.
-     * Content at or above 'untilIndexFromTop' is always rendered if it's the top or outside item (index 0 or -1).
-     * If [onlyRenderBackIfAnimated] is true (which is by default) - the top and outside
-     * items are rendered at all times and the backstack items (the indexes of which are below [untilIndexFromTop])
-     * are only rendered if they're being animated.
-     */
-    @Composable
-    fun renderUntil(
-        untilIndexFromTop: Int,
-        onlyRenderBackIfAnimated: Boolean = true
-    ) = remember(index, _indexFromTop, _animationStatus.animating) {
-        renderUntilIndex = untilIndexFromTop
-        val disallowBackstackRender = !location.back || (allowAnimation && _animationStatus.animating)
-        if (onlyRenderBackIfAnimated) disallowBackstackRender else allowAnimation
-    }
-
     internal suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
         when (backGesture) {
             is BackGestureEvent.OnBackStarted -> {
@@ -115,7 +76,7 @@ class ContentAnimatorScope(
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
                 _backEvent = backGesture.event
 
-                updateStatus(AnimationType.Gestures, Direction.Outward)
+                updateStatus(newType = AnimationType.Gestures, newDirection = Direction.Outward)
             }
 
             is BackGestureEvent.OnBackProgressed -> {
@@ -129,21 +90,24 @@ class ContentAnimatorScope(
             BackGestureEvent.None,
             BackGestureEvent.OnBackCancelled -> {
                 allowRemoval = false
-                updateStatus(AnimationType.Passive, Direction.Inward)
+                updateStatus(newType = AnimationType.Passive, newDirection = Direction.Inward)
                 animateToTarget()
                 allowRemoval = true
             }
 
             BackGestureEvent.OnBack -> {
                 allowRemoval = true
-                updateStatus(AnimationType.Passive, Direction.Outward)
-                animateToTarget()
+                updateStatus(newType = AnimationType.Passive, newDirection = Direction.Outward)
             }
         }
     }
 
-    internal suspend fun updateCurrentIndexAndAnimate(newIndex: Int, newIndexFromTop: Int) {
-        val direction = when {
+    internal suspend fun updateCurrentIndexAndAnimate(
+        newIndex: Int,
+        newIndexFromTop: Int,
+        animate: Boolean = true
+    ) {
+        val newDirection = when {
             newIndexFromTop > _indexFromTop -> Direction.Inward
             newIndexFromTop < _indexFromTop -> Direction.Outward
             else -> _animationStatus.direction
@@ -155,49 +119,58 @@ class ContentAnimatorScope(
             newIndexFromTop >= 1 -> ItemLocation.Back
             else -> error("how")
         }
-        updateStatus(AnimationType.Passive, direction, newLocation)
+
+        val previousLocation = if (newIndexFromTop == 0 && newDirection == Direction.Inward) {
+            ItemLocation.Outside
+        } else {
+            location
+        }
+
+        updateStatus(previousLocation, newLocation, newDirection, AnimationType.Passive)
 
         index = newIndex
         _indexFromTop = newIndexFromTop
 
-        if (allowAnimation) animateToTarget()
+        if (animate) animateToTarget()
     }
 
     private suspend fun animateToTarget() = coroutineScope {
         launch {
-            animationProgressAnimatable.animateTo(
-                targetValue = _indexFromTop.toFloat(),
-                animationSpec = animationSpec,
-                initialVelocity = rawGestureProgress.velocity
-            )
-
-            launch {
-                // for a moment this block will be called upon OnBack because that's animateTo's
-                // intended behavior, meaning these will be called unintentionally, unintentionally
-                // updating animation status. adding a delay compensates for this
-                withFrameNanos {  }
-                updateStatus(AnimationType.None, Direction.None)
-//                if (location.outside && allowRemoval) removalRequestChannel.emit(true)
-                _backEvent = BackEvent()
-            }
-        }
-
-        launch {
             gestureAnimationProgressAnimatable.animateTo(
                 targetValue = _indexFromTop.toFloat(),
                 animationSpec = animationSpec,
-                initialVelocity = rawGestureProgress.velocity
+                initialVelocity = 0.1f + rawGestureProgress.velocity
             )
+        }
+
+        animationProgressAnimatable.animateTo(
+            targetValue = _indexFromTop.toFloat(),
+            animationSpec = animationSpec,
+            initialVelocity = 0.1f + rawGestureProgress.velocity
+        )
+
+        launch {
+            // for a moment this block will be called upon OnBack because that's animateTo's
+            // intended behavior, meaning these will be called unintentionally, unintentionally
+            // updating animation status. adding a delay compensates for this
+            withFrameNanos {  }
+            updateStatus(newType = AnimationType.None, newDirection = Direction.None)
+            _backEvent = BackEvent()
         }
     }
 
-    private suspend fun updateStatus(type: AnimationType, direction: Direction, newItemLocation: ItemLocation? = null) {
+    private suspend fun updateStatus(
+        previousLocation: ItemLocation = _animationStatus.location,
+        newItemLocation: ItemLocation = location,
+        newDirection: Direction,
+        newType: AnimationType
+    ) {
         mutex.withLock {
             _animationStatus = AnimationStatus(
-                previousLocation = _animationStatus.location,
-                location = newItemLocation ?: location,
-                direction = direction,
-                type = type
+                previousLocation = previousLocation,
+                location = newItemLocation,
+                direction = newDirection,
+                type = newType
             )
         }
     }

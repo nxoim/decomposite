@@ -10,12 +10,10 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
-import com.number869.decomposite.core.common.navigation.animations.ContentAnimator
-import com.number869.decomposite.core.common.navigation.animations.NavigationItem
+import com.number869.decomposite.core.common.navigation.animations.ContentAnimations
 import com.number869.decomposite.core.common.navigation.animations.fade
 import com.number869.decomposite.core.common.ultils.ContentType
 import com.number869.decomposite.core.common.ultils.LocalComponentContext
-import com.number869.decomposite.core.common.ultils.SharedBackEventScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -72,7 +70,7 @@ class NavController<C : Any>(
     }.data
 
     val animationsForDestinations = instanceKeeper.getOrCreate("animationsForDestinations ${startingDestination::class}") {
-        AnimationsHolder(mutableMapOf<String, ContentAnimator>())
+        AnimationsHolder(mutableMapOf<String, ContentAnimations>())
     }.data
 
     private val screenNavigation = StackNavigation<C>()
@@ -233,19 +231,17 @@ class NavController<C : Any>(
         }
     }
 
-    @Composable
     fun openInSnack(
         key: String,
-        animation: @Composable NavigationItem.() -> ContentAnimator = { fade() },
+        animation: () -> ContentAnimations = { fade() },
         displayDurationMillis: Duration = 5.seconds,
         content: @Composable BoxScope.() -> Unit
     ) {
-        val anim = animation(NavigationItem(1, 1, SharedBackEventScope()))
         scope.launch(Dispatchers.Main) {
             mutex.withLock {
                 // remember data about content. the content is removed from within
                 // the nav host using DisposableEffect for proper animations using
-                animationsForDestinations[key] = anim
+                animationsForDestinations[key] = animation()
                 contentOfSnacks[key] = { Box(content = content, modifier = Modifier.fillMaxSize()) }
 
                 snackNavigation.push(key)
