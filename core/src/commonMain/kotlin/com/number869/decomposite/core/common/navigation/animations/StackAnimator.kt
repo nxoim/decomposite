@@ -93,16 +93,18 @@ fun <C : Any> StackAnimator(
                         derivedStateOf { indexFromTop <= (animData.renderUntils.min()) }
                     }
                     val animating by remember {
-                        derivedStateOf { animData.scopes.any { it.animationStatus.animating } }
+                        derivedStateOf { animData.scopes.fastAny { it.animationStatus.animating } }
                     }
 
                     val readyForRemoval = !inStack && animData.scopes.fastAll { !it.animationStatus.animating }
 
-                    val render = run {
-                        val requireVisibilityInBackstack = animData.requireVisibilityInBackstacks.any { it }
+                    val render by remember {
+                        derivedStateOf {
+                            val requireVisibilityInBackstack = animData.requireVisibilityInBackstacks.fastAny { it }
 
-                        val disallowBackstackRender = indexFromTop <= 0 || (allowAnimation && animating)
-                        if (requireVisibilityInBackstack) allowAnimation else disallowBackstackRender
+                            val renderTopAndAnimatedBack = indexFromTop < 1 || (allowAnimation && animating)
+                            if (requireVisibilityInBackstack) allowAnimation else renderTopAndAnimatedBack
+                        }
                     }
 
                     // launch animations if there's changes
@@ -110,10 +112,14 @@ fun <C : Any> StackAnimator(
                         coroutineScope.launch {
                             animData.scopes.fastForEach { scope ->
                                 launch {
-                                    scope.updateCurrentIndexAndAnimate(index, indexFromTop, allowAnimation)
+                                    scope.updateCurrentIndexAndAnimate(index, indexFromTop)
                                 }
                             }
                         }
+                    }
+
+                    LaunchedEffect(animating) {
+                        println(configuration.toString() + "animating" + animating)
                     }
 
                     LaunchedEffect(readyForRemoval) {
@@ -132,7 +138,8 @@ fun <C : Any> StackAnimator(
                     }
 
                     val key = remember { configuration.hashString() + " StackAnimator SaveableStateHolder"}
-                    Box(
+
+                    if (render) Box(
                         Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
                         content = { holder.SaveableStateProvider(key) { content(child) } }
                     )
@@ -239,7 +246,7 @@ private class AnimationScopeRegistry {
 }
 
 @OptIn(InternalDecomposeApi::class)
-private fun ChildStack<*, *>.getConfigurations() = items.mapTo(HashSet()) {
+private fun ChildStack<*, *>.getConfigurations() = items.fastMapTo(HashSet()) {
     it.configuration.hashString()
 }
 
