@@ -41,9 +41,12 @@ fun PageStuff(mockPage: MockPage) {
     val navController = navController<TikitokiDestinations>()
     var displayComments by remember { mutableStateOf(false) }
     var displayOptions by remember { mutableStateOf(false) }
+    val commentsSheetState = rememberModalBottomSheetState()
 
     BoxWithConstraints {
-        val animatedFillFraction by animateFloatAsState(if (displayComments) 0.5f else 1f)
+        val animatedFillFraction by animateFloatAsState(
+            if (commentsSheetState.targetValue != SheetValue.Hidden) 0.5f else 1f
+        )
 
         Box(
             Modifier
@@ -98,6 +101,7 @@ fun PageStuff(mockPage: MockPage) {
             }
 
             if (displayComments) ModalBottomSheet(
+                sheetState = commentsSheetState,
                 onDismissRequest = { displayComments = false },
                 windowInsets = CorrectBottomSheetWindowInsets()
             ) {
