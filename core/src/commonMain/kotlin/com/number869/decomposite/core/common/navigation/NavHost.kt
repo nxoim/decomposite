@@ -18,15 +18,14 @@ import com.number869.decomposite.core.common.ultils.*
  * manually by requesting [LocalNavControllerStore] and calling [NavControllerStore.getOrCreate]
  * with the type of your destination.
  */
-@Stable
 @Composable
-fun <C : Any> NavHost(
+inline fun <reified C : Any> NavHost(
     startingNavControllerInstance: NavController<C>,
-    animations: (child: C) -> ContentAnimations = { cleanSlideAndFade() },
-    routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = {
+    noinline animations: (child: C) -> ContentAnimations = { cleanSlideAndFade() },
+    crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = {
         it(Modifier)
     },
-    router: @Composable (child: C) -> Unit,
+    crossinline router: @Composable (child: C) -> Unit,
 ) {
     with(remember { SharedBackEventScope() }) {
         var backHandlerEnabled by remember { mutableStateOf(false) }
@@ -36,13 +35,14 @@ fun <C : Any> NavHost(
                 StackAnimator(
                     ImmutableThingHolder(startingNavControllerInstance.screenStack),
                     modifier,
+                    key = "${C::class.simpleName} routed content",
                     sharedBackEventScope = this,
                     animations = animations,
                     onBackstackEmpty = { backHandlerEnabled = it },
                     content = {
                         CompositionLocalProvider(
                             LocalComponentContext provides it.instance.componentContext,
-                            content = { runCatching { router(it.configuration) } }
+                            content = { router(it.configuration) }
                         )
                     }
                 )
@@ -59,13 +59,14 @@ fun <C : Any> NavHost(
                         else
                             startingNavControllerInstance.screenStack.items.size > 1
                     },
+                    key = "${C::class.simpleName} overlay content",
                     sharedBackEventScope = this,
                     animations = animations,
                     excludeStartingDestination = true,
                     content = {
                         CompositionLocalProvider(
                             LocalComponentContext provides it.instance.componentContext,
-                            content = { runCatching { router(it.configuration) } }
+                            content = { router(it.configuration) }
                         )
                     }
                 )
@@ -75,6 +76,7 @@ fun <C : Any> NavHost(
             StackAnimator(
                 ImmutableThingHolder(startingNavControllerInstance.snackStack),
                 onBackstackEmpty = {},
+                key = "${C::class.simpleName} snack content",
                 animations = {
                     startingNavControllerInstance.animationsForDestinations[it] ?: emptyAnimation()
                 },
@@ -112,8 +114,8 @@ fun <C : Any> NavHost(
 //inline fun <reified C : Any> NavHost(
 //    startingDestination: C,
 //    noinline animations: (child: C) -> ContentAnimations = { cleanSlideAndFade() },
-//    noinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
-//    noinline router: @Composable (child: C) -> Unit
+//    crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = { it(Modifier) },
+//    crossinline router: @Composable (child: C) -> Unit
 //) {
 //    NavHost(
 //        startingNavControllerInstance = navController<C>(startingDestination),

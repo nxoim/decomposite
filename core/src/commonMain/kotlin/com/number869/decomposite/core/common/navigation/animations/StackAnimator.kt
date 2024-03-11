@@ -30,16 +30,19 @@ import kotlinx.coroutines.sync.withLock
 fun <C : Any> StackAnimator(
     stackValue: ImmutableThingHolder<Value<ChildStack<C, DecomposeChildInstance<C>>>>,
     modifier: Modifier = Modifier,
+    key: String = "",
     onBackstackEmpty: (Boolean) -> Unit,
     excludeStartingDestination: Boolean = false,
     sharedBackEventScope: SharedBackEventScope,
     animations: (child: C) -> ContentAnimations,
     content: @Composable (child: Child.Created<C, DecomposeChildInstance<C>>) -> Unit,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val sourceStack by stackValue.thing.subscribeAsState()
     // it's important to use the local instance keeper rather than of the children's for the
     // scopes not to be recreated which is useful in case the exit animation of a config is
     // interrupted by the same config appearing in the stack again while the animation is running
-    val stackAnimatorScope = rememberRetained(stackValue.thing.items.first().configuration.hashString() + "stackAnimatorScope") {
+    val stackAnimatorScope = rememberRetained(key + "StackAnimatorScope") {
         StackAnimatorScope(
             initialStack = stackValue.thing.items.subList(
                 if (excludeStartingDestination) 1 else 0,
@@ -47,15 +50,11 @@ fun <C : Any> StackAnimator(
             )
         )
     }
+    val holder = rememberSaveableStateHolder()
+    holder.retainStates(sourceStack.getConfigurations())
 
     with(stackAnimatorScope) {
-        val coroutineScope = rememberCoroutineScope()
-        val sourceStack by stackValue.thing.subscribeAsState()
-
-        val holder = rememberSaveableStateHolder()
-        holder.retainStates(sourceStack.getConfigurations())
-
-        LaunchedEffect(sourceStack.items, sourceStack.active) {
+        LaunchedEffect(sourceStack.items) {
             onBackstackEmpty(sourceStack.items.size > 1)
 
             cacheAllChildrenConfigs(
@@ -70,15 +69,19 @@ fun <C : Any> StackAnimator(
             cachedChildren.fastForEach { cachedChild ->
                 val configuration = cachedChild.configuration
 
-                key(configuration.hashString()) {
+                key(configuration) {
                     val inStack = sourceStack.items.fastAny { it.configuration == configuration }
                     val child by remember {
                         derivedStateOf {
-                            sourceStack.items.find { it.configuration == configuration } ?: cachedChild
+                            sourceStack.items.find { it.configuration == configuration }
+                                ?: cachedChild
                         }
                     }
                     val index = if (inStack) sourceStack.items.indexOf(child) else -1
-                    val indexFromTop = if (inStack) sourceStack.items.reversed().indexOf(child) else -1
+                    val indexFromTop = if (inStack)
+                        sourceStack.items.reversed().indexOf(child)
+                    else
+                        -1
 
                     val animData = remember {
                         getOrCreateAnimationData(
@@ -89,22 +92,19 @@ fun <C : Any> StackAnimator(
                         )
                     }
 
-                    val allowAnimation by remember {
-                        derivedStateOf { indexFromTop <= (animData.renderUntils.min()) }
-                    }
-                    val animating by remember {
-                        derivedStateOf { animData.scopes.fastAny { it.animationStatus.animating } }
-                    }
+                    val allowAnimation = indexFromTop <= (animData.renderUntils.min())
 
-                    val readyForRemoval = !inStack && animData.scopes.fastAll { !it.animationStatus.animating }
+                    val animating = animData.scopes.fastAny { it.animationStatus.animating }
 
-                    val render by remember {
-                        derivedStateOf {
-                            val requireVisibilityInBackstack = animData.requireVisibilityInBackstacks.fastAny { it }
+                    val readyForRemoval = !inStack
+                            && animData.scopes.fastAll { !it.animationStatus.animating }
 
-                            val renderTopAndAnimatedBack = indexFromTop < 1 || (allowAnimation && animating)
-                            if (requireVisibilityInBackstack) allowAnimation else renderTopAndAnimatedBack
-                        }
+                    val render = remember(indexFromTop, index, animating) {
+                        val requireVisibilityInBack = animData.requireVisibilityInBackstacks
+                            .fastAny { it }
+
+                        val renderTopAndAnimatedBack = indexFromTop < 1 || (allowAnimation && animating)
+                        if (requireVisibilityInBack) allowAnimation else renderTopAndAnimatedBack
                     }
 
                     // launch animations if there's changes
@@ -118,17 +118,13 @@ fun <C : Any> StackAnimator(
                         }
                     }
 
-                    LaunchedEffect(animating) {
-                        println(configuration.toString() + "animating" + animating)
-                    }
-
                     LaunchedEffect(readyForRemoval) {
                         if (readyForRemoval) removeFromCache(configuration)
                     }
 
                     LaunchedEffect(null) {
-                        launch {
-                            if (allowAnimation) sharedBackEventScope.gestureActions.collectLatest() {
+                        if (allowAnimation) launch {
+                            sharedBackEventScope.gestureActions.collectLatest() {
                                 // wrapped in run catching because sometimes it can happen
                                 // that attempts to update the gesture data in nonexistent scopes
                                 // will be made, which will throw an error
@@ -137,12 +133,14 @@ fun <C : Any> StackAnimator(
                         }
                     }
 
-                    val key = remember { configuration.hashString() + " StackAnimator SaveableStateHolder"}
-
-                    if (render) Box(
-                        Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
-                        content = { holder.SaveableStateProvider(key) { content(child) } }
-                    )
+                    if (render) holder.SaveableStateProvider(
+                        key = configuration.hashString() + " StackAnimator SaveableStateHolder"
+                    ) {
+                        Box(
+                            Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
+                            content = { content(child) }
+                        )
+                    }
                 }
             }
         }
@@ -150,20 +148,19 @@ fun <C : Any> StackAnimator(
 }
 
 @Immutable
-private class StackAnimatorScope<C : Any>(initialStack: List<Child.Created<C, DecomposeChildInstance<C>>>) {
-    private val animationScopeRegistry = AnimationScopeRegistry()
-    private val animationDataRegistry = AnimationDataRegistry<C>(animationScopeRegistry)
+private class StackAnimatorScope<C : Any, T : Any>(initialStack: List<Child.Created<C, T>>, ) {
+    private val animationDataRegistry = AnimationDataRegistry<C>()
     private val mutex = Mutex()
     private var _cachedChildren by mutableStateOf(initialStack)
     val cachedChildren get()= _cachedChildren
 
-    fun getOrCreateAnimationData(key: C, source: ContentAnimations, initialIndex: Int, initialIndexFromTop: Int) =
+    inline fun getOrCreateAnimationData(key: C, source: ContentAnimations, initialIndex: Int, initialIndexFromTop: Int) =
         animationDataRegistry.getOrCreateAnimationData(key, source, initialIndex, initialIndexFromTop)
 
-    suspend fun cacheAllChildrenConfigs(source: List<Child.Created<C, DecomposeChildInstance<C>>>) {
+    suspend fun cacheAllChildrenConfigs(source: List<Child.Created<C, T>>) {
         val differences = source.filterNot { it in cachedChildren }
 
-        mutex.withLock { _cachedChildren = cachedChildren + differences }
+        mutex.withLock { _cachedChildren += differences }
     }
 
     suspend fun removeFromCache(target: C) {
@@ -171,7 +168,7 @@ private class StackAnimatorScope<C : Any>(initialStack: List<Child.Created<C, De
             val child = _cachedChildren.find { it.configuration == target }
                 ?: error("Upon removeFromCache() $target was not found in the _cachedChildren")
 
-            _cachedChildren = cachedChildren - child
+            _cachedChildren -= child
             animationDataRegistry.remove(target)
         }
     }
@@ -196,16 +193,17 @@ data class AnimationData(
     val renderUntils: List<Int>,
     val requireVisibilityInBackstacks: List<Boolean>,
 )
-private class AnimationDataRegistry<C : Any> (private val animationScopeRegistry: AnimationScopeRegistry) {
+private class AnimationDataRegistry<C : Any> () {
+    private val animationScopeRegistry = AnimationScopeRegistry()
     private val animationData = hashMapOf<String, AnimationData>()
 
     @OptIn(InternalDecomposeApi::class)
-    fun getOrCreateAnimationData(
+    inline fun getOrCreateAnimationData(
         key: C,
         source: ContentAnimations,
         initialIndex: Int,
         initialIndexFromTop: Int
-    ) = animationData.getOrPut(key.hashString()) {
+    ) = animationData[key.hashString()] ?: animationData.getOrPut(key.hashString()) {
         val scopes = source.items.fastMap {
             // this will also automatically combine all scopes with the same
             // animation specs, meaning the minimum amount of scopes required
@@ -236,7 +234,7 @@ private class AnimationDataRegistry<C : Any> (private val animationScopeRegistry
 }
 
 private class AnimationScopeRegistry {
-    val scopes = hashMapOf<String, ContentAnimatorScope>()
+    private val scopes = hashMapOf<String, ContentAnimatorScope>()
 
     inline fun getOrPut(key: String, scope: () -> ContentAnimatorScope) = scopes.getOrPut(key, scope)
     inline fun remove(key: String) {
