@@ -43,26 +43,24 @@ fun <C : Any> StackAnimator(
     // scopes not to be recreated which is useful in case the exit animation of a config is
     // interrupted by the same config appearing in the stack again while the animation is running
     val stackAnimatorScope = rememberRetained(key + "StackAnimatorScope") {
-        StackAnimatorScope(
-            initialStack = stackValue.thing.items.subList(
-                if (excludeStartingDestination) 1 else 0,
-                stackValue.thing.items.size
-            )
-        )
+        StackAnimatorScope<C, DecomposeChildInstance<C>>()
     }
     val holder = rememberSaveableStateHolder()
     holder.retainStates(sourceStack.getConfigurations())
+    var cachedChildren by mutableStateOf(
+        stackValue.thing.items.subList(
+            if (excludeStartingDestination) 1 else 0,
+            stackValue.thing.items.size
+        )
+    )
+    val mutex = remember { Mutex() }
 
     with(stackAnimatorScope) {
         LaunchedEffect(sourceStack.items) {
             onBackstackEmpty(sourceStack.items.size > 1)
 
-            cacheAllChildrenConfigs(
-                sourceStack.items.subList(
-                    if (excludeStartingDestination) 1 else 0,
-                    stackValue.thing.items.size
-                )
-            )
+            val differences = sourceStack.items.filterNot { it in cachedChildren }
+            if (differences.isNotEmpty()) mutex.withLock { cachedChildren += differences }
         }
 
         Box(modifier) {
@@ -116,7 +114,15 @@ fun <C : Any> StackAnimator(
                     }
 
                     LaunchedEffect(inStack, animating) {
-                        if (!inStack && animating) removeFromCache(configuration)
+                        if (!inStack && animating) {
+                            mutex.withLock {
+                                val childa = cachedChildren.find { it.configuration == configuration }
+                                    ?: error("Upon removeFromCache() $configuration was not found in the cachedChildren")
+
+                                cachedChildren -= childa
+                            }
+                            removeFromCache(configuration)
+                        }
                     }
 
                     LaunchedEffect(null) {
@@ -145,30 +151,13 @@ fun <C : Any> StackAnimator(
 }
 
 @Immutable
-private class StackAnimatorScope<C : Any, T : Any>(initialStack: List<Child.Created<C, T>>, ) {
+private class StackAnimatorScope<C : Any, T : Any>() {
     private val animationDataRegistry = AnimationDataRegistry<C>()
-    private val mutex = Mutex()
-    private var _cachedChildren by mutableStateOf(initialStack)
-    val cachedChildren get()= _cachedChildren
 
     inline fun getOrCreateAnimationData(key: C, source: ContentAnimations, initialIndex: Int, initialIndexFromTop: Int) =
         animationDataRegistry.getOrCreateAnimationData(key, source, initialIndex, initialIndexFromTop)
 
-    suspend fun cacheAllChildrenConfigs(source: List<Child.Created<C, T>>) {
-        val differences = source.filterNot { it in cachedChildren }
-
-        mutex.withLock { _cachedChildren += differences }
-    }
-
-    suspend fun removeFromCache(target: C) {
-        mutex.withLock {
-            val child = _cachedChildren.find { it.configuration == target }
-                ?: error("Upon removeFromCache() $target was not found in the _cachedChildren")
-
-            _cachedChildren -= child
-            animationDataRegistry.remove(target)
-        }
-    }
+    fun removeFromCache(target: C) { animationDataRegistry.remove(target) }
 
     suspend fun updateGestureDataInScopes(
         target: C,
