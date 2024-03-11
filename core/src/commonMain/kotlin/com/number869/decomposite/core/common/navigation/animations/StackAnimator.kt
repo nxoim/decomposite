@@ -45,30 +45,36 @@ fun <C : Any> StackAnimator(
     val stackAnimatorScope = rememberRetained(key + "StackAnimatorScope") {
         StackAnimatorScope<C, DecomposeChildInstance<C>>()
     }
-    val holder = rememberSaveableStateHolder()
-    holder.retainStates(sourceStack.getConfigurations())
-    var cachedChildren by mutableStateOf(
-        stackValue.thing.items.subList(
-            if (excludeStartingDestination) 1 else 0,
-            stackValue.thing.items.size
+    var cachedChildren by remember {
+        mutableStateOf(
+            stackValue.thing.items.subList(
+                if (excludeStartingDestination) 1 else 0,
+                stackValue.thing.items.size
+            )
         )
-    )
+    }
     val mutex = remember { Mutex() }
 
     with(stackAnimatorScope) {
         LaunchedEffect(sourceStack.items) {
             onBackstackEmpty(sourceStack.items.size > 1)
 
-            val differences = sourceStack.items.filterNot { it in cachedChildren }
-            if (differences.isNotEmpty()) mutex.withLock { cachedChildren += differences }
+            val differences = stackValue.thing.items
+                .subList(
+                    if (excludeStartingDestination) 1 else 0,
+                    stackValue.thing.items.size
+                )
+                .filterNot { it in cachedChildren }
+            mutex.withLock { cachedChildren += differences }
         }
 
         Box(modifier) {
             cachedChildren.fastForEach { cachedChild ->
                 val configuration = cachedChild.configuration
+                val holder = rememberSaveableStateHolder()
 
                 key(configuration) {
-                    val inStack = sourceStack.items.any { it.configuration == configuration }
+                    val inStack = sourceStack.items.fastAny { it.configuration == configuration }
                     val child by remember {
                         derivedStateOf {
                             sourceStack.items.find { it.configuration == configuration }
@@ -92,13 +98,12 @@ fun <C : Any> StackAnimator(
 
                     val allowAnimation = indexFromTop <= (animData.renderUntils.min())
 
-                    val animating = animData.scopes.any { it.animationStatus.animating }
+                    val animating = animData.scopes.fastAny { it.animationStatus.animating }
 
-                    val render = remember(indexFromTop, index, animating) {
-                        val requireVisibilityInBack = animData.requireVisibilityInBackstacks
-                            .fastAny { it }
-
-                        val renderTopAndAnimatedBack = indexFromTop < 1 || (allowAnimation && animating)
+                    val render = remember(animating) {
+                        val requireVisibilityInBack = animData.requireVisibilityInBackstacks.fastAny { it }
+                        val renderingBack = allowAnimation && animating
+                        val renderTopAndAnimatedBack = indexFromTop < 1 || renderingBack
                         if (requireVisibilityInBack) allowAnimation else renderTopAndAnimatedBack
                     }
 
@@ -114,7 +119,7 @@ fun <C : Any> StackAnimator(
                     }
 
                     LaunchedEffect(inStack, animating) {
-                        if (!inStack && animating) {
+                        if (!inStack && !animating) {
                             mutex.withLock {
                                 val childa = cachedChildren.find { it.configuration == configuration }
                                     ?: error("Upon removeFromCache() $configuration was not found in the cachedChildren")
@@ -157,7 +162,7 @@ private class StackAnimatorScope<C : Any, T : Any>() {
     inline fun getOrCreateAnimationData(key: C, source: ContentAnimations, initialIndex: Int, initialIndexFromTop: Int) =
         animationDataRegistry.getOrCreateAnimationData(key, source, initialIndex, initialIndexFromTop)
 
-    fun removeFromCache(target: C) { animationDataRegistry.remove(target) }
+    inline fun removeFromCache(target: C) { animationDataRegistry.remove(target) }
 
     suspend fun updateGestureDataInScopes(
         target: C,
