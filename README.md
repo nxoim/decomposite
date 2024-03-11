@@ -51,30 +51,12 @@ NavigationRoot(navigationRootData()) { YourContent() }
 
 Navigation host creation:
 ```kotlin
-NavHost<YourDestinations>(
-    startingDestination = YourDestinations.Star,
-    defaultAnimation = cleanFadeAndSlide(),
-    routedContent = { // content that isn't in an overlay
-        Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
-            it(Modifier.padding(scaffoldPadding))
-        }
-    }
-) {
-    when (it) { // nested hosts!
-        RootDestinations.Star -> animatedDestination(fade() + scale()) { StarNavHost() }
-        RootDestinations.Heart -> animatedDestination { HeartNavHost() }
-    }
-}
-```
-
-Or:
-```kotlin
-NavHost<YourDestinations>(
-    startingDestination = YourDestinations.Star,
+NavHost(
+    navController<YourDestinations>(startingDestination = YourDestinations.Star),
     animations = {
         when (it) { 
             RootDestinations.Star -> fade() + scale()
-            else -> fade()
+            else -> cleanSlideAndFade()
         }
     },
     routedContent = { // content that isn't in an overlay
@@ -94,7 +76,7 @@ Or you can create a navigation controller manually:
 ```kotlin
 val navController = navController<YourDestinations>(startingDestination = YourDestinations.Star)
     
-NavHost<YourDestinations>(
+NavHost(
     startingNavControllerInstance = navController,
     ...
 )
@@ -102,7 +84,7 @@ NavHost<YourDestinations>(
 
 Navigation controller usage:
 ```kotlin
-// getting the controller instances from the store. It's remembered by default
+// getting the controller instances from the store
 val navController = navController<YourDestinations>()
 
 // in any clickable
@@ -111,7 +93,8 @@ navController.navigate(YourDestinations.Heart)
 // or if you want to display a destination as an overlay
 navController.navigate(YourDestinations.Star, ContentType.Overlay)
 
-// you can open snack content
+// you can open snack content, even in a coroutine 
+// scope, like LaunchedEffect
 navController.openInSnack("some key", duration = 5L.seconds) {
     YourSnackbarComposable()
 }
