@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
@@ -231,6 +232,7 @@ class NavController<C : Any>(
         }
     }
 
+    @OptIn(ExperimentalDecomposeApi::class)
     fun openInSnack(
         key: String,
         animation: () -> ContentAnimations = { fade() },
@@ -244,7 +246,7 @@ class NavController<C : Any>(
                 animationsForDestinations[key] = animation()
                 contentOfSnacks[key] = { Box(content = content, modifier = Modifier.fillMaxSize()) }
 
-                snackNavigation.push(key)
+                snackNavigation.pushNew(key)
                 delay(displayDurationMillis)
                 closeSnack(key)
 
