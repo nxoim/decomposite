@@ -70,7 +70,7 @@ fun <C : Any> StackAnimator(
                 val configuration = cachedChild.configuration
 
                 key(configuration) {
-                    val inStack = sourceStack.items.fastAny { it.configuration == configuration }
+                    val inStack = sourceStack.items.any { it.configuration == configuration }
                     val child by remember {
                         derivedStateOf {
                             sourceStack.items.find { it.configuration == configuration }
@@ -94,10 +94,7 @@ fun <C : Any> StackAnimator(
 
                     val allowAnimation = indexFromTop <= (animData.renderUntils.min())
 
-                    val animating = animData.scopes.fastAny { it.animationStatus.animating }
-
-                    val readyForRemoval = !inStack
-                            && animData.scopes.fastAll { !it.animationStatus.animating }
+                    val animating = animData.scopes.any { it.animationStatus.animating }
 
                     val render = remember(indexFromTop, index, animating) {
                         val requireVisibilityInBack = animData.requireVisibilityInBackstacks
@@ -118,8 +115,8 @@ fun <C : Any> StackAnimator(
                         }
                     }
 
-                    LaunchedEffect(readyForRemoval) {
-                        if (readyForRemoval) removeFromCache(configuration)
+                    LaunchedEffect(inStack, animating) {
+                        if (!inStack && animating) removeFromCache(configuration)
                     }
 
                     LaunchedEffect(null) {
