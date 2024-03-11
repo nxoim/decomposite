@@ -2,10 +2,12 @@ package com.number869.decomposite.core.common.navigation.animations
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.util.*
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMapIndexed
 import androidx.compose.ui.zIndex
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.InternalDecomposeApi
@@ -237,23 +239,3 @@ private class AnimationScopeRegistry {
         childrensScopes.keys.forEach { scopes.remove(it) }
     }
 }
-
-@OptIn(InternalDecomposeApi::class)
-private fun ChildStack<*, *>.getConfigurations() = items.fastMapTo(HashSet()) {
-    it.configuration.hashString()
-}
-
-@Composable
-private fun SaveableStateHolder.retainStates(currentKeys: Set<Any>) {
-    val keys = remember(this) { Keys(currentKeys) }
-
-    DisposableEffect(this, currentKeys) {
-        keys.set.forEach { if (it !in currentKeys) removeState(it) }
-
-        keys.set = currentKeys
-
-        onDispose {}
-    }
-}
-
-private class Keys(var set: Set<Any>)
