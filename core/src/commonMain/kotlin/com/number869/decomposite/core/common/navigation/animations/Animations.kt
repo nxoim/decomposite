@@ -12,12 +12,15 @@ import com.arkivanov.essenty.backhandler.BackEvent
 
 fun softSpring() = spring(1.8f, 2500f, 0.0005f)
 
-fun emptyAnimation() = contentAnimator(tween(0)) { Modifier }
+fun emptyAnimation(
+    renderUntil: Int = Int.MAX_VALUE,
+    requireVisibilityInBackstack: Boolean = false,
+) = contentAnimator(tween(0), renderUntil, requireVisibilityInBackstack) { Modifier }
 
 fun fade(
+    animationSpec: AnimationSpec<Float> = softSpring(),
     clean: Boolean = true,
-    animateUsingGestures: Boolean = true,
-    animationSpec: AnimationSpec<Float> = spring()
+    animateUsingGestures: Boolean = true
 ) = contentAnimator(animationSpec) {
     Modifier.graphicsLayer {
         val grade = if (clean) 2 else 1
@@ -31,9 +34,11 @@ fun fade(
 }
 
 fun scale(
+    animationSpec: AnimationSpec<Float> = softSpring(),
     minimumScale: Float = 0.9f,
-    animationSpec: AnimationSpec<Float> = softSpring()
-) = contentAnimator(animationSpec) {
+    renderUntil: Int = Int.MAX_VALUE,
+    requireVisibilityInBackstack: Boolean = false
+) = contentAnimator(animationSpec, renderUntil, requireVisibilityInBackstack) {
     Modifier.graphicsLayer {
         val scale = (gestureAnimationProgress - (minimumScale * gestureAnimationProgress)).let {
             1f + (-it * it)
@@ -45,11 +50,13 @@ fun scale(
 }
 
 fun slide(
+    animationSpec: AnimationSpec<Float> = softSpring(),
     orientation: Orientation = Orientation.Horizontal,
     targetOffsetDp: Int = 64,
     dependOnSwipeEdge: Boolean = false,
-    animationSpec: AnimationSpec<Float> = softSpring(),
-) = contentAnimator(animationSpec) {
+    renderUntil: Int = Int.MAX_VALUE,
+    requireVisibilityInBackstack: Boolean = false
+) = contentAnimator(animationSpec, renderUntil, requireVisibilityInBackstack) {
     Modifier.graphicsLayer {
         val progress = if (dependOnSwipeEdge && backEvent.swipeEdge == BackEvent.SwipeEdge.RIGHT)
             gestureAnimationProgress
@@ -65,8 +72,8 @@ fun slide(
 }
 
 fun iosLikeSlide(
-    backStackSlideFraction: Float = 0.25f,
-    animationSpec: AnimationSpec<Float> = softSpring()
+    animationSpec: AnimationSpec<Float> = softSpring(),
+    backStackSlideFraction: Float = 0.25f
 ) = contentAnimator(animationSpec, renderUntil = 3) {
     Modifier
         .drawWithContent {
@@ -83,10 +90,10 @@ fun iosLikeSlide(
 }
 
 fun cleanSlideAndFade(
+    animationSpec: AnimationSpec<Float> = softSpring(),
     orientation: Orientation = Orientation.Horizontal,
     targetOffsetDp: Int = 64,
     animateFadeUsingGestures: Boolean = false,
-    animationSpec: AnimationSpec<Float> = softSpring()
 ) = fade(
     clean = true,
     animateUsingGestures = animateFadeUsingGestures,
