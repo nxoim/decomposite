@@ -43,7 +43,7 @@ fun <C : Any> StackAnimator(
     // scopes not to be recreated which is useful in case the exit animation of a config is
     // interrupted by the same config appearing in the stack again while the animation is running
     val stackAnimatorScope = rememberRetained(key + "StackAnimatorScope") {
-        StackAnimatorScope<C, DecomposeChildInstance<C>>()
+        StackAnimatorScope<C>()
     }
     var cachedChildren by remember {
         mutableStateOf(
@@ -81,6 +81,7 @@ fun <C : Any> StackAnimator(
                                 ?: cachedChild
                         }
                     }
+
                     val index = if (inStack) sourceStack.items.indexOf(child) else -1
                     val indexFromTop = if (inStack)
                         sourceStack.items.reversed().indexOf(child)
@@ -108,11 +109,15 @@ fun <C : Any> StackAnimator(
                     }
 
                     // launch animations if there's changes
-                    LaunchedEffect(sourceStack.items, indexFromTop) {
+                    LaunchedEffect(indexFromTop, index) {
                         coroutineScope.launch {
                             animData.scopes.fastForEach { scope ->
                                 launch {
-                                    scope.updateCurrentIndexAndAnimate(index, indexFromTop)
+                                    scope.updateCurrentIndexAndAnimate(
+                                        index,
+                                        indexFromTop,
+                                        animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
+                                    )
                                 }
                             }
                         }
@@ -121,12 +126,11 @@ fun <C : Any> StackAnimator(
                     LaunchedEffect(inStack, animating) {
                         if (!inStack && !animating) {
                             mutex.withLock {
-                                val childa = cachedChildren.find { it.configuration == configuration }
+                                cachedChildren -= cachedChildren.find { it.configuration == configuration }
                                     ?: error("Upon removeFromCache() $configuration was not found in the cachedChildren")
 
-                                cachedChildren -= childa
+                                removeFromCache(configuration)
                             }
-                            removeFromCache(configuration)
                         }
                     }
 
@@ -156,7 +160,7 @@ fun <C : Any> StackAnimator(
 }
 
 @Immutable
-private class StackAnimatorScope<C : Any, T : Any>() {
+private class StackAnimatorScope<C : Any>() {
     private val animationDataRegistry = AnimationDataRegistry<C>()
 
     inline fun getOrCreateAnimationData(key: C, source: ContentAnimations, initialIndex: Int, initialIndexFromTop: Int) =

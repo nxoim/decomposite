@@ -21,8 +21,9 @@ class ContentAnimatorScope(
     private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
     val indexFromTop get() = _indexFromTop
     private var allowRemoval by mutableStateOf(true)
-    private var index by mutableIntStateOf(initialIndex)
-    private val initial get() = index == 0
+    private var _index by mutableIntStateOf(initialIndex)
+    val index get() = _index
+    private val initial get() = _index == 0
 
     private val location
         get() = when {
@@ -126,12 +127,15 @@ class ContentAnimatorScope(
             location
         }
 
-        updateStatus(previousLocation, newLocation, newDirection, AnimationType.Passive)
-
-        index = newIndex
+        _index = newIndex
         _indexFromTop = newIndexFromTop
 
-        if (animate) animateToTarget()
+        if (animate) {
+            updateStatus(previousLocation, newLocation, newDirection, AnimationType.Passive)
+            animateToTarget()
+        } else {
+            updateStatus(previousLocation, newLocation, Direction.None, AnimationType.None)
+        }
     }
 
     private suspend fun animateToTarget() = coroutineScope {
