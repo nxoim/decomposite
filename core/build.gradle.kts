@@ -32,7 +32,7 @@ kotlin {
         iosSimulatorArm64(),
     ).forEach { target ->
         target.binaries.framework {
-            baseName = "decomposite-core"
+            baseName = "decomposite"
         }
     }
 
@@ -61,7 +61,7 @@ kotlin {
 
 android {
     compileSdk = (findProperty("android.compileSdk") as String).toInt()
-    namespace = "com.number869.decomposite.core"
+    namespace = "com.number869.decomposite"
 
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     sourceSets["main"].res.srcDirs("src/androidMain/res")
@@ -84,7 +84,7 @@ mavenPublishing {
     // or when publishing to https://s01.oss.sonatype.org
 //    publishToMavenCentral(SonatypeHost.S01, automaticRelease = true)
 //    signAllPublications()
-    coordinates("com.number869", "decomposite-core", "0.0.1")
+    coordinates("com.number869", "decomposite", "0.0.1")
 
     pom {
         name.set(project.name)

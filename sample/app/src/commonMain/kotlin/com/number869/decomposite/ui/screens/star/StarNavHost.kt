@@ -10,33 +10,27 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
+import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
+import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
+import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.star.another.AnotherStarScreen
 import com.number869.decomposite.ui.screens.star.home.StarHomeScreen
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StarNavHost() {
-    NavHost<StarDestinations>(
-        startingDestination = StarDestinations.Home,
-        routedContent = {
-            val currentScreen by currentScreen.collectAsState()
-
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text("Star") },
-                        navigationIcon = {
-                            AnimatedVisibility(currentScreen != StarDestinations.Home) {
-                                IconButton(onClick = { navigateBack() }) {
-                                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                                }
-                            }
-                        }
-                    )
-                }
-            ) { scaffoldPadding ->
-                it(Modifier.padding(scaffoldPadding))
+    NavHost(
+        navController<StarDestinations>(StarDestinations.Home),
+        animations = {
+            when (it) {
+                StarDestinations.AnotherStar -> iosLikeSlide()
+                else -> cleanSlideAndFade()
             }
+        },
+        routedContent = {
+            Scaffold(
+                topBar = { StarTopAppBar() },
+                content = { scaffoldPadding -> it(Modifier.padding(scaffoldPadding)) }
+            )
         }
     ) { destination ->
         when (destination) {
@@ -44,4 +38,22 @@ fun StarNavHost() {
             StarDestinations.AnotherStar -> AnotherStarScreen()
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StarTopAppBar() {
+    val navController = navController<StarDestinations>()
+    val currentScreen by navController.currentScreen.collectAsState()
+
+    TopAppBar(
+        title = { Text("Star") },
+        navigationIcon = {
+            AnimatedVisibility(currentScreen != StarDestinations.Home) {
+                IconButton(onClick = { navController.navigateBack() }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+            }
+        }
+    )
 }

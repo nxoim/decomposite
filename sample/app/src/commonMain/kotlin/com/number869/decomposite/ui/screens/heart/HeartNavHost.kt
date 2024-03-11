@@ -10,6 +10,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
+import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
+import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.another.AnotherHeartScreen
 import com.number869.decomposite.ui.screens.heart.home.HeartHomeScreen
@@ -18,7 +20,13 @@ import com.number869.decomposite.ui.screens.heart.home.HeartHomeScreen
 @Composable
 fun HeartNavHost() {
     NavHost<HeartDestinations>(
-        startingDestination = HeartDestinations.Home,
+        navController<HeartDestinations>(HeartDestinations.Home),
+        animations = {
+            when (it) {
+                is HeartDestinations.AnotherHeart -> iosLikeSlide()
+                else -> cleanSlideAndFade()
+            }
+        },
         routedContent = {
             // this doesn't throw an error because it's initialized before contained
             // content executes
@@ -45,6 +53,7 @@ fun HeartNavHost() {
     ) { destination ->
         when (destination) {
             HeartDestinations.Home -> HeartHomeScreen()
+
             is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
         }
     }
