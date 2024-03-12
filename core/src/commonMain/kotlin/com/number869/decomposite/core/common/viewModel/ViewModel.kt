@@ -1,28 +1,22 @@
 package com.number869.decomposite.core.common.viewModel
 
-import androidx.compose.runtime.*
-import com.arkivanov.essenty.lifecycle.subscribe
-import com.number869.decomposite.core.common.ultils.LocalComponentContext
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
+import com.number869.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 
+
 @Stable
 @Composable
-inline fun <reified T : ViewModel> viewModel(key: String = ""): T {
-    val localComponentContext = LocalComponentContext.current
+inline fun <reified T : ViewModel> getExistingViewModelInstance(key: String = ""): T {
     val viewModelStore = LocalViewModelStore.current
     val viewModelKey = key + T::class.toString()
     val vm = remember(viewModelKey) { viewModelStore.get<T>(viewModelKey) }
-
-    LaunchedEffect(null) {
-        localComponentContext.lifecycle.subscribe(
-            onDestroy = {
-                vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
-            }
-        )
-    }
 
     return vm
 }
@@ -39,19 +33,14 @@ inline fun <reified T : ViewModel> viewModel(key: String = ""): T {
 @Stable
 @Composable
 inline fun <reified T : ViewModel> viewModel(key: String = "", crossinline viewModel: () -> T): T {
-    val localComponentContext = LocalComponentContext.current
     val viewModelStore = LocalViewModelStore.current
     val viewModelKey = key + T::class.toString()
     val vm = remember(viewModelKey) {
         viewModelStore.getOrCreateViewModel(viewModelKey, viewModel)
     }
 
-    LaunchedEffect(null) {
-        localComponentContext.lifecycle.subscribe(
-            onDestroy = {
-                vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
-            }
-        )
+    OnDestinationDisposeEffect(T::class.toString() + "ViewModel") {
+        vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
     }
 
     return vm

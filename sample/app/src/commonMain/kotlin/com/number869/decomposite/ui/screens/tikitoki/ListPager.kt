@@ -22,12 +22,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.core.common.ultils.noRippleClickable
-import com.number869.decomposite.core.common.viewModel.viewModel
+import com.number869.decomposite.core.common.viewModel.getExistingViewModelInstance
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListPager() {
-    val vm = viewModel<TikitokiViewModel>()
+    val vm = getExistingViewModelInstance<TikitokiViewModel>()
     val pagerState = rememberPagerState() { vm.mockVids.size }
 
     Box() {
