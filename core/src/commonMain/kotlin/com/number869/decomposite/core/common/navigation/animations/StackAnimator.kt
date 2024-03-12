@@ -17,10 +17,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.items
 import com.arkivanov.decompose.value.Value
 import com.number869.decomposite.core.common.navigation.DecomposeChildInstance
-import com.number869.decomposite.core.common.ultils.BackGestureEvent
-import com.number869.decomposite.core.common.ultils.ImmutableThingHolder
-import com.number869.decomposite.core.common.ultils.SharedBackEventScope
-import com.number869.decomposite.core.common.ultils.rememberRetained
+import com.number869.decomposite.core.common.ultils.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -147,13 +144,19 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                         }
                     }
 
-                    if (render) holder.SaveableStateProvider(
-                        key = configuration.hashString() + " StackAnimator SaveableStateHolder"
-                    ) {
+                    val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
+                    if (render) holder.SaveableStateProvider(childHolderKey) {
                         Box(
                             Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
                             content = { content(child) }
                         )
+                    }
+
+                    OnDestinationDisposeEffect(
+                        key = key + configuration.hashString() + "OnDestinationDisposeEffect",
+                        componentContext = child.instance.componentContext
+                    ) {
+                        holder.removeState(childHolderKey)
                     }
                 }
             }

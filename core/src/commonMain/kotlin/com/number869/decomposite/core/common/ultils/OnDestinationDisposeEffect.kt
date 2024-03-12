@@ -17,10 +17,9 @@ import kotlin.jvm.JvmInline
 @Composable
 inline fun OnDestinationDisposeEffect(
     key: Any,
+    componentContext: ComponentContext = LocalComponentContext.current,
     crossinline block: @DisallowComposableCalls () -> Unit
 ) {
-    val componentContext = LocalComponentContext.current
-
     DisposableEffect(null) {
         onDispose { componentContext.instanceKeeper.remove(key) }
     }
