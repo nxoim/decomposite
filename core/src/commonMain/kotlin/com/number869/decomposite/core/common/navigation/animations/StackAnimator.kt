@@ -29,15 +29,15 @@ import kotlinx.coroutines.sync.withLock
 
 @OptIn(InternalDecomposeApi::class)
 @Composable
-fun <C : Any> StackAnimator(
-    stackValue: ImmutableThingHolder<Value<ChildStack<C, DecomposeChildInstance<C>>>>,
+fun <C : Any, T : DecomposeChildInstance> StackAnimator(
+    stackValue: ImmutableThingHolder<Value<ChildStack<C, T>>>,
     modifier: Modifier = Modifier,
     key: String = "",
     onBackstackEmpty: (Boolean) -> Unit,
     excludeStartingDestination: Boolean = false,
     sharedBackEventScope: SharedBackEventScope,
     animations: (child: C) -> ContentAnimations,
-    content: @Composable (child: Child.Created<C, DecomposeChildInstance<C>>) -> Unit,
+    content: @Composable (child: Child.Created<C, T>) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val sourceStack by stackValue.thing.subscribeAsState()

@@ -26,6 +26,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.serializer
+import kotlin.jvm.JvmInline
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -43,10 +44,16 @@ inline fun <reified C : Any> navController(
     startingDestination: C,
     serializer: KSerializer<C>? = null,
     navStore: NavControllerStore = LocalNavControllerStore.current,
-    componentContext: ComponentContext = LocalComponentContext.current
+    componentContext: ComponentContext = LocalComponentContext.current,
+    noinline childFactory: (
+        config: C,
+        childComponentContext: ComponentContext
+    ) -> DecomposeChildInstance = { _, childComponentContext ->
+        DefaultChildInstance(childComponentContext)
+    }
 ) = remember {
     navStore.getOrCreate<C> {
-        NavController(startingDestination, serializer ?: serializer(), componentContext)
+        NavController(startingDestination, serializer ?: serializer(), componentContext, childFactory)
     }
 }
 
@@ -61,7 +68,13 @@ inline fun <reified T : Any> getNavController(navStore: NavControllerStore) = na
 class NavController<C : Any>(
     private val startingDestination: C,
     serializer: KSerializer<C>? = null,
-    componentContext: ComponentContext
+    componentContext: ComponentContext,
+    childFactory: (
+        config: C,
+        childComponentContext: ComponentContext
+    ) -> DecomposeChildInstance = { _, childComponentContext ->
+        DefaultChildInstance(childComponentContext)
+    }
 ) : ComponentContext by componentContext {
     private val scope = MainScope()
     private val mutex = Mutex()
@@ -84,7 +97,7 @@ class NavController<C : Any>(
         initialConfiguration = startingDestination,
         key = "screenStack" + startingDestination::class.toString(),
         handleBackButton = true,
-        childFactory = { config, componentContext -> DecomposeChildInstance(config, componentContext) }
+        childFactory = childFactory
     )
 
     val overlayStack = childStack(
@@ -93,7 +106,7 @@ class NavController<C : Any>(
         initialConfiguration = startingDestination,
         key = "overlayStack" + startingDestination::class.toString(),
         handleBackButton = true,
-        childFactory = { config, context -> DecomposeChildInstance(config, context) ; }
+        childFactory = childFactory
     )
 
     val snackStack = childStack(
@@ -102,7 +115,7 @@ class NavController<C : Any>(
         initialConfiguration = "empty",
         key = "snackStack" + startingDestination::class.toString(),
         handleBackButton = false,
-        childFactory = { config, context -> DecomposeChildInstance(config, context) }
+        childFactory = { _, context -> DefaultChildInstance(context) }
     )
 
     private val _currentScreen = MutableStateFlow(screenStack.active.configuration)
@@ -193,7 +206,7 @@ class NavController<C : Any>(
         }
     }
 
-    fun close(destination: Child.Created<C, DecomposeChildInstance<C>>, type: ContentType, onComplete: () -> Unit = { }) {
+    fun close(destination: Child.Created<C, DecomposeChildInstance>, type: ContentType, onComplete: () -> Unit = { }) {
         when (type) {
             ContentType.Contained -> {
                 val stackWithoutThisKeyAsArrayOfKeys = screenStack.backStack
@@ -271,8 +284,13 @@ class NavController<C : Any>(
     }
 }
 
+@JvmInline
 @Immutable
-class DecomposeChildInstance<C>(val config: C, val componentContext: ComponentContext)
+value class DefaultChildInstance(override val componentContext: ComponentContext) : DecomposeChildInstance
+
+interface DecomposeChildInstance {
+    val componentContext: ComponentContext
+}
 
 @Immutable
 private data class AnimationsHolder<T>(val data: T) : InstanceKeeper.Instance
