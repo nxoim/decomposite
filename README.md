@@ -113,7 +113,7 @@ fun YourScreen() {
     // just get a view model. 
     // this does not create a view model due to reflection practically
     // not existing in the wasm target as of yet
-    val vm = viewModel<SomeViewModel>("optionalKey")
+    val vm = getExistingViewModelInstance<SomeViewModel>("optionalKey")
 }
 
 class SomeViewModel(someArgument: String) : ViewModel() {
