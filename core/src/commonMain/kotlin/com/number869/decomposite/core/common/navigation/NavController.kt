@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.*
@@ -15,6 +14,7 @@ import com.number869.decomposite.core.common.navigation.animations.ContentAnimat
 import com.number869.decomposite.core.common.navigation.animations.fade
 import com.number869.decomposite.core.common.ultils.ContentType
 import com.number869.decomposite.core.common.ultils.LocalComponentContext
+import com.number869.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -51,9 +51,16 @@ inline fun <reified C : Any> navController(
     ) -> DecomposeChildInstance = { _, childComponentContext ->
         DefaultChildInstance(childComponentContext)
     }
-) = remember {
-    navStore.getOrCreate<C> {
-        NavController(startingDestination, serializer ?: serializer(), componentContext, childFactory)
+): NavController<C> {
+    OnDestinationDisposeEffect(C::class.toString() + " NavHost OnDestinationDisposeEffect") {
+        navStore.remove<C>()
+        println("on destroy " + C::class.toString() + " NavHost OnDestinationDisposeEffect")
+    }
+
+    return remember {
+        navStore.getOrCreate<C> {
+            NavController(startingDestination, serializer ?: serializer(), componentContext, childFactory)
+        }
     }
 }
 
@@ -183,51 +190,17 @@ class NavController<C : Any>(
     fun close(destination: C, type: ContentType, onComplete: () -> Unit = { }) {
         when (type) {
             ContentType.Contained -> {
-                val stackWithoutThisKeyAsArrayOfKeys = screenStack.backStack
-                    .filterNot { it.configuration == destination }
-                    .map { it.configuration as Any }
-                    .toTypedArray()
-
-                screenNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
-                    onComplete()
-                }
+                screenNavigation.navigate(
+                    transformer = { stack -> stack.filterNot { it == destination } },
+                    onComplete = { _, _ -> onComplete() },
+                )
             }
 
             ContentType.Overlay -> {
-                val stackWithoutThisKeyAsArrayOfKeys = overlayStack.backStack
-                    .filterNot { it.configuration == destination }
-                    .map { it.configuration as Any }
-                    .toTypedArray()
-
-                overlayNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
-                    onComplete()
-                }
-            }
-        }
-    }
-
-    fun close(destination: Child.Created<C, DecomposeChildInstance>, type: ContentType, onComplete: () -> Unit = { }) {
-        when (type) {
-            ContentType.Contained -> {
-                val stackWithoutThisKeyAsArrayOfKeys = screenStack.backStack
-                    .filterNot { it == destination }
-                    .map { it.configuration as Any }
-                    .toTypedArray()
-
-                screenNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
-                    onComplete()
-                }
-            }
-
-            ContentType.Overlay -> {
-                val stackWithoutThisKeyAsArrayOfKeys = overlayStack.backStack
-                    .filterNot { it.configuration == destination }
-                    .map { it.configuration as Any }
-                    .toTypedArray()
-
-                overlayNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys as Array<C>) {
-                    onComplete()
-                }
+                overlayNavigation.navigate(
+                    transformer = { stack -> stack.filterNot { it == destination } },
+                    onComplete = { _, _ -> onComplete() },
+                )
             }
         }
     }
