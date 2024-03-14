@@ -17,7 +17,10 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.items
 import com.arkivanov.decompose.value.Value
 import com.number869.decomposite.core.common.navigation.DecomposeChildInstance
-import com.number869.decomposite.core.common.ultils.*
+import com.number869.decomposite.core.common.ultils.BackGestureEvent
+import com.number869.decomposite.core.common.ultils.ImmutableThingHolder
+import com.number869.decomposite.core.common.ultils.SharedBackEventScope
+import com.number869.decomposite.core.common.ultils.rememberRetained
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -71,6 +74,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
             cachedChildren.fastForEach { cachedChild ->
                 val configuration = cachedChild.configuration
                 val holder = rememberSaveableStateHolder()
+                val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
 
                 key(configuration) {
                     val inStack = sourceStack.items.fastAny { it.configuration == configuration }
@@ -117,18 +121,15 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                                         indexFromTop,
                                         animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
                                     )
+
+                                    if (!inStack) { // after animating, if is not in stack
+                                        mutex.withLock {
+                                            cachedChildren -= child
+                                            removeFromCache(configuration)
+                                            holder.removeState(childHolderKey)
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                    }
-
-                    LaunchedEffect(inStack, animating) {
-                        if (!inStack && !animating) {
-                            mutex.withLock {
-                                cachedChildren -= cachedChildren.find { it.configuration == configuration }
-                                    ?: error("Upon removeFromCache() $configuration was not found in the cachedChildren")
-
-                                removeFromCache(configuration)
                             }
                         }
                     }
@@ -144,19 +145,11 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                         }
                     }
 
-                    val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
                     if (render) holder.SaveableStateProvider(childHolderKey) {
                         Box(
                             Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
                             content = { content(child) }
                         )
-                    }
-
-                    OnDestinationDisposeEffect(
-                        key = key + configuration.hashString() + "OnDestinationDisposeEffect",
-                        componentContext = child.instance.componentContext
-                    ) {
-                        holder.removeState(childHolderKey)
                     }
                 }
             }
