@@ -27,11 +27,19 @@ inline fun OnDestinationDisposeEffect(
     remember { componentContext.onDestroyDisposableEffect(key, block) }
 }
 
+/**
+ * Saves the call in a container that executes the call before getting fully destroyed,
+ * surviving configuration changes, making sure this is only executed when
+ * a component fully dies,
+ */
 inline fun ComponentContext.onDestroyDisposableEffect(
     key: Any,
     crossinline block: @DisallowComposableCalls () -> Unit
 ) = instanceKeeper.getOrCreate(key) { OnDestroyActionHolder { block() } }
 
+/**
+ * Executes [onDispose] when the component is completely destroyed.
+ */
 @JvmInline
 value class OnDestroyActionHolder(val onDispose: () -> Unit) : InstanceKeeper.Instance {
     override fun onDestroy() = onDispose()
