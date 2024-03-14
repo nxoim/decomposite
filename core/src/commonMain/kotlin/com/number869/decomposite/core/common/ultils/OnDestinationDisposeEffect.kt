@@ -6,13 +6,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
+import com.arkivanov.essenty.instancekeeper.getOrCreate
 import kotlin.jvm.JvmInline
 
 /**
  * Kind of like [DisposableEffect], but relies on [InstanceKeeper.Instance]'s onDestroy
  * to make sure an action is done when a component is actually destroyed, surviving
- * configuration changes. Keys must be unique. Will throw an error if more than 1 instance
- * of this function has same keys.
+ * configuration changes. Keys must be unique.
  */
 @Composable
 inline fun OnDestinationDisposeEffect(
@@ -30,7 +30,7 @@ inline fun OnDestinationDisposeEffect(
 inline fun ComponentContext.onDestroyDisposableEffect(
     key: Any,
     crossinline block: @DisallowComposableCalls () -> Unit
-) = instanceKeeper.put(key, OnDestroyActionHolder { block() })
+) = instanceKeeper.getOrCreate(key) { OnDestroyActionHolder { block() } }
 
 @JvmInline
 value class OnDestroyActionHolder(val onDispose: () -> Unit) : InstanceKeeper.Instance {
