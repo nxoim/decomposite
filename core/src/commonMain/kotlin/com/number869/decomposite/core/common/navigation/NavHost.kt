@@ -107,12 +107,5 @@ inline fun <reified C : Any> NavHost(
                 onBack()
             }
         )
-
-        val localNavStore = LocalNavControllerStore.current
-
-        OnDestinationDisposeEffect(C::class.toString() + " NavHost OnDestinationDisposeEffect") {
-            localNavStore.remove<C>()
-            println("on destroy " + C::class.toString() + " NavHost OnDestinationDisposeEffect")
-        }
     }
 }
