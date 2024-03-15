@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import androidx.compose.ui.util.fastMapIndexed
 import androidx.compose.ui.zIndex
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.InternalDecomposeApi
@@ -102,7 +101,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 
                     val allowAnimation = indexFromTop <= (animData.renderUntils.min())
 
-                    val animating = animData.scopes.fastAny { it.animationStatus.animating }
+                    val animating = animData.scopes.any { it.value.animationStatus.animating }
 
                     val render = remember(animating) {
                         val requireVisibilityInBack = animData.requireVisibilityInBackstacks.fastAny { it }
@@ -114,9 +113,9 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                     // launch animations if there's changes
                     LaunchedEffect(indexFromTop, index) {
                         coroutineScope.launch {
-                            animData.scopes.fastForEach { scope ->
+                            animData.scopes.forEach { (_, scope) ->
                                 launch {
-                                    scope.updateCurrentIndexAndAnimate(
+                                    scope.update(
                                         index,
                                         indexFromTop,
                                         animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
@@ -158,7 +157,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 }
 
 @Immutable
-private class StackAnimatorScope<C : Any>() {
+private class StackAnimatorScope<C : Any> {
     private val animationDataRegistry = AnimationDataRegistry<C>()
 
     inline fun getOrCreateAnimationData(key: C, source: ContentAnimations, initialIndex: Int, initialIndexFromTop: Int) =
@@ -170,8 +169,8 @@ private class StackAnimatorScope<C : Any>() {
         target: C,
         backGestureData: BackGestureEvent
     ) = coroutineScope {
-        animationDataRegistry.get(target).scopes.fastForEach {
-            launch { it.onBackGesture(backGestureData) }
+        animationDataRegistry.get(target).scopes.forEach { (_, scope) ->
+            launch { scope.onBackGesture(backGestureData) }
         }
     }
 
@@ -180,8 +179,8 @@ private class StackAnimatorScope<C : Any>() {
     }
 }
 
-data class AnimationData(
-    val scopes: List<ContentAnimatorScope>,
+private data class AnimationData(
+    val scopes: Map<String, ContentAnimatorScope>,
     val modifiers: List<Modifier>,
     val renderUntils: List<Int>,
     val requireVisibilityInBackstacks: List<Boolean>,
@@ -201,15 +200,15 @@ private class AnimationDataRegistry<C : Any> () {
             // this will also automatically combine all scopes with the same
             // animation specs, meaning the minimum amount of scopes required
             // will be created
-            animationScopeRegistry.getOrPut(it.animationSpec.hashString() + key.hashString() + "animator scope") {
-                DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, it.animationSpec)
+            it.key to animationScopeRegistry.getOrPut(it.key + it::class.qualifiedName + key.hashString() + "animator scope") {
+                it.animatorScopeFactory(initialIndex, initialIndexFromTop)
             }
-        }
+        }.toMap()
 
         AnimationData(
             scopes = scopes,
-            modifiers = source.items.fastMapIndexed { animIndex, it ->
-                it.animationModifier.invoke(scopes[animIndex])
+            modifiers = source.items.fastMap {
+                (it.animationModifier as ContentAnimatorScope.() -> Modifier).invoke((scopes[it.key]!!))
             },
             renderUntils = source.items.fastMap { it.renderUntil },
             requireVisibilityInBackstacks = source.items.fastMap { it.requireVisibilityInBackstack },
@@ -217,7 +216,8 @@ private class AnimationDataRegistry<C : Any> () {
     }
 
     @OptIn(InternalDecomposeApi::class)
-    fun get(key: C) = animationData[key.hashString()] ?: error("No animation data for $key in AnimationDataRegistry")
+    fun get(key: C) = animationData[key.hashString()]
+        ?: error("No animation data for $key in AnimationDataRegistry")
 
     @OptIn(InternalDecomposeApi::class)
     fun remove(key: C) {

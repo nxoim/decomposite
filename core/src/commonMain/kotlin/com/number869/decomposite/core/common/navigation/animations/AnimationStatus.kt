@@ -1,12 +1,16 @@
 package com.number869.decomposite.core.common.navigation.animations
 
-data class AnimationStatus(
+interface AnimationStatus {
+    val animating: Boolean
+}
+
+data class DefaultAnimationStatus(
     val previousLocation: ItemLocation,
     val location: ItemLocation,
     val direction: Direction,
     val type: AnimationType
-) {
-    val animating = !type.none || !direction.none
+) : AnimationStatus{
+    override val animating = !type.none || !direction.none
 }
 
 enum class ItemLocation { Back, Top, Outside }

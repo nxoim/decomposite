@@ -4,18 +4,29 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
+import com.arkivanov.decompose.InternalDecomposeApi
+import com.arkivanov.decompose.hashString
 import kotlin.jvm.JvmInline
 
 @JvmInline
 @Immutable
-value class ContentAnimations(val items: List<ContentAnimator>)
+value class ContentAnimations(val items: List<ContentAnimator<*>>)
 
+/**
+ * Describes the animator and creates a scope. [key] is used to identify the scopes and
+ * minimize their creation, as scopes with the same animator type and key will always have
+ * 1 instance only.
+ */
 @Immutable
-data class ContentAnimator(
-    val animationSpec: AnimationSpec<Float>,
+data class ContentAnimator<T : ContentAnimatorScope>(
+    val key: String,
     val renderUntil: Int,
     val requireVisibilityInBackstack: Boolean,
-    val animationModifier: ContentAnimatorScope.() -> Modifier
+    val animatorScopeFactory: (
+        initialIndex: Int,
+        initialIndexFromTop: Int
+    ) -> T,
+    val animationModifier: T.() -> Modifier
 )
 
 /**
@@ -30,18 +41,22 @@ data class ContentAnimator(
  * set to false - ALL items will be visible while in backstack as if all animations have [requireVisibilityInBackstack]
  * set to true).
  */
+@OptIn(InternalDecomposeApi::class)
 fun contentAnimator(
     animationSpec: AnimationSpec<Float> = softSpring(),
     renderUntil: Int = 1,
     requireVisibilityInBackstack: Boolean = false,
-    block: ContentAnimatorScope.() -> Modifier
+    block: DefaultContentAnimatorScope.() -> Modifier
 ) = ContentAnimations(
     listOf(
         ContentAnimator(
-            animationSpec,
-            renderUntil,
-            requireVisibilityInBackstack,
-            block
+            key = animationSpec.hashString(), // 1 instance per animation spec
+            renderUntil = renderUntil,
+            requireVisibilityInBackstack = requireVisibilityInBackstack,
+            animatorScopeFactory = { initialIndex, initialIndexFromTop ->
+                DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, animationSpec)
+            },
+            animationModifier = block
         )
     )
 )
