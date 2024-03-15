@@ -11,18 +11,36 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+interface ContentAnimatorScope {
+    val indexFromTop: Int
+    val index: Int
+    val backEvent: BackEvent
+    val animationProgress: Float
+    val gestureAnimationProgress: Float
+    val swipeOffset: Offset
+    val animationStatus: AnimationStatus
+    suspend fun onBackGesture(backGesture: BackGestureEvent): Any
+    suspend fun updateCurrentIndexAndAnimate(newIndex: Int, newIndexFromTop: Int, animate: Boolean = true)
+    suspend fun updateStatus(
+        previousLocation: ItemLocation,
+        newItemLocation: ItemLocation,
+        newDirection: Direction,
+        newType: AnimationType
+    )
+}
+
 @Immutable
-class ContentAnimatorScope(
+class DefaultContentAnimatorScope(
     initialIndex: Int,
     initialIndexFromTop: Int,
     private val animationSpec: AnimationSpec<Float>
-) {
+) : ContentAnimatorScope {
     private val mutex = Mutex()
     private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
-    val indexFromTop get() = _indexFromTop
+    override val indexFromTop get() = _indexFromTop
     private var allowRemoval by mutableStateOf(true)
     private var _index by mutableIntStateOf(initialIndex)
-    val index get() = _index
+    override val index get() = _index
     private val initial get() = _index == 0
 
     private val location
@@ -43,13 +61,13 @@ class ContentAnimatorScope(
     private val rawGestureProgress = Animatable(0f)
 
     private var _backEvent by mutableStateOf(BackEvent())
-    val backEvent get() = _backEvent
+    override val backEvent get() = _backEvent
     private var initialSwipeOffset by mutableStateOf(Offset.Zero)
 
-    val animationProgress by animationProgressAnimatable.asState()
-    val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
+    override val animationProgress by animationProgressAnimatable.asState()
+    override val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
 
-    val swipeOffset get() = Offset(
+    override val swipeOffset get() = Offset(
         initialSwipeOffset.x - _backEvent.touchX,
         initialSwipeOffset.y - _backEvent.touchY
     )
@@ -63,9 +81,9 @@ class ContentAnimatorScope(
         )
     )
 
-    val animationStatus get() = _animationStatus
+    override val animationStatus get() = _animationStatus
 
-    internal suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
+    override suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
         when (backGesture) {
             is BackGestureEvent.OnBackStarted -> {
                 // stop all animations
@@ -77,7 +95,7 @@ class ContentAnimatorScope(
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
                 _backEvent = backGesture.event
 
-                updateStatus(newType = AnimationType.Gestures, newDirection = Direction.Outward)
+                updateStatus(_animationStatus.location, location, newType = AnimationType.Gestures, newDirection = Direction.Outward)
             }
 
             is BackGestureEvent.OnBackProgressed -> {
@@ -91,22 +109,22 @@ class ContentAnimatorScope(
             BackGestureEvent.None,
             BackGestureEvent.OnBackCancelled -> {
                 allowRemoval = false
-                updateStatus(newType = AnimationType.Passive, newDirection = Direction.Inward)
+                updateStatus(_animationStatus.location, location, newType = AnimationType.Passive, newDirection = Direction.Inward)
                 animateToTarget()
                 allowRemoval = true
             }
 
             BackGestureEvent.OnBack -> {
                 allowRemoval = true
-                updateStatus(newType = AnimationType.Passive, newDirection = Direction.Outward)
+                updateStatus(_animationStatus.location, location, newType = AnimationType.Passive, newDirection = Direction.Outward)
             }
         }
     }
 
-    internal suspend fun updateCurrentIndexAndAnimate(
+    override suspend fun updateCurrentIndexAndAnimate(
         newIndex: Int,
         newIndexFromTop: Int,
-        animate: Boolean = true
+        animate: Boolean
     ) {
         val newDirection = when {
             newIndexFromTop > _indexFromTop -> Direction.Inward
@@ -158,14 +176,14 @@ class ContentAnimatorScope(
             // intended behavior, meaning these will be called unintentionally, unintentionally
             // updating animation status. adding a delay compensates for this
             withFrameNanos {  }
-            updateStatus(newType = AnimationType.None, newDirection = Direction.None)
+            updateStatus(_animationStatus.location, location, newType = AnimationType.None, newDirection = Direction.None)
             _backEvent = BackEvent()
         }
     }
 
-    private suspend fun updateStatus(
-        previousLocation: ItemLocation = _animationStatus.location,
-        newItemLocation: ItemLocation = location,
+    override suspend fun updateStatus(
+        previousLocation: ItemLocation,
+        newItemLocation: ItemLocation,
         newDirection: Direction,
         newType: AnimationType
     ) {

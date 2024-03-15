@@ -202,7 +202,7 @@ private class AnimationDataRegistry<C : Any> () {
             // animation specs, meaning the minimum amount of scopes required
             // will be created
             animationScopeRegistry.getOrPut(it.animationSpec.hashString() + key.hashString() + "animator scope") {
-                ContentAnimatorScope(initialIndex, initialIndexFromTop, it.animationSpec)
+                DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, it.animationSpec)
             }
         }
 
