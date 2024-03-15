@@ -59,7 +59,7 @@ inline fun <reified C : Any> navController(
         navStore.remove<C>()
     }
 
-    return remember {
+    return remember(componentContext) {
         navStore.getOrCreate<C> {
             NavController(startingDestination, serializer ?: serializer(), componentContext, childFactory)
         }
