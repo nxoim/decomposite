@@ -1,9 +1,6 @@
 package com.number869.decomposite.core.common.ultils
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisallowComposableCalls
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
@@ -17,14 +14,26 @@ import kotlin.jvm.JvmInline
 @Composable
 inline fun OnDestinationDisposeEffect(
     key: Any,
+    waitForCompositionRemoval: Boolean = false,
     componentContext: ComponentContext = LocalComponentContext.current,
     crossinline block: @DisallowComposableCalls () -> Unit
 ) {
-    DisposableEffect(null) {
-        onDispose { componentContext.instanceKeeper.remove(key) }
-    }
+    if (waitForCompositionRemoval) {
+        val componentDestructionDetector = remember(componentContext) {
+            componentContext.instanceKeeper.getOrCreate(key) {
+                ComponentDestructionDetector()
+            }
+        }
+        DisposableEffect(true) {
+            onDispose { if (componentDestructionDetector.destroyed) block() }
+        }
+    } else {
+        DisposableEffect(true) {
+            onDispose { componentContext.instanceKeeper.remove(key) }
+        }
 
-    remember { componentContext.onDestroyDisposableEffect(key, block) }
+        remember { componentContext.onDestroyDisposableEffect(key, block) }
+    }
 }
 
 /**
@@ -43,4 +52,10 @@ inline fun ComponentContext.onDestroyDisposableEffect(
 @JvmInline
 value class OnDestroyActionHolder(val onDispose: () -> Unit) : InstanceKeeper.Instance {
     override fun onDestroy() = onDispose()
+}
+
+@Immutable
+class ComponentDestructionDetector() : InstanceKeeper.Instance {
+    var destroyed = false
+    override fun onDestroy() { destroyed = true }
 }

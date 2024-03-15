@@ -52,9 +52,11 @@ inline fun <reified C : Any> navController(
         DefaultChildInstance(childComponentContext)
     }
 ): NavController<C> {
-    OnDestinationDisposeEffect(C::class.toString() + " NavHost OnDestinationDisposeEffect") {
+    OnDestinationDisposeEffect(
+        C::class.toString() + " NavHost OnDestinationDisposeEffect",
+        waitForCompositionRemoval = true
+    ) {
         navStore.remove<C>()
-        println("on destroy " + C::class.toString() + " NavHost OnDestinationDisposeEffect")
     }
 
     return remember {
