@@ -7,7 +7,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 class NavControllerStore() {
     val store = hashMapOf<String, Any>()
 
-    inline fun <reified T : Any> get() = store[T::class.toString()] as NavController<T>
+    inline fun <reified T : Any> get() = (store[T::class.toString()] as? NavController<T>) ?: error(
+        "instance of ${T::class.simpleName} was not found in NavControllerStore"
+    )
 
     inline fun <reified T : Any> getOrCreate(crossinline creator: () -> NavController<T>) =
         store.getOrPut(T::class.toString()) { creator() } as NavController<T>
