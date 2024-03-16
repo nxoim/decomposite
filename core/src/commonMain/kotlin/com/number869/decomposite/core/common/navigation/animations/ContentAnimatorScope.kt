@@ -29,7 +29,6 @@ class DefaultContentAnimatorScope(
     private val mutex = Mutex()
     private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
     override val indexFromTop get() = _indexFromTop
-    private var allowRemoval by mutableStateOf(true)
     private var _index by mutableIntStateOf(initialIndex)
     override val index get() = _index
     private val initial get() = _index == 0
@@ -81,8 +80,6 @@ class DefaultContentAnimatorScope(
                 animationProgressAnimatable.stop()
                 gestureAnimationProgressAnimatable.stop()
 
-                // if item is about to be removed - this prevents it from happening
-                allowRemoval = false
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
                 _backEvent = backGesture.event
 
@@ -110,7 +107,6 @@ class DefaultContentAnimatorScope(
 
             BackGestureEvent.None,
             BackGestureEvent.OnBackCancelled -> {
-                allowRemoval = false
                 updateStatus(
                     _animationStatus.location,
                     location,
@@ -118,11 +114,9 @@ class DefaultContentAnimatorScope(
                     AnimationType.Passive,
                 )
                 animateToTarget()
-                allowRemoval = true
             }
 
             BackGestureEvent.OnBack -> {
-                allowRemoval = true
                 updateStatus(
                     _animationStatus.location,
                     location,
