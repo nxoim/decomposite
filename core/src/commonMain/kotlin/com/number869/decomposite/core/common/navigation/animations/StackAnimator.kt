@@ -63,10 +63,11 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 
         Box(modifier) {
             cachedChildren.forEach { (configuration, cachedChild) ->
-                val holder = rememberSaveableStateHolder()
                 val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
 
                 key(configuration) {
+                    val holder = rememberSaveableStateHolder()
+
                     val inStack = sourceStack.items.fastAny { it.configuration == configuration }
                     val child by remember {
                         derivedStateOf {
