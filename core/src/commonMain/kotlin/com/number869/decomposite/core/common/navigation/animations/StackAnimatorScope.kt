@@ -17,12 +17,12 @@ import kotlinx.coroutines.launch
 // interrupted by the same config appearing in the stack again while the animation is running
 @Composable
 fun <C : Any> rememberStackAnimatorScope(key: String? = null) = if (key.isNullOrEmpty())
-    rememberRetained() { StackAnimatorScope<C>() }
+    rememberRetained() { StackAnimatorScope<C>(key) }
 else
-    rememberRetained("$key StackAnimatorScope") { StackAnimatorScope<C>() }
+    rememberRetained("$key StackAnimatorScope") { StackAnimatorScope<C>(key) }
 
 @Immutable
-class StackAnimatorScope<C : Any> {
+class StackAnimatorScope<C : Any>(val key: String?) {
     val animationDataRegistry = AnimationDataRegistry<C>()
     val childAnimPrerequisites = hashMapOf<C, ChildAnimPrerequisites>()
 

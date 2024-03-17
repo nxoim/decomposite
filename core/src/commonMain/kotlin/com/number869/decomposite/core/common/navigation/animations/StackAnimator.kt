@@ -16,8 +16,6 @@ import com.arkivanov.decompose.value.Value
 import com.number869.decomposite.core.common.navigation.DecomposeChildInstance
 import com.number869.decomposite.core.common.ultils.ImmutableThingHolder
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 @OptIn(InternalDecomposeApi::class)
 @Composable
@@ -30,7 +28,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
     animations: (child: C) -> ContentAnimations,
     content: @Composable (child: Child.Created<C, T>) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val sourceStack by stackValue.thing.subscribeAsState()
 
     val cachedChildren = remember {
@@ -43,7 +40,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
             )
         }
     }
-    val mutex = remember { Mutex() }
 
     with(stackAnimatorScope) {
         LaunchedEffect(sourceStack.items) {
@@ -58,14 +54,14 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                     // also check if the instance is equal
                     it.configuration in cachedChildren || it.instance == cachedChildren[it.configuration]?.instance
                 }
-            mutex.withLock { cachedChildren.putAll(differences.associateBy { it.configuration }) }
+            cachedChildren.putAll(differences.associateBy { it.configuration })
         }
 
         Box(modifier) {
             cachedChildren.forEach { (configuration, cachedChild) ->
                 val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
 
-                key(configuration) {
+                key(configuration, stackAnimatorScope.key) {
                     val holder = rememberSaveableStateHolder()
 
                     val inStack = sourceStack.items.fastAny { it.configuration == configuration }
@@ -82,7 +78,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                     else
                         -1
 
-                    val animData = remember {
+                    val animData = remember(indexFromTop) {
                         getOrCreateAnimationData(
                             key = child.configuration,
                             source = animations(configuration),
@@ -91,49 +87,45 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                         )
                     }
 
-                    val allowAnimation = indexFromTop <= (animData.renderUntils.min())
+                    val allowingAnimation = indexFromTop <= (animData.renderUntils.min())
 
                     val animating = animData.scopes.any { it.value.animationStatus.animating }
 
-                    val render = remember(animating) {
+                    val displaying = remember(animating, allowingAnimation) {
                         val requireVisibilityInBack = animData.requireVisibilityInBackstacks.fastAny { it }
-                        val renderingBack = allowAnimation && animating
+                        val renderingBack = allowingAnimation && animating
                         val renderTopAndAnimatedBack = indexFromTop < 1 || renderingBack
-                        if (requireVisibilityInBack) allowAnimation else renderTopAndAnimatedBack
+                        if (requireVisibilityInBack) allowingAnimation else renderTopAndAnimatedBack
                     }
 
-                    LaunchedEffect(allowAnimation, inStack) {
+                    LaunchedEffect(allowingAnimation, inStack) {
                         stackAnimatorScope.updateChildAnimPrerequisites(
                             configuration,
-                            allowAnimation,
+                            allowingAnimation,
                             inStack
                         )
                     }
 
                     // launch animations if there's changes
                     LaunchedEffect(indexFromTop, index) {
-                        coroutineScope.launch {
-                            animData.scopes.forEach { (_, scope) ->
-                                launch {
-                                    scope.update(
-                                        index,
-                                        indexFromTop,
-                                        animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
-                                    )
+                        animData.scopes.forEach { (_, scope) ->
+                            launch {
+                                scope.update(
+                                    index,
+                                    indexFromTop,
+                                    animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
+                                )
 
-                                    if (!inStack) { // after animating, if is not in stack
-                                        mutex.withLock {
-                                            cachedChildren.remove(configuration)
-                                            removeFromCache(configuration)
-                                            holder.removeState(childHolderKey)
-                                        }
-                                    }
+                                if (!inStack) { // after animating, if is not in stack
+                                    cachedChildren.remove(configuration)
+                                    removeFromCache(configuration)
+                                    holder.removeState(childHolderKey)
                                 }
                             }
                         }
                     }
 
-                    if (render) holder.SaveableStateProvider(childHolderKey) {
+                    if (displaying) holder.SaveableStateProvider(childHolderKey) {
                         Box(
                             Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
                             content = { content(child) }
@@ -144,5 +136,3 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
         }
     }
 }
-
-
