@@ -1,13 +1,12 @@
 package com.number869.decomposite.core.common.navigation
 
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.router.stack.items
-import com.number869.decomposite.core.common.navigation.animations.ContentAnimations
-import com.number869.decomposite.core.common.navigation.animations.StackAnimator
-import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
-import com.number869.decomposite.core.common.navigation.animations.emptyAnimation
+import com.number869.decomposite.core.common.navigation.animations.*
 import com.number869.decomposite.core.common.ultils.*
+import kotlinx.coroutines.launch
 
 /**
  * Navigation Host.
@@ -27,85 +26,120 @@ inline fun <reified C : Any> NavHost(
     },
     crossinline router: @Composable (child: C) -> Unit,
 ) {
-    with(remember { SharedBackEventScope() }) {
-        var backHandlerEnabled by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val screenStackAnimatorScope = rememberStackAnimatorScope<C>(
+        "${C::class.simpleName} routed content"
+    )
+    val overlayStackAnimatorScope = rememberStackAnimatorScope<C>(
+        "${C::class.simpleName} overlay content"
+    )
 
-        CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
-            startingNavControllerInstance.routedContent { modifier ->
-                StackAnimator(
-                    ImmutableThingHolder(startingNavControllerInstance.screenStack),
-                    modifier,
-                    key = "${C::class.simpleName} routed content",
-                    sharedBackEventScope = this,
-                    animations = animations,
-                    onBackstackEmpty = { backHandlerEnabled = it },
-                    content = {
-                        CompositionLocalProvider(
-                            LocalComponentContext provides it.instance.componentContext,
-                            content = { router(it.configuration) }
-                        )
-                    }
-                )
-            }
-        }
+    var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
+    var handlingGesturesInOverlay by rememberSaveable { mutableStateOf(false) }
 
-        LocalNavigationRoot.current.overlay {
-            CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
-                StackAnimator(
-                    ImmutableThingHolder(startingNavControllerInstance.overlayStack),
-                    onBackstackEmpty = {
-                        backHandlerEnabled = if (it)
-                            it
-                        else
-                            startingNavControllerInstance.screenStack.items.size > 1
-                    },
-                    key = "${C::class.simpleName} overlay content",
-                    sharedBackEventScope = this,
-                    animations = animations,
-                    excludeStartingDestination = true,
-                    content = {
-                        CompositionLocalProvider(
-                            LocalComponentContext provides it.instance.componentContext,
-                            content = { router(it.configuration) }
-                        )
-                    }
-                )
-            }
-
-            // snacks don't need to be aware of gestures
+    CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
+        startingNavControllerInstance.routedContent { modifier ->
             StackAnimator(
-                ImmutableThingHolder(startingNavControllerInstance.snackStack),
-                onBackstackEmpty = {},
-                key = "${C::class.simpleName} snack content",
-                animations = {
-                    startingNavControllerInstance.animationsForDestinations[it] ?: emptyAnimation()
-                },
-                sharedBackEventScope = SharedBackEventScope(),
+                stackValue = ImmutableThingHolder(startingNavControllerInstance.screenStack),
+                stackAnimatorScope = screenStackAnimatorScope,
+                modifier = modifier,
+                animations = animations,
+                onBackstackChange = { empty -> backHandlerEnabled = !empty },
                 content = {
                     CompositionLocalProvider(
                         LocalComponentContext provides it.instance.componentContext,
-                        content = {
-                            startingNavControllerInstance.contentOfSnacks[it.configuration]?.invoke()
+                        content = { router(it.configuration) }
+                    )
+                }
+            )
+        }
+    }
 
-                            DisposableEffect(it) {
-                                onDispose { startingNavControllerInstance.removeSnackContents(it.configuration) }
-                            }
-                        }
+    LocalNavigationRoot.current.overlay {
+        CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
+            StackAnimator(
+                stackValue = ImmutableThingHolder(startingNavControllerInstance.overlayStack),
+                stackAnimatorScope = overlayStackAnimatorScope,
+                onBackstackChange = { empty ->
+                    handlingGesturesInOverlay = !empty
+                    backHandlerEnabled = if (empty)
+                        startingNavControllerInstance.screenStack.items.size > 1
+                    else
+                        true
+                },
+                animations = animations,
+                excludeStartingDestination = true,
+                content = {
+                    CompositionLocalProvider(
+                        LocalComponentContext provides it.instance.componentContext,
+                        content = { router(it.configuration) }
                     )
                 }
             )
         }
 
-        BackGestureHandler(
-            enabled = backHandlerEnabled,
-            startingNavControllerInstance.backHandler,
-            onBackStarted = { onBackStarted(it) },
-            onBackProgressed = { onBackProgressed(it) },
-            onBackCancelled = { onBackCancelled() },
-            onBack = {
-                startingNavControllerInstance.navigateBack()
-                onBack()
+        // snacks don't need to be aware of gestures
+        StackAnimator(
+            stackValue = ImmutableThingHolder(startingNavControllerInstance.snackStack),
+            stackAnimatorScope = rememberStackAnimatorScope("${C::class.simpleName} snack content"),
+            onBackstackChange = {},
+            animations = {
+                startingNavControllerInstance.animationsForDestinations[it] ?: emptyAnimation()
+            },
+            content = {
+                CompositionLocalProvider(
+                    LocalComponentContext provides it.instance.componentContext,
+                    content = {
+                        startingNavControllerInstance.contentOfSnacks[it.configuration]?.invoke()
+
+                        DisposableEffect(it) {
+                            onDispose { startingNavControllerInstance.removeSnackContents(it.configuration) }
+                        }
+                    }
+                )
             }
         )
     }
+
+    BackGestureHandler(
+        enabled = backHandlerEnabled,
+        startingNavControllerInstance.backHandler,
+        onBackStarted = {
+            coroutineScope.launch {
+                if (handlingGesturesInOverlay) {
+                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackStarted(it))
+                } else {
+                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackStarted(it))
+                }
+            }
+        },
+        onBackProgressed = {
+            coroutineScope.launch {
+                if (handlingGesturesInOverlay) {
+                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackProgressed(it))
+                } else {
+                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackProgressed(it))
+                }
+            }
+        },
+        onBackCancelled = {
+            coroutineScope.launch {
+                if (handlingGesturesInOverlay) {
+                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
+                } else {
+                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
+                }
+            }
+        },
+        onBack = {
+            startingNavControllerInstance.navigateBack()
+            coroutineScope.launch {
+                if (handlingGesturesInOverlay) {
+                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBack)
+                } else {
+                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBack)
+                }
+            }
+        }
+    )
 }
