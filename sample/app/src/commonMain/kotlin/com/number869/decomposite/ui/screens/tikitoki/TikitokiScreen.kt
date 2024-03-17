@@ -8,7 +8,8 @@ import com.number869.decomposite.core.common.viewModel.viewModel
 
 @Composable
 fun TikitokiScreen() {
-    val vm = viewModel() { TikitokiViewModel() }
+    // initializing the view model here, and will be using the getter everywhere else
+    viewModel() { TikitokiViewModel() }
 
     NavHost(
         navController<TikitokiDestinations>(TikitokiDestinations.Pager),
@@ -16,7 +17,7 @@ fun TikitokiScreen() {
     ) {
         when (it) {
             TikitokiDestinations.Pager -> ListPager()
-            is TikitokiDestinations.User -> UserPage()
+            is TikitokiDestinations.User -> UserPage(it.mockUser)
         }
     }
 }

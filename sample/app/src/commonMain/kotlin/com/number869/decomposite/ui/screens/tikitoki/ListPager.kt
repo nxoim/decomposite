@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.core.common.ultils.noRippleClickable
@@ -37,7 +38,7 @@ fun ListPager() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageStuff(mockPage: MockPage) {
+private fun PageStuff(mockPage: MockPage) {
     val navController = navController<TikitokiDestinations>()
     var displayComments by remember { mutableStateOf(false) }
     var displayOptions by remember { mutableStateOf(false) }
@@ -71,7 +72,7 @@ fun PageStuff(mockPage: MockPage) {
                             Modifier
                                 .clip(CircleShape)
                                 .size(64.dp)
-                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .background(Color(mockPage.mockUser.profilePicColorARGB))
                                 .clickable { navController.navigate(TikitokiDestinations.User(mockPage.mockUser)) },
                             contentAlignment = Alignment.Center
                         ) {
@@ -87,7 +88,6 @@ fun PageStuff(mockPage: MockPage) {
                 }
             }
 
-
             if (displayOptions) ModalBottomSheet(
                 onDismissRequest = { displayOptions = false },
                 windowInsets = CorrectBottomSheetWindowInsets()
@@ -96,7 +96,7 @@ fun PageStuff(mockPage: MockPage) {
                     Modifier.fillMaxWidth().height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Options for $mockPage")
+                    Text("Options for ${mockPage.name}")
                 }
             }
 
@@ -109,7 +109,7 @@ fun PageStuff(mockPage: MockPage) {
                     Modifier.fillMaxWidth().fillMaxHeight(0.5f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Comments for $mockPage")
+                    Text("Comments for ${mockPage.name}")
                 }
             }
         }
