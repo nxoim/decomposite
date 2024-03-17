@@ -5,7 +5,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.zIndex
 import com.arkivanov.decompose.Child
@@ -46,13 +45,16 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
     val stackAnimatorScope = rememberRetained(key + "StackAnimatorScope") {
         StackAnimatorScope<C>()
     }
-    var cachedChildren by remember {
-        mutableStateOf(
-            stackValue.thing.items.subList(
-                if (excludeStartingDestination) 1 else 0,
-                stackValue.thing.items.size
+
+    val cachedChildren = remember {
+        mutableStateMapOf<C, Child.Created<C, T>>().apply {
+            putAll(
+                stackValue.thing.items.subList(
+                    if (excludeStartingDestination) 1 else 0,
+                    stackValue.thing.items.size
+                ).associateBy { it.configuration }
             )
-        )
+        }
     }
     val mutex = remember { Mutex() }
 
@@ -65,13 +67,15 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                     if (excludeStartingDestination) 1 else 0,
                     stackValue.thing.items.size
                 )
-                .filterNot { it in cachedChildren }
-            mutex.withLock { cachedChildren += differences }
+                .filterNot {
+                    // also check if the instance is equal
+                    it.configuration in cachedChildren || it.instance == cachedChildren[it.configuration]?.instance
+                }
+            mutex.withLock { cachedChildren.putAll(differences.associateBy { it.configuration }) }
         }
 
         Box(modifier) {
-            cachedChildren.fastForEach { cachedChild ->
-                val configuration = cachedChild.configuration
+            cachedChildren.forEach { (configuration, cachedChild) ->
                 val holder = rememberSaveableStateHolder()
                 val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
 
@@ -123,7 +127,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 
                                     if (!inStack) { // after animating, if is not in stack
                                         mutex.withLock {
-                                            cachedChildren -= child
+                                            cachedChildren.remove(configuration)
                                             removeFromCache(configuration)
                                             holder.removeState(childHolderKey)
                                         }
@@ -134,7 +138,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                     }
 
                     LaunchedEffect(null) {
-                        if (allowAnimation) launch {
+                        if (inStack && allowAnimation) launch {
                             sharedBackEventScope.gestureActions.collectLatest() {
                                 // wrapped in run catching because sometimes it can happen
                                 // that attempts to update the gesture data in nonexistent scopes
@@ -165,7 +169,7 @@ private class StackAnimatorScope<C : Any> {
 
     inline fun removeFromCache(target: C) { animationDataRegistry.remove(target) }
 
-    suspend fun updateGestureDataInScopes(
+    suspend inline fun updateGestureDataInScopes(
         target: C,
         backGestureData: BackGestureEvent
     ) = coroutineScope {
@@ -174,7 +178,7 @@ private class StackAnimatorScope<C : Any> {
         }
     }
 
-    fun Modifier.accumulate(modifiers: List<Modifier>) = modifiers.fold(this) { acc, modifier ->
+    inline fun Modifier.accumulate(modifiers: List<Modifier>) = modifiers.fold(this) { acc, modifier ->
         acc.then(modifier)
     }
 }
