@@ -16,9 +16,10 @@ import kotlinx.coroutines.launch
 // scopes not to be recreated which is useful in case the exit animation of a config is
 // interrupted by the same config appearing in the stack again while the animation is running
 @Composable
-fun <C : Any> rememberStackAnimatorScope(key: String) = rememberRetained(key + "StackAnimatorScope") {
-    StackAnimatorScope<C>()
-}
+fun <C : Any> rememberStackAnimatorScope(key: String? = null) = if (key.isNullOrEmpty())
+    rememberRetained() { StackAnimatorScope<C>() }
+else
+    rememberRetained("$key StackAnimatorScope") { StackAnimatorScope<C>() }
 
 @Immutable
 class StackAnimatorScope<C : Any> {
