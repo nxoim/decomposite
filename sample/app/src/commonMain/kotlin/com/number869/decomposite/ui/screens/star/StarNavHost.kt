@@ -21,7 +21,7 @@ fun StarNavHost() {
     NavHost(
         navController<StarDestinations>(StarDestinations.Home),
         animations = {
-            when (it) {
+            when (currentChild) {
                 StarDestinations.AnotherStar -> iosLikeSlide()
                 else -> cleanSlideAndFade()
             }

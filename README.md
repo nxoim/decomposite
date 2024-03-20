@@ -54,7 +54,7 @@ Navigation host creation:
 NavHost(
     navController<YourDestinations>(startingDestination = YourDestinations.Star),
     animations = {
-        when (it) { 
+        when (currentChild) { 
             RootDestinations.Star -> fade() + scale()
             else -> cleanSlideAndFade()
         }

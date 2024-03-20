@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 @Composable
 inline fun <reified C : Any> NavHost(
     startingNavControllerInstance: NavController<C>,
-    noinline animations: (child: C) -> ContentAnimations = { cleanSlideAndFade() },
+    noinline animations: AnimatorChildrenConfigurations<C>.() -> ContentAnimations = { cleanSlideAndFade() },
     crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = {
         it(Modifier)
     },
@@ -84,7 +84,7 @@ inline fun <reified C : Any> NavHost(
             stackAnimatorScope = rememberStackAnimatorScope("${C::class.simpleName} snack content"),
             onBackstackChange = {},
             animations = {
-                startingNavControllerInstance.animationsForDestinations[it] ?: emptyAnimation()
+                startingNavControllerInstance.animationsForDestinations[currentChild] ?: emptyAnimation()
             },
             content = {
                 CompositionLocalProvider(

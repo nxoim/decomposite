@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,31 +23,13 @@ fun HeartNavHost() {
     NavHost<HeartDestinations>(
         navController<HeartDestinations>(HeartDestinations.Home),
         animations = {
-            when (it) {
+            when (currentChild) {
                 is HeartDestinations.AnotherHeart -> iosLikeSlide()
                 else -> cleanSlideAndFade()
             }
         },
         routedContent = {
-            // this doesn't throw an error because it's initialized before contained
-            // content executes
-            val navController = navController<HeartDestinations>()
-            val currentScreen by navController.currentScreen.collectAsState()
-
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text("Heart") },
-                        navigationIcon = {
-                            AnimatedVisibility(currentScreen != HeartDestinations.Home) {
-                                IconButton(onClick = { navController.navigateBack() }) {
-                                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                                }
-                            }
-                        }
-                    )
-                }
-            ) { scaffoldPadding ->
+            Scaffold(topBar = { HeartTopAppBar() }) { scaffoldPadding ->
                 it(Modifier.padding(scaffoldPadding))
             }
         }
@@ -57,4 +40,29 @@ fun HeartNavHost() {
             is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HeartTopAppBar() {
+    val navController = navController<HeartDestinations>()
+    val currentScreen by navController.currentScreen.collectAsState()
+
+    TopAppBar(
+        title = { Text("Heart") },
+        navigationIcon = {
+            AnimatedVisibility(currentScreen != HeartDestinations.Home) {
+                IconButton(onClick = navController::navigateBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+            }
+        },
+        actions = {
+            AnimatedVisibility(currentScreen != HeartDestinations.Home) {
+                IconButton(onClick = { navController.replaceAll(HeartDestinations.Home)}) {
+                    Icon(Icons.Default.Close, contentDescription = "Close")
+                }
+            }
+        }
+    )
 }
