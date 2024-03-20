@@ -35,7 +35,7 @@ class DefaultContentAnimatorScope(
 
     private val location
         get() = when {
-            _indexFromTop == -1 -> ItemLocation.Outside
+            _indexFromTop <= -1 -> ItemLocation.Outside
             _indexFromTop == 0 -> ItemLocation.Top
             _indexFromTop >= 1 -> ItemLocation.Back
             else -> error("how")
@@ -139,7 +139,7 @@ class DefaultContentAnimatorScope(
         }
 
         val newLocation = when {
-            newIndexFromTop == -1 -> ItemLocation.Outside
+            newIndexFromTop <= -1 -> ItemLocation.Outside
             newIndexFromTop == 0 -> ItemLocation.Top
             newIndexFromTop >= 1 -> ItemLocation.Back
             else -> error("how")
@@ -165,14 +165,14 @@ class DefaultContentAnimatorScope(
     private suspend fun animateToTarget() = coroutineScope {
         launch {
             gestureAnimationProgressAnimatable.animateTo(
-                targetValue = _indexFromTop.toFloat(),
+                targetValue = (_indexFromTop.coerceAtLeast(-1)).toFloat(),
                 animationSpec = animationSpec,
                 initialVelocity = 0.1f + rawGestureProgress.velocity
             )
         }
 
         animationProgressAnimatable.animateTo(
-            targetValue = _indexFromTop.toFloat(),
+            targetValue = (_indexFromTop.coerceAtLeast(-1)).toFloat(),
             animationSpec = animationSpec,
             initialVelocity = 0.1f + rawGestureProgress.velocity
         )

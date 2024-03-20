@@ -5,16 +5,17 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.zIndex
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.InternalDecomposeApi
-import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.hashString
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.items
 import com.arkivanov.decompose.value.Value
 import com.number869.decomposite.core.common.navigation.DecomposeChildInstance
 import com.number869.decomposite.core.common.ultils.ImmutableThingHolder
+import com.number869.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import kotlinx.coroutines.launch
 
 @OptIn(InternalDecomposeApi::class)
@@ -25,46 +26,70 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
     modifier: Modifier = Modifier,
     onBackstackChange: (stackEmpty: Boolean) -> Unit,
     excludeStartingDestination: Boolean = false,
+    allowBatchRemoval: Boolean = true,
     animations: (child: C) -> ContentAnimations,
     content: @Composable (child: Child.Created<C, T>) -> Unit,
-) {
-    val sourceStack by stackValue.thing.subscribeAsState()
-
-    val cachedChildren = remember {
-        mutableStateMapOf<C, Child.Created<C, T>>().apply {
-            putAll(
-                stackValue.thing.items.subList(
-                    if (excludeStartingDestination) 1 else 0,
-                    stackValue.thing.items.size
-                ).associateBy { it.configuration }
-            )
+) = with(stackAnimatorScope) {
+    key(stackAnimatorScope.key) {
+        val holder = rememberSaveableStateHolder()
+        var sourceStack by remember { mutableStateOf(stackValue.thing.value) }
+        val removingItems = remember { mutableStateListOf<C>() }
+        val cachedChildren = remember {
+            mutableStateMapOf<C, Child.Created<C, T>>().apply {
+                putAll(
+                    stackValue.thing.items.subList(
+                        if (excludeStartingDestination) 1 else 0,
+                        stackValue.thing.items.size
+                    ).associateBy { it.configuration }
+                )
+            }
         }
-    }
 
-    with(stackAnimatorScope) {
-        LaunchedEffect(sourceStack.items) {
-            onBackstackChange(sourceStack.items.size == 1)
+        LaunchedEffect(Unit) {
+            // check on startup if there's animation data left for nonexistent children, which
+            // can happen during a configuration change
+            launch {
+                removeStaleAnimationDataCache(nonStale = sourceStack.items.fastMap { it.configuration } )
+            }
 
-            val differences = stackValue.thing.items
-                .subList(
+            stackValue.thing.subscribe { newStackRaw ->
+                onBackstackChange(newStackRaw.items.size <= 1)
+                val oldStack = sourceStack.items
+                val newStack = newStackRaw.items.subList(
                     if (excludeStartingDestination) 1 else 0,
                     stackValue.thing.items.size
                 )
-                .filterNot {
-                    // also check if the instance is equal
-                    it.configuration in cachedChildren || it.instance == cachedChildren[it.configuration]?.instance
+
+                val childrenToRemove = oldStack.filter { it !in newStack && it.configuration !in removingItems }
+                val batchRemoval = childrenToRemove.size > 1 && allowBatchRemoval
+
+                // cancel removal of items that appeared again in the stack
+                removingItems.removeAll(newStackRaw.items.map { it.configuration })
+
+                if (batchRemoval) {
+                    // remove from cache and everything all children, except the last one,
+                    // which will be animated
+                    val itemsToRemoveImmediately = childrenToRemove.subList(0, childrenToRemove.size - 1)
+                    itemsToRemoveImmediately.forEach { (configuration, _) ->
+                        cachedChildren.remove(configuration)
+                    }
+                    removingItems.add(childrenToRemove.last().configuration)
+                } else {
+                    childrenToRemove.forEach {
+                        removingItems.add(it.configuration)
+                    }
                 }
-            cachedChildren.putAll(differences.associateBy { it.configuration })
+
+                sourceStack = newStackRaw
+
+                cachedChildren.putAll(newStack.associateBy { it.configuration })
+            }
         }
 
         Box(modifier) {
             cachedChildren.forEach { (configuration, cachedChild) ->
-                val childHolderKey = configuration.hashString() + " StackAnimator SaveableStateHolder"
-
-                key(configuration, stackAnimatorScope.key) {
-                    val holder = rememberSaveableStateHolder()
-
-                    val inStack = sourceStack.items.fastAny { it.configuration == configuration }
+                key(configuration) {
+                    val inStack = !removingItems.contains(configuration)
                     val child by remember {
                         derivedStateOf {
                             sourceStack.items.find { it.configuration == configuration }
@@ -72,16 +97,21 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                         }
                     }
 
-                    val index = if (inStack) sourceStack.items.indexOf(child) else -1
-                    val indexFromTop = if (inStack)
-                        sourceStack.items.reversed().indexOf(child)
+                    val index = if (inStack)
+                        sourceStack.items.indexOf(child)
                     else
-                        -1
+                        -(removingItems.indexOf(configuration) + 1)
 
-                    val animData = remember(indexFromTop) {
+                    val indexFromTop = if (inStack)
+                        sourceStack.items.size - index - 1
+                    else
+                        -(removingItems.indexOf(configuration) + 1)
+
+                    val allAnimations = animations(configuration)
+                    val animData = remember(allAnimations) {
                         getOrCreateAnimationData(
-                            key = child.configuration,
-                            source = animations(configuration),
+                            key = configuration,
+                            source = allAnimations,
                             initialIndex = index,
                             initialIndexFromTop = indexFromTop
                         )
@@ -89,7 +119,11 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 
                     val allowingAnimation = indexFromTop <= (animData.renderUntils.min())
 
-                    val animating = animData.scopes.any { it.value.animationStatus.animating }
+                    val animating by remember {
+                        derivedStateOf {
+                            animData.scopes.any { it.value.animationStatus.animating }
+                        }
+                    }
 
                     val displaying = remember(animating, allowingAnimation) {
                         val requireVisibilityInBack = animData.requireVisibilityInBackstacks.fastAny { it }
@@ -116,16 +150,24 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                                     animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
                                 )
 
-                                if (!inStack) { // after animating, if is not in stack
-                                    cachedChildren.remove(configuration)
-                                    removeFromCache(configuration)
-                                    holder.removeState(childHolderKey)
-                                }
+                                // after animating, if is not in stack
+                                if (!inStack) cachedChildren.remove(configuration)
                             }
                         }
                     }
 
-                    if (displaying) holder.SaveableStateProvider(childHolderKey) {
+                    // will get triggered upon removal
+                    OnDestinationDisposeEffect(
+                        child.configuration.hashString() + stackAnimatorScope.key + "OnDestinationDisposeEffect",
+                        waitForCompositionRemoval = true,
+                        componentContext = child.instance.componentContext
+                    ) {
+                        removingItems.remove(configuration)
+                        removeAnimationDataFromCache(configuration)
+                        holder.removeState(childHolderKey(configuration))
+                    }
+
+                    if (displaying) holder.SaveableStateProvider(childHolderKey(configuration)) {
                         Box(
                             Modifier.zIndex((-indexFromTop).toFloat()).accumulate(animData.modifiers),
                             content = { content(child) }
@@ -136,3 +178,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
         }
     }
 }
+
+@OptIn(InternalDecomposeApi::class)
+private fun <C : Any> childHolderKey(childConfiguration: C) =
+    childConfiguration.hashString() + " StackAnimator SaveableStateHolder"
