@@ -12,30 +12,30 @@ import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.star.another.AnotherStarScreen
 import com.number869.decomposite.ui.screens.star.home.StarHomeScreen
 
 @Composable
 fun StarNavHost() {
-    NavHost(
-        navController<StarDestinations>(StarDestinations.Home),
-        animations = {
-            when (currentChild) {
-                StarDestinations.AnotherStar -> iosLikeSlide()
-                else -> cleanSlideAndFade()
+    val starNavController = navController<StarDestinations>(StarDestinations.Home)
+
+    Scaffold(topBar = { StarTopAppBar() }) { scaffoldPadding ->
+        NavHost(
+            starNavController,
+            Modifier.padding(scaffoldPadding),
+            animations = {
+                when (currentChild) {
+                    StarDestinations.AnotherStar -> iosLikeSlide()
+                    else -> cleanSlideAndFade()
+                }
             }
-        },
-        routedContent = {
-            Scaffold(
-                topBar = { StarTopAppBar() },
-                content = { scaffoldPadding -> it(Modifier.padding(scaffoldPadding)) }
-            )
-        }
-    ) { destination ->
-        when (destination) {
-            StarDestinations.Home -> StarHomeScreen()
-            StarDestinations.AnotherStar -> AnotherStarScreen()
+        ) { destination ->
+            when (destination) {
+                StarDestinations.Home -> StarHomeScreen()
+                StarDestinations.AnotherStar -> AnotherStarScreen()
+            }
         }
     }
 }
@@ -43,7 +43,7 @@ fun StarNavHost() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StarTopAppBar() {
-    val navController = navController<StarDestinations>()
+    val navController = getExistingNavControllerInstance<StarDestinations>()
     val currentScreen by navController.currentScreen.collectAsState()
 
     TopAppBar(

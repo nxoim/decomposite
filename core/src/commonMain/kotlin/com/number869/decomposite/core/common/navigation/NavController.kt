@@ -35,7 +35,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 @ReadOnlyComposable
 @Composable
-inline fun <reified T : Any> navController(
+inline fun <reified T : Any> getExistingNavControllerInstance(
     navStore: NavControllerStore = LocalNavControllerStore.current
 ) = navStore.get<T>()
 

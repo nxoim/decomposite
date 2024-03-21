@@ -51,41 +51,32 @@ NavigationRoot(navigationRootData()) { YourContent() }
 
 Navigation host creation:
 ```kotlin
-NavHost(
-    navController<YourDestinations>(startingDestination = YourDestinations.Star),
-    animations = {
-        when (currentChild) { 
-            RootDestinations.Star -> fade() + scale()
-            else -> cleanSlideAndFade()
-        }
-    },
-    routedContent = { // content that isn't in an overlay
-        Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
-            it(Modifier.padding(scaffoldPadding))
-        }
-    }
-) {
-    when (it) { // nested hosts!
-        RootDestinations.Star -> StarNavHost()
-        RootDestinations.Heart -> HeartNavHost()
-    }
-}
-```
+// creating an instance
+val yourNavController = navController<YourDestinations>(startingDestination = YourDestinations.Star)
 
-Or you can create a navigation controller manually:
-```kotlin
-val navController = navController<YourDestinations>(startingDestination = YourDestinations.Star)
-    
-NavHost(
-    startingNavControllerInstance = navController,
-    ...
-)
+Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
+    NavHost(
+        yourNavController,
+        Modifier.padding(scaffoldPadding),        
+        animations = {
+            when (currentChild) {
+                RootDestinations.Star -> fade() + scale()
+                else -> cleanSlideAndFade()
+            }
+        }
+    ) {
+        when (it) { // nested hosts!
+            RootDestinations.Star -> StarNavHost()
+            RootDestinations.Heart -> HeartNavHost()
+        }
+    }    
+}
 ```
 
 Navigation controller usage:
 ```kotlin
-// getting the controller instances from the store
-val navController = navController<YourDestinations>()
+// getting the controller instance from the store
+val navController = getExistingNavControllerInstance<YourDestinations>()
 
 // in any clickable
 navController.navigate(YourDestinations.Heart)

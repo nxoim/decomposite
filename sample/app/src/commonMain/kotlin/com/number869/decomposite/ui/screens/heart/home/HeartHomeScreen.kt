@@ -12,12 +12,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.number869.decomposite.core.common.navigation.navController
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 import com.number869.decomposite.ui.screens.heart.HeartDestinations
 
 @Composable
 fun HeartHomeScreen() {
-    val navController = navController<HeartDestinations>()
+    val navController = getExistingNavControllerInstance<HeartDestinations>()
 
     Column(
         modifier = Modifier.fillMaxSize(),

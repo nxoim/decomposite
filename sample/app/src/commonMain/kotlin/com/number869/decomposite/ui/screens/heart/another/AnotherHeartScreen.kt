@@ -17,7 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.number869.decomposite.core.common.navigation.navController
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 import com.number869.decomposite.core.common.viewModel.ViewModel
 import com.number869.decomposite.core.common.viewModel.viewModel
 import com.number869.decomposite.ui.screens.heart.HeartDestinations
@@ -27,7 +27,7 @@ import kotlin.random.Random
 
 @Composable
 fun AnotherHeartScreen(text: String) {
-    val navController = navController<HeartDestinations>()
+    val navController = getExistingNavControllerInstance<HeartDestinations>()
     val vm = viewModel(key = text) { AnotherHeartViewModel() }
 
     Surface {

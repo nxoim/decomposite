@@ -13,13 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.number869.decomposite.core.common.navigation.navController
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 import com.number869.decomposite.core.common.ultils.ContentType
 import com.number869.decomposite.ui.screens.star.StarDestinations
 
 @Composable
 fun StarHomeScreen() {
-    val navController = navController<StarDestinations>()
+    val navController = getExistingNavControllerInstance<StarDestinations>()
 
     Column(
         Modifier.fillMaxSize(),

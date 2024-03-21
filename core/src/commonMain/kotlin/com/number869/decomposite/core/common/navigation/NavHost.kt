@@ -12,18 +12,12 @@ import kotlinx.coroutines.launch
  * Navigation Host.
  * [router] is where you declare the content of each destination.
  * [routedContent] is where the content is displayed, where you put your scaffold, maybe something else.
- * When a host is created - a navigation controller is created for it, and it is accessible in [routedContent],
- * however you can make your own controller by calling [navController] and giving it a starting destination, or
- * manually by requesting [LocalNavControllerStore] and calling [NavControllerStore.getOrCreate]
- * with the type of your destination.
  */
 @Composable
 inline fun <reified C : Any> NavHost(
     startingNavControllerInstance: NavController<C>,
+    modifier: Modifier = Modifier,
     noinline animations: AnimatorChildrenConfigurations<C>.() -> ContentAnimations = { cleanSlideAndFade() },
-    crossinline routedContent: @Composable NavController<C>.(content: @Composable (Modifier) -> Unit) -> Unit = {
-        it(Modifier)
-    },
     crossinline router: @Composable (child: C) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -38,21 +32,19 @@ inline fun <reified C : Any> NavHost(
     var handlingGesturesInOverlay by rememberSaveable { mutableStateOf(false) }
 
     CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
-        startingNavControllerInstance.routedContent { modifier ->
-            StackAnimator(
-                stackValue = ImmutableThingHolder(startingNavControllerInstance.screenStack),
-                stackAnimatorScope = screenStackAnimatorScope,
-                modifier = modifier,
-                animations = animations,
-                onBackstackChange = { empty -> backHandlerEnabled = !empty },
-                content = {
-                    CompositionLocalProvider(
-                        LocalComponentContext provides it.instance.componentContext,
-                        content = { router(it.configuration) }
-                    )
-                }
-            )
-        }
+        StackAnimator(
+            stackValue = ImmutableThingHolder(startingNavControllerInstance.screenStack),
+            stackAnimatorScope = screenStackAnimatorScope,
+            modifier = modifier,
+            animations = animations,
+            onBackstackChange = { empty -> backHandlerEnabled = !empty },
+            content = {
+                CompositionLocalProvider(
+                    LocalComponentContext provides it.instance.componentContext,
+                    content = { router(it.configuration) }
+                )
+            }
+        )
     }
 
     LocalNavigationRoot.current.overlay {

@@ -13,39 +13,40 @@ import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.another.AnotherHeartScreen
 import com.number869.decomposite.ui.screens.heart.home.HeartHomeScreen
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HeartNavHost() {
-    NavHost<HeartDestinations>(
-        navController<HeartDestinations>(HeartDestinations.Home),
-        animations = {
-            when (currentChild) {
-                is HeartDestinations.AnotherHeart -> iosLikeSlide()
-                else -> cleanSlideAndFade()
-            }
-        },
-        routedContent = {
-            Scaffold(topBar = { HeartTopAppBar() }) { scaffoldPadding ->
-                it(Modifier.padding(scaffoldPadding))
-            }
-        }
-    ) { destination ->
-        when (destination) {
-            HeartDestinations.Home -> HeartHomeScreen()
+    val heartNavController = navController<HeartDestinations>(HeartDestinations.Home)
 
-            is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
+    Scaffold(topBar = { HeartTopAppBar() }) { scaffoldPadding ->
+        NavHost<HeartDestinations>(
+            heartNavController,
+            Modifier.padding(scaffoldPadding),
+            animations = {
+                when (currentChild) {
+                    is HeartDestinations.AnotherHeart -> iosLikeSlide()
+                    else -> cleanSlideAndFade()
+                }
+            }
+        ) { destination ->
+            when (destination) {
+                HeartDestinations.Home -> HeartHomeScreen()
+
+                is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
+            }
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HeartTopAppBar() {
-    val navController = navController<HeartDestinations>()
+    val navController = getExistingNavControllerInstance<HeartDestinations>()
     val currentScreen by navController.currentScreen.collectAsState()
 
     TopAppBar(

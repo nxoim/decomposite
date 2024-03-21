@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.NavigationRoot
 import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.HeartNavHost
 import com.number869.decomposite.ui.screens.star.StarNavHost
@@ -34,44 +35,46 @@ fun App() {
 }
 
 @Composable
-fun RootNavHost() = NavHost<RootDestinations>(
-    navController<RootDestinations>(RootDestinations.Star) ,
-    animations = {
-        cleanSlideAndFade(
-            orientation = Orientation.Vertical,
-            targetOffsetDp = -16
-        )
-    },
-    routedContent = {
-        Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
-            it(Modifier.padding(scaffoldPadding))
+fun RootNavHost() {
+    val rootNavController = navController<RootDestinations>(RootDestinations.Star)
+
+    Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
+        NavHost<RootDestinations>(
+            rootNavController,
+            Modifier.padding(scaffoldPadding),
+            animations = {
+                cleanSlideAndFade(
+                    orientation = Orientation.Vertical,
+                    targetOffsetDp = -16
+                )
+            }
+        ) {
+            when (it) { // nested
+                RootDestinations.Star -> StarNavHost()
+                RootDestinations.Tikitoki -> TikitokiScreen()
+                RootDestinations.Heart -> HeartNavHost()
+            }
         }
-    },
-) {
-    when (it) { // nested
-        RootDestinations.Star -> StarNavHost()
-        RootDestinations.Tikitoki -> TikitokiScreen()
-        RootDestinations.Heart -> HeartNavHost()
     }
 }
 
 
 @Composable
 fun GlobalSampleNavBar() {
-    val navController = navController<RootDestinations>()
+    val navController = getExistingNavControllerInstance<RootDestinations>()
     val currentScreen by navController.currentScreen.collectAsState()
 
     NavigationBar {
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Star,
             icon = { Icon(Icons.Default.Star, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Star)}
+            onClick = { navController.navigate(RootDestinations.Star) }
         )
 
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Tikitoki,
             icon = { Icon(Icons.Default.PanoramaVertical, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Tikitoki)}
+            onClick = { navController.navigate(RootDestinations.Tikitoki) }
         )
 
         NavigationBarItem(

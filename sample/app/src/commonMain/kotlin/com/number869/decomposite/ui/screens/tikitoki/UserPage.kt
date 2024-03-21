@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.number869.decomposite.core.common.navigation.navController
+import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
 
 @Composable
 fun UserPage(mockUser: MockUser) = Surface {
@@ -70,7 +70,7 @@ fun UserPage(mockUser: MockUser) = Surface {
 private fun UserPageTopAppBar(
     userName: String
 ) {
-    val navController = navController<TikitokiDestinations>()
+    val navController = getExistingNavControllerInstance<TikitokiDestinations>()
 
     CenterAlignedTopAppBar(
         title = { Text(userName) },
