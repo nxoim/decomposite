@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
-import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
+import com.number869.decomposite.core.common.navigation.getExistingNavController
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.heart.another.AnotherHeartScreen
 import com.number869.decomposite.ui.screens.heart.home.HeartHomeScreen
@@ -46,7 +46,7 @@ fun HeartNavHost() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HeartTopAppBar() {
-    val navController = getExistingNavControllerInstance<HeartDestinations>()
+    val navController = getExistingNavController<HeartDestinations>()
     val currentScreen by navController.currentScreen.collectAsState()
 
     TopAppBar(

@@ -76,7 +76,7 @@ Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
 Navigation controller usage:
 ```kotlin
 // getting the controller instance from the store
-val navController = getExistingNavControllerInstance<YourDestinations>()
+val navController = getExistingNavController<YourDestinations>()
 
 // in any clickable
 navController.navigate(YourDestinations.Heart)
@@ -84,14 +84,15 @@ navController.navigate(YourDestinations.Heart)
 // or if you want to display a destination as an overlay
 navController.navigate(YourDestinations.Star, ContentType.Overlay)
 
-// you can open snack content, even in a coroutine 
-// scope, like LaunchedEffect
-navController.openInSnack("some key", duration = 5L.seconds) {
-    YourSnackbarComposable()
-}
-
 // navigate back
 navController.navigateBack()
+```
+
+You can open snack content, even in a coroutine:
+```kotlin
+snackController().display("some key", duration = 5L.seconds) {
+    YourSnackbarComposable()
+}
 ```
 
 View model creation and usage:
@@ -104,7 +105,7 @@ fun YourScreen() {
     // just get a view model. 
     // this does not create a view model due to reflection practically
     // not existing in the wasm target as of yet
-    val vm = getExistingViewModelInstance<SomeViewModel>("optionalKey")
+    val vm = getExistingViewModel<SomeViewModel>("optionalKey")
 }
 
 class SomeViewModel(someArgument: String) : ViewModel() {

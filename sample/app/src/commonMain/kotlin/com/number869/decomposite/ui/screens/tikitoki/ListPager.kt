@@ -21,14 +21,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
+import com.number869.decomposite.core.common.navigation.getExistingNavController
 import com.number869.decomposite.core.common.ultils.noRippleClickable
-import com.number869.decomposite.core.common.viewModel.getExistingViewModelInstance
+import com.number869.decomposite.core.common.viewModel.getExistingViewModel
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListPager() {
-    val vm = getExistingViewModelInstance<TikitokiViewModel>()
+    val vm = getExistingViewModel<TikitokiViewModel>()
     val pagerState = rememberPagerState() { vm.mockVids.size }
 
     Box() {
@@ -39,7 +39,7 @@ fun ListPager() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PageStuff(mockPage: MockPage) {
-    val navController = getExistingNavControllerInstance<TikitokiDestinations>()
+    val navController = getExistingNavController<TikitokiDestinations>()
     var displayComments by remember { mutableStateOf(false) }
     var displayOptions by remember { mutableStateOf(false) }
     val commentsSheetState = rememberModalBottomSheetState()

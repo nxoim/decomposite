@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.navigation.NavHost
 import com.number869.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.number869.decomposite.core.common.navigation.animations.iosLikeSlide
-import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
+import com.number869.decomposite.core.common.navigation.getExistingNavController
 import com.number869.decomposite.core.common.navigation.navController
 import com.number869.decomposite.ui.screens.star.another.AnotherStarScreen
 import com.number869.decomposite.ui.screens.star.home.StarHomeScreen
@@ -43,7 +43,7 @@ fun StarNavHost() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StarTopAppBar() {
-    val navController = getExistingNavControllerInstance<StarDestinations>()
+    val navController = getExistingNavController<StarDestinations>()
     val currentScreen by navController.currentScreen.collectAsState()
 
     TopAppBar(

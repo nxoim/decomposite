@@ -5,6 +5,8 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
+import com.number869.decomposite.core.common.navigation.snacks.SnackController
+import com.number869.decomposite.core.common.navigation.snacks.SnackHost
 import com.number869.decomposite.core.common.ultils.LocalComponentContext
 import com.number869.decomposite.core.common.viewModel.LocalViewModelStore
 import com.number869.decomposite.core.common.viewModel.ViewModelStore
@@ -13,7 +15,8 @@ import com.number869.decomposite.core.common.viewModel.ViewModelStore
 class NavigationRootData(
     val defaultComponentContext: DefaultComponentContext,
     val navStore: NavControllerStore,
-    val viewModelStore: ViewModelStore
+    val viewModelStore: ViewModelStore,
+    val snackController: SnackController
 )
 
 /**
@@ -34,12 +37,13 @@ fun navigationRootDataProvider(
     return NavigationRootData(
         defaultComponentContext = anyComponentContext,
         navStore = navStore,
-        viewModelStore = anyComponentContext.instanceKeeper.getOrCreateSimple { viewModelStore }
+        viewModelStore = anyComponentContext.instanceKeeper.getOrCreateSimple { viewModelStore },
+        snackController = SnackController(anyComponentContext),
     )
 }
 
 @Immutable
-class NavigationRoot {
+class NavigationRoot(val snackController: SnackController) {
     val overlays = mutableStateListOf<@Composable () -> Unit>()
     @Composable
     fun overlay(content: @Composable () -> Unit) {
@@ -54,7 +58,7 @@ val LocalNavigationRoot = staticCompositionLocalOf<NavigationRoot> {
 
 @Composable
 fun NavigationRoot(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {
-    with(remember { NavigationRoot() }) {
+    with(remember { NavigationRoot(navigationRootData.snackController) }) {
         CompositionLocalProvider(
             LocalNavControllerStore provides navigationRootData.navStore,
             LocalViewModelStore provides navigationRootData.viewModelStore,
@@ -64,6 +68,8 @@ fun NavigationRoot(navigationRootData: NavigationRootData, content: @Composable 
                 content()
 
                 overlays.forEach { it() }
+
+                SnackHost()
             }
         )
     }

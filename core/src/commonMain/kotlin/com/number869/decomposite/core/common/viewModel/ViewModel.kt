@@ -13,7 +13,7 @@ import kotlinx.coroutines.cancelChildren
 
 @Stable
 @Composable
-inline fun <reified T : ViewModel> getExistingViewModelInstance(key: String = ""): T {
+inline fun <reified T : ViewModel> getExistingViewModel(key: String = ""): T {
     val viewModelStore = LocalViewModelStore.current
     val viewModelKey = key + T::class.toString()
     val vm = remember(viewModelKey) { viewModelStore.get<T>(viewModelKey) }

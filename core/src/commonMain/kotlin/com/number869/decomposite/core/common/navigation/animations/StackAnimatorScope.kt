@@ -2,10 +2,6 @@ package com.number869.decomposite.core.common.navigation.animations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import com.number869.decomposite.core.common.ultils.BackGestureEvent
 import com.number869.decomposite.core.common.ultils.rememberRetained
@@ -41,15 +37,17 @@ class StackAnimatorScope<C : Any>(val key: String?) {
     }
 
     suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) = coroutineScope {
-        animationDataRegistry.forEach { (configuration, animationData) ->
-            val prerequisites = childAnimPrerequisites[configuration] ?: ChildAnimPrerequisites(
-                allowAnimation = false,
-                inStack = false
-            )
+        kotlin.runCatching {
+            animationDataRegistry.forEach { (configuration, animationData) ->
+                val prerequisites = childAnimPrerequisites[configuration] ?: ChildAnimPrerequisites(
+                    allowAnimation = false,
+                    inStack = false
+                )
 
-            if (prerequisites.inStack && prerequisites.allowAnimation) {
-                animationData.scopes.forEach { (_, scope) ->
-                    launch { scope.onBackGesture(backGestureData) }
+                if (prerequisites.inStack && prerequisites.allowAnimation) {
+                    animationData.scopes.forEach { (_, scope) ->
+                        launch {  scope.onBackGesture(backGestureData) }
+                    }
                 }
             }
         }
@@ -64,11 +62,12 @@ class StackAnimatorScope<C : Any>(val key: String?) {
     }
 }
 
+@Immutable
 data class AnimationData(
-    val scopes: SnapshotStateMap<String, ContentAnimatorScope>,
-    val modifiers: SnapshotStateList<Modifier>,
-    val renderUntils: SnapshotStateList<Int>,
-    val requireVisibilityInBackstacks: SnapshotStateList<Boolean>,
+    val scopes: Map<String, ContentAnimatorScope>,
+    val modifiers: List<Modifier>,
+    val renderUntils: List<Int>,
+    val requireVisibilityInBackstacks: List<Boolean>,
 )
 
 data class ChildAnimPrerequisites(
@@ -90,10 +89,10 @@ class AnimationDataRegistry<C : Any> {
         val existingData = animationData[key]
         if (existingData != null) {
             // if we have existing data, update it
-            val updatedScopes = mutableStateMapOf<String, ContentAnimatorScope>()
-            val updatedModifiers = mutableStateListOf<Modifier>()
-            val updatedRenderUntils = mutableStateListOf<Int>()
-            val updatedRequireVisibilityInBackstacks = mutableStateListOf<Boolean>()
+            val updatedScopes = mutableMapOf<String, ContentAnimatorScope>()
+            val updatedModifiers = mutableListOf<Modifier>()
+            val updatedRenderUntils = mutableListOf<Int>()
+            val updatedRequireVisibilityInBackstacks = mutableListOf<Boolean>()
 
             source.items.forEach { animator ->
                 // get existing or create the scope for this animator
@@ -107,23 +106,21 @@ class AnimationDataRegistry<C : Any> {
                 updatedRequireVisibilityInBackstacks.add(animator.requireVisibilityInBackstack)
             }
 
-            // clear (to make sure old data gets removed) and put updated data
-            existingData.scopes.clear()
-            existingData.scopes.putAll(updatedScopes)
-            existingData.modifiers.clear()
-            existingData.modifiers.addAll(updatedModifiers)
-            existingData.renderUntils.clear()
-            existingData.renderUntils.addAll(updatedRenderUntils)
-            existingData.requireVisibilityInBackstacks.clear()
-            existingData.requireVisibilityInBackstacks.addAll(updatedRequireVisibilityInBackstacks)
+            val newData = AnimationData(
+                updatedScopes,
+                updatedModifiers,
+                updatedRenderUntils,
+                updatedRequireVisibilityInBackstacks
+            )
+            animationData[key] = newData
 
-            return existingData
+            return newData
         } else {
             // if we don't have existing data, create a new one
-            val scopes = mutableStateMapOf<String, ContentAnimatorScope>()
-            val modifiers = mutableStateListOf<Modifier>()
-            val renderUntils = mutableStateListOf<Int>()
-            val requireVisibilityInBackstacks = mutableStateListOf<Boolean>()
+            val scopes = mutableMapOf<String, ContentAnimatorScope>()
+            val modifiers = mutableListOf<Modifier>()
+            val renderUntils = mutableListOf<Int>()
+            val requireVisibilityInBackstacks = mutableListOf<Boolean>()
 
             source.items.forEach { animator ->
                 val scopeKey = Pair(key, animator.key)
@@ -131,6 +128,7 @@ class AnimationDataRegistry<C : Any> {
                     animator.animatorScopeFactory(initialIndex, initialIndexFromTop)
                 }
                 scopes[animator.key] = scope
+                @Suppress("UNCHECKED_CAST") // because it's never Nothing.()
                 modifiers.add((animator.animationModifier as ContentAnimatorScope.() -> Modifier).invoke(scope))
                 renderUntils.add(animator.renderUntil)
                 requireVisibilityInBackstacks.add(animator.requireVisibilityInBackstack)

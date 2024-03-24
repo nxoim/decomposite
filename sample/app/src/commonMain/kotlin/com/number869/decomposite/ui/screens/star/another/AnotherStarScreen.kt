@@ -13,7 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.number869.decomposite.core.common.navigation.getExistingNavControllerInstance
+import com.number869.decomposite.core.common.navigation.getExistingNavController
+import com.number869.decomposite.core.common.navigation.snacks.snackController
 import com.number869.decomposite.core.common.ultils.ContentType
 import com.number869.decomposite.core.common.ultils.LocalContentType
 import com.number869.decomposite.ui.screens.star.StarDestinations
@@ -22,7 +23,8 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun AnotherStarScreen() {
     val contentType = LocalContentType.current
-    val navController = getExistingNavControllerInstance<StarDestinations>()
+    val navController = getExistingNavController<StarDestinations>()
+    val snackController = snackController()
 
     Surface {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -41,7 +43,7 @@ fun AnotherStarScreen() {
     }
 
     LaunchedEffect(Unit) {
-        if (contentType == ContentType.Overlay) navController.openInSnack(
+        if (contentType == ContentType.Overlay) snackController.display(
             "noStarScreenSnack",
             displayDurationMillis = 2L.seconds
         ) {

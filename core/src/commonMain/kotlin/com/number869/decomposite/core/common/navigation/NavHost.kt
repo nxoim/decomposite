@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.router.stack.items
 import com.number869.decomposite.core.common.navigation.animations.*
 import com.number869.decomposite.core.common.ultils.*
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
 /**
@@ -54,6 +55,7 @@ inline fun <reified C : Any> NavHost(
                 stackAnimatorScope = overlayStackAnimatorScope,
                 onBackstackChange = { empty ->
                     handlingGesturesInOverlay = !empty
+                    if (empty) coroutineScope.coroutineContext.cancelChildren()
                     backHandlerEnabled = if (empty)
                         startingNavControllerInstance.screenStack.items.size > 1
                     else
@@ -69,28 +71,6 @@ inline fun <reified C : Any> NavHost(
                 }
             )
         }
-
-        // snacks don't need to be aware of gestures
-        StackAnimator(
-            stackValue = ImmutableThingHolder(startingNavControllerInstance.snackStack),
-            stackAnimatorScope = rememberStackAnimatorScope("${C::class.simpleName} snack content"),
-            onBackstackChange = {},
-            animations = {
-                startingNavControllerInstance.animationsForDestinations[currentChild] ?: emptyAnimation()
-            },
-            content = {
-                CompositionLocalProvider(
-                    LocalComponentContext provides it.instance.componentContext,
-                    content = {
-                        startingNavControllerInstance.contentOfSnacks[it.configuration]?.invoke()
-
-                        DisposableEffect(it) {
-                            onDispose { startingNavControllerInstance.removeSnackContents(it.configuration) }
-                        }
-                    }
-                )
-            }
-        )
     }
 
     BackGestureHandler(
