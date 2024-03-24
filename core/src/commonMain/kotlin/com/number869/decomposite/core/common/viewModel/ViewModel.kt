@@ -39,7 +39,39 @@ inline fun <reified T : ViewModel> viewModel(key: String = "", crossinline viewM
         viewModelStore.getOrCreateViewModel(viewModelKey, viewModel)
     }
 
-    OnDestinationDisposeEffect(T::class.toString() + "ViewModel") {
+    // because of getOrCreate inside OnDestinationDisposeEffect - only the first created
+    // instance of it is active
+    OnDestinationDisposeEffect(
+        T::class.toString() + "ViewModel",
+        waitForCompositionRemoval = true
+    ) {
+        vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
+    }
+
+    return vm
+}
+
+@Stable
+@Composable
+inline fun <reified T : ViewModel> prepareLazyViewModel(key: String = "", noinline viewModel: () -> T) {
+    val viewModelStore = LocalViewModelStore.current
+    val viewModelKey = key + T::class.toString()
+    remember(viewModelKey) { viewModelStore.prepareLazyViewModel(viewModelKey, viewModel) }
+}
+
+@Stable
+@Composable
+inline fun <reified T : ViewModel> getLazyViewModel(key: String = ""): T {
+    val viewModelStore = LocalViewModelStore.current
+    val viewModelKey = key + T::class.toString()
+    val vm = remember(viewModelKey) { viewModelStore.getLazyViewModel<T>(viewModelKey) }
+
+    // because of getOrCreate inside OnDestinationDisposeEffect - only the first created
+    // instance of it is active
+    OnDestinationDisposeEffect(
+        T::class.toString() + "ViewModel",
+        waitForCompositionRemoval = true
+    ) {
         vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
     }
 
