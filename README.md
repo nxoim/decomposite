@@ -20,9 +20,9 @@ Uhm...
 - Automatically create navigation controller instances upon the creation of nav hosts that are retrievable by just calling navController, again, kind of like view models
 
 # Examples/Getting Started
-In your version catalog add the "com.github.Number869.Decomposite:decomposite:preferredVersion" artifact. In your toml file that would be:
+In your version catalog add the "com.github.nxoim.Decomposite:decomposite:preferredVersion" artifact. In your toml file that would be:
 ```
-decomposite = { group = "com.github.number869.decomposite", name = "decomposite", version.ref = "version" }
+decomposite = { group = "com.github.nxoim.decomposite", name = "decomposite", version.ref = "version" }
 ```
 
 First you have to set up the app by creating a root of the app. This root sets up stores for view models and nav controllers, overlay stuff, and provides the root component context.
