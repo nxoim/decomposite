@@ -6,33 +6,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PanoramaVertical
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.NavHost
-import com.nxoim.decomposite.core.common.navigation.NavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.ui.screens.heart.HeartNavHost
 import com.nxoim.decomposite.ui.screens.star.StarNavHost
 import com.nxoim.decomposite.ui.screens.tikitoki.TikitokiScreen
-import com.nxoim.decomposite.ui.theme.SampleTheme
 import kotlinx.serialization.Serializable
-import org.koin.compose.getKoin
 
 
 @Composable
-fun App() {
-    SampleTheme {
-        Surface {
-            // because of material 3 quirks - surface wraps the root to fix text colors in overlays
-            NavigationRoot(navigationRootData = getKoin().get()) { RootNavHost() }
-        }
-    }
-}
+fun App() = RootNavHost()
 
 @Composable
 fun RootNavHost() {
