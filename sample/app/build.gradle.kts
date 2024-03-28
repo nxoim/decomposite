@@ -64,7 +64,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(project(":core"))
-            implementation(project(":optionalExtensions"))
         }
 
         commonTest.dependencies {
@@ -81,7 +80,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.android)
             implementation(project(":core"))
-            implementation(project(":optionalExtensions"))
         }
 
         jvmMain.dependencies {
@@ -95,14 +93,14 @@ kotlin {
 }
 
 android {
-    namespace = "com.number869.decomposite"
+    namespace = "com.nxoim.decomposite"
     compileSdk = 34
 
     defaultConfig {
         minSdk = 24
         targetSdk = 34
 
-        applicationId = "com.number869.decomposite.androidApp"
+        applicationId = "com.nxoim.decomposite.androidApp"
         versionCode = 1
         versionName = "1.0.0"
     }
@@ -137,7 +135,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
-            packageName = "com.number869.decomposite.desktopApp"
+            packageName = "com.nxoim.decomposite.desktopApp"
             packageVersion = "1.0.0"
         }
     }

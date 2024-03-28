@@ -32,7 +32,7 @@ kotlin {
         iosSimulatorArm64(),
     ).forEach { target ->
         target.binaries.framework {
-            baseName = "decomposite-core"
+            baseName = "decomposite"
         }
     }
 
@@ -61,7 +61,7 @@ kotlin {
 
 android {
     compileSdk = (findProperty("android.compileSdk") as String).toInt()
-    namespace = "com.number869.decomposite.core"
+    namespace = "com.nxoim.decomposite"
 
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     sourceSets["main"].res.srcDirs("src/androidMain/res")
@@ -84,12 +84,12 @@ mavenPublishing {
     // or when publishing to https://s01.oss.sonatype.org
 //    publishToMavenCentral(SonatypeHost.S01, automaticRelease = true)
 //    signAllPublications()
-    coordinates("com.number869", "decomposite-core", "0.0.1")
+    coordinates("com.nxoim", "decomposite", "0.0.1")
 
     pom {
         name.set(project.name)
 
-        url.set("https://github.com/Number869/Decomposite")
+        url.set("https://github.com/nxoim/Decomposite")
         licenses {
             license {
                 name.set("APACHE LICENSE, VERSION 2.0")
@@ -99,15 +99,15 @@ mavenPublishing {
         }
         developers {
             developer {
-                id.set("Number869")
-                name.set("Number 869")
-                url.set("https://github.com/Number869/")
+                id.set("nxoim")
+                name.set("nxoim")
+                url.set("https://github.com/nxoim/")
             }
         }
         scm {
-            url.set("https://github.com/Number869/Decomposite")
-            connection.set("scm:git:git://github.com/Number869/Decomposite.git")
-            developerConnection.set("scm:git:ssh://git@github.com/Number869/Decomposite.git")
+            url.set("https://github.com/nxoim/Decomposite")
+            connection.set("scm:git:git://github.com/nxoim/Decomposite.git")
+            developerConnection.set("scm:git:ssh://git@github.com/nxoim/Decomposite.git")
         }
     }
 }
