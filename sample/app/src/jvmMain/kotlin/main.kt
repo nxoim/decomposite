@@ -1,5 +1,7 @@
 
 import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
@@ -43,7 +45,8 @@ fun main() = application {
                 PredictiveBackGestureOverlay(
                     backDispatcher,
                     backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
-                    endEdgeEnabled = false, // disable swipes from the right side,
+                    endEdgeEnabled = false, // disable swipes from the right side
+                    edgeWidth = (window.size.width / LocalDensity.current.density).dp,
                     content = { NavigationRoot(navigationRootData) { App() } }
                 )
             }
