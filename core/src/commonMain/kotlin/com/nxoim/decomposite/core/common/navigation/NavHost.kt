@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 /**
  * Navigation Host.
  * [router] is where you declare the content of each destination.
- * [routedContent] is where the content is displayed, where you put your scaffold, maybe something else.
  */
+@NonRestartableComposable
 @Composable
 inline fun <reified C : Any> NavHost(
     startingNavControllerInstance: NavController<C>,
