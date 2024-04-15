@@ -1,3 +1,11 @@
+[![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
+
+![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
+![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
+![badge-iOS](https://img.shields.io/badge/Platform-iOS-lightgray)(?)
+![badge-macOS](https://img.shields.io/badge/Platform-macOS-purple)(?)
+(i dont have apple's devices) Some time in the future WASM/JS and maybe WASI.
+
 # What?
 Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, snack bars, custom extensions like animations, etc.
 
@@ -20,9 +28,9 @@ Uhm...
 - Automatically create navigation controller instances upon the creation of nav hosts that are retrievable by just calling navController, again, kind of like view models
 
 # Examples/Getting Started
-In your version catalog add the "com.github.nxoim.Decomposite:decomposite:preferredVersion" artifact. In your toml file that would be:
+In your version catalog add the "com.github.nxoim.decomposite:decomposite" artifact. In your toml file that would be:
 ```
-decomposite = { group = "com.github.nxoim.decomposite", name = "decomposite", version.ref = "version" }
+decomposite = { module = "com.github.nxoim.decomposite:decomposite", version.ref = "version" }
 ```
 
 First you have to set up the app by creating a root of the app. This root sets up stores for view models and nav controllers, overlay stuff, and provides the root component context.
@@ -34,14 +42,16 @@ class YourActivity : ComponentActivity() {
     	super.onCreate(savedInstanceState)
 
         // default component context is included with the decompose library
-        val navigationRootData = navigationRootData(defaultComponentContext())
+        val navigationRootData = NavigationRootData(defaultComponentContext())
 
         setContent {
-            NavigationRoot(navigationRootData) { YourContent() }
+            NavigationRootProvider(navigationRootData) { YourContent() }
         }
     }
 }
 ```
+
+Check out [the android sample](https://github.com/nxoim/decomposite/blob/update/sample/app/src/androidMain/kotlin/com/nxoim/decomposite/App.android.kt) if you want predictive gesture animations application-wide and on older androids. 
 
 On everything else:
 ```kotlin
@@ -124,7 +134,7 @@ Back gestures on other platforms:
 fun main() = application {
     // initialize these at some root
     val backDispatcher = BackDispatcher()
-    val navigationRootData = navigationRootDataProvider(
+    val navigationRootData = NavigationRootData(
         DefaultComponentContext(LifecycleRegistry(), backHandler = backDispatcher)
     )
 
@@ -151,7 +161,7 @@ fun main() = application {
                     backDispatcher,
                     backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
                     endEdgeEnabled = false, // disable swipes from the right side,
-                    content = { NavigationRoot(navigationRootData) { App() } }
+                    content = { NavigationRootProvider(navigationRootData) { App() } }
                 )
             }
         }
