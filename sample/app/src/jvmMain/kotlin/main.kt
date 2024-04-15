@@ -10,8 +10,8 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.nxoim.decomposite.App
-import com.nxoim.decomposite.core.common.navigation.NavigationRoot
-import com.nxoim.decomposite.core.common.navigation.navigationRootDataProvider
+import com.nxoim.decomposite.core.common.navigation.NavigationRootData
+import com.nxoim.decomposite.core.common.navigation.NavigationRootProvider
 import com.nxoim.decomposite.ui.theme.SampleTheme
 import java.awt.Dimension
 
@@ -19,7 +19,7 @@ import java.awt.Dimension
 fun main() = application {
     // initialize these at some root
     val backDispatcher = BackDispatcher()
-    val navigationRootData = navigationRootDataProvider(
+    val navigationRootData = NavigationRootData(
         DefaultComponentContext(LifecycleRegistry(), backHandler = backDispatcher)
     )
 
@@ -47,7 +47,7 @@ fun main() = application {
                     backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
                     endEdgeEnabled = false, // disable swipes from the right side
                     edgeWidth = (window.size.width / LocalDensity.current.density).dp,
-                    content = { NavigationRoot(navigationRootData) { App() } }
+                    content = { NavigationRootProvider(navigationRootData) { App() } }
                 )
             }
         }

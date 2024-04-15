@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
  * [animationSpec] is still used for the gesture cancellation animation
  */
 @OptIn(InternalDecomposeApi::class)
-fun materialContainerMorphContentAnimator(
+internal fun materialContainerMorphContentAnimator(
     animationSpec: AnimationSpec<Float> = softSpring(),
     renderUntil: Int = 1,
     requireVisibilityInBackstack: Boolean = false,
@@ -45,7 +45,7 @@ fun materialContainerMorphContentAnimator(
     )
 )
 
-class MaterialContainerMorphContentAnimatorScope (
+internal class MaterialContainerMorphContentAnimatorScope (
     initialIndex: Int,
     initialIndexFromTop: Int,
     private val animationSpec: AnimationSpec<Float>,
