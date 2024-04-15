@@ -3,6 +3,7 @@ package com.nxoim.decomposite.core.common.navigation.animations
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.coroutines.coroutineScope

@@ -1,6 +1,5 @@
 package com.nxoim.decomposite
 
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -15,7 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.NavHost
-import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
+import com.nxoim.decomposite.core.common.navigation.animations.materialContainerMorph
 import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.ui.screens.heart.HeartNavHost
@@ -35,12 +34,7 @@ fun RootNavHost() {
         NavHost<RootDestinations>(
             rootNavController,
             Modifier.padding(scaffoldPadding),
-            animations = {
-                cleanSlideAndFade(
-                    orientation = Orientation.Vertical,
-                    targetOffsetDp = -16
-                )
-            }
+            animations = { materialContainerMorph() }
         ) {
             when (it) { // nested
                 RootDestinations.Star -> StarNavHost()

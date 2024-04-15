@@ -4,11 +4,14 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import com.arkivanov.essenty.backhandler.BackEvent
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.materialContainerMorphContentAnimator
 
 fun softSpring() = spring(1.8f, 2500f, 0.0005f)
 
@@ -37,10 +40,12 @@ fun scale(
     animationSpec: AnimationSpec<Float> = softSpring(),
     minimumScale: Float = 0.9f,
     renderUntil: Int = Int.MAX_VALUE,
+    affectByGestures: Boolean = true,
     requireVisibilityInBackstack: Boolean = false
 ) = contentAnimator(animationSpec, renderUntil, requireVisibilityInBackstack) {
     Modifier.graphicsLayer {
-        val scale = (gestureAnimationProgress - (minimumScale * gestureAnimationProgress)).let {
+        val progress = if (affectByGestures) gestureAnimationProgress else animationProgress
+        val scale = (progress - (minimumScale * progress)).let {
             1f + (-it * it)
         }
 
@@ -103,6 +108,37 @@ fun cleanSlideAndFade(
     targetOffsetDp = targetOffsetDp,
     animationSpec = animationSpec
 )
+
+fun AnimatorChildrenConfigurations<*>.materialContainerMorph(
+    sharedElementModifier: Modifier = Modifier,
+    fallbackCornerRadiusDp: Int = 16,
+) = materialContainerMorphContentAnimator {
+    Modifier.then(sharedElementModifier)
+        .drawWithContent {
+            val color = Color.Black.copy((animationProgress * 0.2f).coerceIn(0f, 1f))
+            drawContent()
+            drawRect(color)
+        }
+        .graphicsLayer {
+            val backLayerScale = 1f - (0.025f * animationProgress).coerceIn(0f, 1f)
+            val frontScale = (gestureAnimationProgress.coerceAtMost(0f) * 0.1f)
+
+            val offsetX = ((((size.width / 20) - (8 * density)) * (-gestureAnimationProgress).coerceIn(0f, 1f)) - (1f - animationProgress)).let {
+                if (swipeEdge == BackEvent.SwipeEdge.LEFT) it else -it
+            }
+            val offsetY = (((swipeOffset.y / 20) - (8 * density)) * (-gestureAnimationProgress).coerceIn(0f, 1f)) * (1f - animationProgress)
+
+            scaleX = backLayerScale + frontScale
+            scaleY = backLayerScale + frontScale
+
+            translationX = offsetX
+            translationY = offsetY
+
+            clip = true
+            val radius = (fallbackCornerRadiusDp * density) * (-gestureAnimationProgress).coerceIn(0f, 1f)
+            shape = RoundedCornerShape(radius)
+        }
+}
 
 
 

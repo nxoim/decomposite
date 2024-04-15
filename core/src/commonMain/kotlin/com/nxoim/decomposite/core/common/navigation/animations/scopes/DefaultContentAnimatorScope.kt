@@ -1,24 +1,51 @@
-package com.nxoim.decomposite.core.common.navigation.animations
+package com.nxoim.decomposite.core.common.navigation.animations.scopes
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import com.arkivanov.decompose.InternalDecomposeApi
+import com.arkivanov.decompose.hashString
 import com.arkivanov.essenty.backhandler.BackEvent
+import com.nxoim.decomposite.core.common.navigation.animations.*
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-interface ContentAnimatorScope {
-    val indexFromTop: Int
-    val index: Int
-    val animationStatus: AnimationStatus
-
-    suspend fun onBackGesture(backGesture: BackGestureEvent): Any
-    suspend fun update(newIndex: Int, newIndexFromTop: Int, animate: Boolean = true)
-}
+/**
+ * [renderUntil] Controls content rendering based on it's position in the stack and animation state.
+ * Content at or above [renderUntil] is always rendered if it's the item is index 0 or -1 (top or outside).
+ *
+ * If [requireVisibilityInBackstack] is false (which is by default) - the top and outside items
+ * are rendered at all times while the backstack items are only rendered if they're being animated.
+ *
+ * If [requireVisibilityInBackstack] is set to false - will be visible even when it's not animated
+ * (note that if you're combining animations, like fade() + scale(), if one of them has [requireVisibilityInBackstack]
+ * set to false - ALL items will be visible while in backstack as if all animations have [requireVisibilityInBackstack]
+ * set to true).
+ */
+@OptIn(InternalDecomposeApi::class)
+fun contentAnimator(
+    animationSpec: AnimationSpec<Float> = softSpring(),
+    renderUntil: Int = 1,
+    requireVisibilityInBackstack: Boolean = false,
+    block: DefaultContentAnimatorScope.() -> Modifier
+) = ContentAnimations(
+    listOf(
+        ContentAnimator(
+            key = animationSpec.hashString() + "DefaultContentAnimator", // 1 instance per animation spec
+            renderUntil = renderUntil,
+            requireVisibilityInBackstack = requireVisibilityInBackstack,
+            animatorScopeFactory = { initialIndex, initialIndexFromTop ->
+                DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, animationSpec)
+            },
+            animationModifier = block
+        )
+    )
+)
 
 @Immutable
 class DefaultContentAnimatorScope(
@@ -208,4 +235,3 @@ class DefaultContentAnimatorScope(
         }
     }
 }
-
