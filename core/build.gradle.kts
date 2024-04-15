@@ -48,6 +48,8 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
+                implementation(libs.androidx.appcompat)
+                implementation(libs.decompose.extensions)
             }
         }
 
