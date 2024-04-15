@@ -115,7 +115,7 @@ fun DestinationAnimationsConfiguratorScope<*>.materialContainerMorph(
     sharedElementModifier: Modifier = Modifier,
     fallbackCornerRadiusDp: Int = 16,
 ) = materialContainerMorphContentAnimator {
-    Modifier.then(sharedElementModifier)
+    sharedElementModifier
         .drawWithContent {
             val color = Color.Black.copy((animationProgress * 0.2f).coerceIn(0f, 1f))
             drawContent()
