@@ -34,7 +34,7 @@ fun RootNavHost() {
     Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
         NavHost<RootDestinations>(
             rootNavController,
-            Modifier.padding(scaffoldPadding),
+            Modifier.padding(bottom = scaffoldPadding.calculateBottomPadding()),
             animations = {
                 cleanSlideAndFade(
                     orientation = Orientation.Vertical,
