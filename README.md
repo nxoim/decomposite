@@ -132,11 +132,9 @@ Back gestures on other platforms:
 ```kotlin
 // this is for jvm
 fun main() = application {
-    // initialize these at some root
-    val backDispatcher = BackDispatcher()
+    // initialize this at the root of your app
     val navigationRootData = NavigationRootData(
-        DefaultComponentContext(LifecycleRegistry(), backHandler = backDispatcher)
-    )
+        DefaultComponentContext(LifecycleRegistry())
 
     Window(
         title = "Decomposite",
@@ -157,14 +155,18 @@ fun main() = application {
                 // then initialize the back gesture overlay that will handle the back gestures.
                 // initialize it first, put NavigationRoot inside it, else overlays will not 
                 // detect the gestures
-                PredictiveBackGestureOverlay(
-                    backDispatcher,
-                    backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
-                    endEdgeEnabled = false, // disable swipes from the right side,
+                BackGestureProviderContainer(
+                    navigationRootData.defaultComponentContext.backHandler,
+                    endEdgeEnabled = true, // enables swipes from the right side,
                     content = { NavigationRootProvider(navigationRootData) { App() } }
                 )
             }
         }
     }
 }
+```
+
+Or you can apply a modifier to the content you want to handle the back gestures, like:
+```kotlin
+ExamoleComposable(Modifier.backGestureProvider(LocalBackHandler.current))
 ```
