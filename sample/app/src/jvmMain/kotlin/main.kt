@@ -6,10 +6,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.PredictiveBackGestureOverlay
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.nxoim.decomposite.App
+import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.common.navigation.NavigationRootProvider
 import com.nxoim.decomposite.ui.theme.SampleTheme
@@ -42,10 +42,8 @@ fun main() = application {
                 // then initialize the back gesture overlay that will handle the back gestures.
                 // initialize it first, put NavigationRoot inside it, else overlays will not
                 // detect the gestures
-                PredictiveBackGestureOverlay(
+                BackGestureProviderContainer(
                     backDispatcher,
-                    backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
-                    endEdgeEnabled = false, // disable swipes from the right side
                     edgeWidth = (window.size.width / LocalDensity.current.density).dp,
                     content = { NavigationRootProvider(navigationRootData) { App() } }
                 )

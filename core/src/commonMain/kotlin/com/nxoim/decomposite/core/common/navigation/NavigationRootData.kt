@@ -3,12 +3,15 @@ package com.nxoim.decomposite.core.common.navigation
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalDensity
+import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import com.nxoim.decomposite.core.common.navigation.snacks.SnackController
 import com.nxoim.decomposite.core.common.navigation.snacks.SnackHost
+import com.nxoim.decomposite.core.common.ultils.LocalBackDispatcher
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import com.nxoim.decomposite.core.common.ultils.ScreenShape
@@ -23,7 +26,7 @@ import kotlin.math.roundToInt
  */
 @Immutable
 data class NavigationRootData(
-    val defaultComponentContext: DefaultComponentContext = DefaultComponentContext(
+    val defaultComponentContext: ComponentContext = DefaultComponentContext(
         LifecycleRegistry(),
         StateKeeperDispatcher(savedState = null)
     ),
@@ -59,6 +62,9 @@ internal fun CommonNavigationRootProvider(
     LocalViewModelStore provides navigationRootData.viewModelStore,
     LocalComponentContext provides navigationRootData.defaultComponentContext,
     LocalNavigationRoot provides navigationRoot,
+    LocalBackDispatcher provides navigationRootData
+        .defaultComponentContext
+        .backHandler as BackDispatcher,
     content = {
         content()
 
