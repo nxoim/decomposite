@@ -168,5 +168,5 @@ fun main() = application {
 
 Or you can apply a modifier to the content you want to handle the back gestures, like:
 ```kotlin
-ExamoleComposable(Modifier.backGestureProvider(LocalBackHandler.current))
+ExampleComposable(Modifier.backGestureProvider(LocalBackDispatcher.current))
 ```
