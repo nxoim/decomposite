@@ -56,7 +56,7 @@ Check out [the android sample](https://github.com/nxoim/decomposite/blob/update/
 On everything else:
 ```kotlin
 // inside any composable at the root
-NavigationRoot(navigationRootData()) { YourContent() }
+NavigationRootProvider(NavigationRootData()) { YourContent() }
 ```
 
 Navigation host creation:
