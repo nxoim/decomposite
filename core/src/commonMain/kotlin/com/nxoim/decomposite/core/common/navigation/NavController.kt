@@ -197,12 +197,12 @@ class NavController<C : Any>(
      * Replaces all destinations with the provided one.
      */
     fun replaceAll(
-        destination: C,
+        vararg destination: C,
         type: ContentType = ContentType.Contained,
         onComplete: () -> Unit = {}
     ) = when (type) {
-        ContentType.Contained -> screenNavigation.replaceAll(destination) { onComplete() }
-        ContentType.Overlay -> overlayNavigation.replaceAll(destination) { onComplete() }
+        ContentType.Contained -> screenNavigation.replaceAll(*destination) { onComplete() }
+        ContentType.Overlay -> overlayNavigation.replaceAll(*destination) { onComplete() }
     }
 }
 
