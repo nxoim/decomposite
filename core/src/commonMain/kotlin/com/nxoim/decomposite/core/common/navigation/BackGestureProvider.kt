@@ -13,12 +13,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackCallback
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.arkivanov.essenty.backhandler.BackEvent.SwipeEdge
-import com.arkivanov.essenty.backhandler.BackHandler
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 @ExperimentalDecomposeApi
 @Composable
 fun BackGestureProviderContainer(
-    backHandler: BackHandler,
+    defaultComponentContext: DefaultComponentContext,
     modifier: Modifier = Modifier,
     startEdgeEnabled: Boolean = true,
     endEdgeEnabled: Boolean = false,
@@ -58,7 +58,7 @@ fun BackGestureProviderContainer(
 
     Box(
         modifier = modifier.backGestureProvider(
-            backDispatcher = backHandler as BackDispatcher,
+            backDispatcher = defaultComponentContext.backHandler as BackDispatcher,
             leftEdgeEnabled = when (layoutDirection) {
                 LayoutDirection.Ltr -> startEdgeEnabled
                 LayoutDirection.Rtl -> endEdgeEnabled
@@ -76,10 +76,10 @@ fun BackGestureProviderContainer(
         content()
     }
 
-    DisposableEffect(backHandler) {
+    DisposableEffect(defaultComponentContext.backHandler) {
         val callback = BackCallback(priority = BackCallback.PRIORITY_MIN, onBack = {  })
-        backHandler.register(callback)
-        onDispose { backHandler.unregister(callback) }
+        defaultComponentContext.backHandler.register(callback)
+        onDispose { defaultComponentContext.backHandler.unregister(callback) }
     }
 }
 

@@ -3,7 +3,6 @@ package com.nxoim.decomposite.core.common.navigation
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalDensity
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
@@ -26,7 +25,7 @@ import kotlin.math.roundToInt
  */
 @Immutable
 data class NavigationRootData(
-    val defaultComponentContext: ComponentContext = DefaultComponentContext(
+    val defaultComponentContext: DefaultComponentContext = DefaultComponentContext(
         LifecycleRegistry(),
         StateKeeperDispatcher(savedState = null)
     ),

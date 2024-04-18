@@ -24,7 +24,7 @@ class AppActivity : ComponentActivity() {
             SampleTheme {
                 Surface {
                     BackGestureProviderContainer(
-                        navigationRootData.defaultComponentContext.backHandler,
+                        navigationRootData.defaultComponentContext,
                         edgeWidth = null
                     ) {
                         NavigationRootProvider(navigationRootData) { App() }

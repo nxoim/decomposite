@@ -6,7 +6,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.nxoim.decomposite.App
 import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
@@ -17,11 +16,8 @@ import java.awt.Dimension
 
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
-    // initialize these at some root
-    val backDispatcher = BackDispatcher()
-    val navigationRootData = NavigationRootData(
-        DefaultComponentContext(LifecycleRegistry(), backHandler = backDispatcher)
-    )
+    // initialize this at the root of your app
+    val navigationRootData = NavigationRootData(DefaultComponentContext(LifecycleRegistry()))
 
     Window(
         title = "Decomposite",
@@ -43,7 +39,7 @@ fun main() = application {
                 // initialize it first, put NavigationRoot inside it, else overlays will not
                 // detect the gestures
                 BackGestureProviderContainer(
-                    backDispatcher,
+                    navigationRootData.defaultComponentContext,
                     edgeWidth = (window.size.width / LocalDensity.current.density).dp,
                     content = { NavigationRootProvider(navigationRootData) { App() } }
                 )
