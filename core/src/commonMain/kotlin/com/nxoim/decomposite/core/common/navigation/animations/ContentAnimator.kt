@@ -2,6 +2,7 @@ package com.nxoim.decomposite.core.common.navigation.animations
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import kotlin.jvm.JvmInline
@@ -31,3 +32,7 @@ data class ContentAnimator<T : ContentAnimatorScope>(
 inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAnimations(
     this.items + other.items
 )
+
+val LocalContentAnimator = staticCompositionLocalOf<DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations> {
+    { cleanSlideAndFade() }
+}

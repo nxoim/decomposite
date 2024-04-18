@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 inline fun <reified C : Any> NavHost(
     startingNavControllerInstance: NavController<C>,
     modifier: Modifier = Modifier,
-    noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations = { cleanSlideAndFade() },
+    noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
+        LocalContentAnimator.current,
     crossinline router: @Composable (child: C) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -42,6 +43,7 @@ inline fun <reified C : Any> NavHost(
             content = {
                 CompositionLocalProvider(
                     LocalComponentContext provides it.instance.componentContext,
+                    LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
                     content = { router(it.configuration) }
                 )
             }
@@ -66,6 +68,7 @@ inline fun <reified C : Any> NavHost(
                 content = {
                     CompositionLocalProvider(
                         LocalComponentContext provides it.instance.componentContext,
+                        LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
                         content = { router(it.configuration) }
                     )
                 }
