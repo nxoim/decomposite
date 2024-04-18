@@ -11,8 +11,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
@@ -55,7 +53,7 @@ fun RootNavHost() {
 @Composable
 fun GlobalSampleNavBar() {
     val navController = getExistingNavController<RootDestinations>()
-    val currentScreen by navController.currentScreen.collectAsState()
+    val currentScreen = navController.currentScreen
 
     NavigationBar {
         NavigationBarItem(

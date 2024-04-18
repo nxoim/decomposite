@@ -1,18 +1,12 @@
 package com.nxoim.decomposite.core.common.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.*
 import com.nxoim.decomposite.core.common.ultils.ContentType
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import com.nxoim.decomposite.core.common.ultils.activeAsState
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import kotlin.jvm.JvmInline
@@ -53,11 +47,6 @@ inline fun <reified C : Any> navController(
     }
 }
 
-//@Composable
-//inline fun <reified T : Any> navController(
-//    navStore: NavControllerStore = LocalNavControllerStore.current
-//) = remember { navStore.get<T>() }
-
 inline fun <reified T : Any> getNavController(navStore: NavControllerStore) = navStore.get<T>()
 
 @Immutable
@@ -72,8 +61,6 @@ class NavController<C : Any>(
         DefaultChildInstance(childComponentContext)
     }
 ) : ComponentContext by componentContext {
-    private val scope = MainScope()
-
     private val screenNavigation = StackNavigation<C>()
     private val overlayNavigation = StackNavigation<C>()
 
@@ -95,14 +82,7 @@ class NavController<C : Any>(
         childFactory = childFactory
     )
 
-    private val _currentScreen = MutableStateFlow(screenStack.active.configuration)
-    val currentScreen: StateFlow<C> get() = _currentScreen
-
-    init {
-        scope.launch {
-            screenStack.subscribe { _currentScreen.value = it.active.configuration }
-        }
-    }
+    val currentScreen by screenStack.activeAsState()
 
     fun navigate(
         destination: C,
