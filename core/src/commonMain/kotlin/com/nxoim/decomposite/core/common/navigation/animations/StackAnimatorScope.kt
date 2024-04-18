@@ -13,12 +13,19 @@ import kotlinx.coroutines.launch
 // it's important to use the local instance keeper rather than of the children's for the
 // scopes not to be recreated which is useful in case the exit animation of a config is
 // interrupted by the same config appearing in the stack again while the animation is running
+/**
+ * Creates a retained instance of a [StackAnimatorScope].
+ */
 @Composable
 fun <C : Any> rememberStackAnimatorScope(key: String? = null) = if (key.isNullOrEmpty())
     rememberRetained() { StackAnimatorScope<C>(key) }
 else
     rememberRetained("$key StackAnimatorScope") { StackAnimatorScope<C>(key) }
 
+/**
+ * Manages the children's animation state and modifiers. Creates instances of animator scopes
+ * avoiding duplicates.
+ */
 @Immutable
 class StackAnimatorScope<C : Any>(val key: String?) {
     val animationDataRegistry = AnimationDataRegistry<C>()
@@ -32,6 +39,10 @@ class StackAnimatorScope<C : Any>(val key: String?) {
         childAnimPrerequisites.remove(target)
     }
 
+    /**
+     * Removes stale animation data. Stale animation data is the data that was left over
+     * during a configuration change that is no longer used (no longer exists in the source stack)
+     */
     internal fun removeStaleAnimationDataCache(nonStale: List<C>) {
         val stale = childAnimPrerequisites.filter { it.key !in nonStale }.map { it.key }
         stale.forEach(::removeAnimationDataFromCache)

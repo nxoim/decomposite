@@ -20,6 +20,9 @@ import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlinx.coroutines.launch
 
+/**
+ * Animates the stack. Caches the children for the time of animation.
+ */
 @OptIn(InternalDecomposeApi::class)
 @Composable
 fun <C : Any, T : DecomposeChildInstance> StackAnimator(
@@ -192,6 +195,9 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 private fun <C : Any> childHolderKey(child: C) =
     child.hashString() + " StackAnimator SaveableStateHolder"
 
+/**
+ * Provides data helpful for the configuration of animations.
+ */
 data class DestinationAnimationsConfiguratorScope<C : Any>(
     val previousChild: C?,
     val currentChild: C,

@@ -10,7 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 
-
+/**
+ * Gets an existing view model instance. Does not manage the view model's lifecycle.
+ */
 @Stable
 @Composable
 inline fun <reified T : ViewModel> getExistingViewModel(key: String = ""): T {
@@ -51,6 +53,10 @@ inline fun <reified T : ViewModel> viewModel(key: String = "", crossinline viewM
     return vm
 }
 
+/**
+ * Prepares a simple lazy view model. A reference is saved in [ViewModelStore] which is
+ * later called by [getLazyViewModel]
+ */
 @Stable
 @Composable
 inline fun <reified T : ViewModel> prepareLazyViewModel(key: String = "", noinline viewModel: () -> T) {
@@ -59,6 +65,10 @@ inline fun <reified T : ViewModel> prepareLazyViewModel(key: String = "", noinli
     remember(viewModelKey) { viewModelStore.prepareLazyViewModel(viewModelKey, viewModel) }
 }
 
+/**
+ * Creates a view model instance using the prepared (by [prepareLazyViewModel]) reference
+ * if an instance does not exist. The first call of this manages the view model's lifecycle.
+ */
 @Stable
 @Composable
 inline fun <reified T : ViewModel> getLazyViewModel(key: String = ""): T {

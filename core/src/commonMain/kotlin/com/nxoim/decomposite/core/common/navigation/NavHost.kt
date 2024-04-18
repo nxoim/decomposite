@@ -10,8 +10,11 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
 /**
- * Navigation Host.
- * [router] is where you declare the content of each destination.
+ * Sets up stack animators for overlays and contained content and
+ * manages back gestures for the animations. Animations are passed down using
+ * [CompositionLocalProvider] for other navigation hosts to consume.
+ *
+ * [router] is a typical router where you declare the content of each destination.
  */
 @NonRestartableComposable
 @Composable

@@ -25,9 +25,9 @@ import kotlinx.coroutines.launch
 
 // based on PredictiveBackGestureOverlay from the decompose extensions
 /**
- * Handles back gestures on both edges of the screen and drives the provided [backHandler] accordingly.
+ * Handles back gestures on both edges of the screen and drives the provided [BackDispatcher] accordingly.
  *
- * @param backHandler [BackDispatcher] where callbacks should be registered.
+ * @param defaultComponentContext is used for getting the back dispatcher conveniently.
  * @param modifier a [Modifier] to applied to the overlay.
  * @param startEdgeEnabled controls whether the start edge is enabled or not,
  * left in LTR mode and right in RTL mode.
@@ -51,7 +51,7 @@ fun BackGestureProviderContainer(
     edgeWidth: Dp? = null,
     activationOffsetThreshold: Dp = 16.dp,
     progressConfirmationThreshold: Float = 0.2F,
-    velocityConfirmationThreshold: Dp = 8.dp,
+    velocityConfirmationThreshold: Dp = 4.dp,
     content: @Composable () -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -95,7 +95,7 @@ fun Modifier.backGestureProvider(
     edgeWidth: Dp? = null, // if null - use max size
     activationOffsetThreshold: Dp = 16.dp,
     progressConfirmationThreshold: Float = 0.2F,
-    velocityConfirmationThreshold: Dp = 8.dp,
+    velocityConfirmationThreshold: Dp = 4.dp,
 ) = pointerInput(backDispatcher, leftEdgeEnabled, rightEdgeEnabled) {
     val triggerWidth = edgeWidth?.let { it.value * density } ?: size.width.toFloat()
     var edge: SwipeEdge = SwipeEdge.UNKNOWN

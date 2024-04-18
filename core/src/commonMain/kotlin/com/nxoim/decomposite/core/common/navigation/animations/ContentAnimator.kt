@@ -7,14 +7,17 @@ import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import kotlin.jvm.JvmInline
 
+/**
+ * Contains all animations in a list.
+ */
 @JvmInline
 @Immutable
 value class ContentAnimations(val items: List<ContentAnimator<*>>)
 
 /**
- * Describes the animator and creates a scope. [key] is used to identify the scopes and
- * minimize their creation, as scopes with the same animator type and key will always have
- * 1 instance only.
+ * Describes the animator and creates a scope. [key] is used to identify the scopes in
+ * [StackAnimatorScope] and to minimize their creation, as scopes with the same animator type
+ * and key will always have 1a single instance.
  */
 @Immutable
 data class ContentAnimator<T : ContentAnimatorScope>(

@@ -8,6 +8,7 @@ import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
+import com.nxoim.decomposite.core.common.navigation.animations.materialContainerMorph
 import com.nxoim.decomposite.core.common.navigation.snacks.SnackController
 import com.nxoim.decomposite.core.common.navigation.snacks.SnackHost
 import com.nxoim.decomposite.core.common.ultils.LocalBackDispatcher
@@ -18,8 +19,13 @@ import com.nxoim.decomposite.core.common.viewModel.LocalViewModelStore
 import com.nxoim.decomposite.core.common.viewModel.ViewModelStore
 import kotlin.math.roundToInt
 
+
 /**
- * Initialize this outside of setContent in the activity and then just wrap the root of your
+ * Creates the root of the app for back gesture handling, snack content controller,
+ * storing view models, and navigation controller instances. View model store by default
+ * is wrapped into default component context's instance keeper.
+ *
+ * Initialize this outside of setContent in the activity, wrap the root of your
  * compose content ON YOUR PLATFORM (unless you provide default component context via
  * dependency injection) with [LocalNavControllerStore] so that the nav hosts can access it.
  */
@@ -36,6 +42,10 @@ data class NavigationRootData(
     val snackController: SnackController = SnackController(defaultComponentContext)
 )
 
+/**
+ * Sets up the navigation root. Is used for managing overlays and snack content. Contains
+ * information about the screen for some animations, like [materialContainerMorph].
+ */
 @Immutable
 class NavigationRoot(
     val snackController: SnackController,
@@ -50,6 +60,10 @@ class NavigationRoot(
     }
 }
 
+/**
+ * Provides navigation controller and view model stores, default component context, navigation
+ * root for overlays, and the back dispatcher vis [CompositionLocalProvider], displays overlays.
+ */
 @NonRestartableComposable
 @Composable
 internal fun CommonNavigationRootProvider(
@@ -73,6 +87,11 @@ internal fun CommonNavigationRootProvider(
     }
 )
 
+/**
+ * Fallback implementation of a navigation root provider. Uses BoxWithConstraints to provide
+ * the screen size, which is possibly incorrect on some platforms. Please use a platform
+ * implementation. You are welcome to open an issue or PR.
+ */
 @FallbackNavigationRootImplementation
 @NonRestartableComposable
 @Composable
@@ -95,6 +114,9 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
     }
 }
 
+/**
+ * Provides some data from the root of the app for displaying overlays and other things.
+ */
 val LocalNavigationRoot = staticCompositionLocalOf<NavigationRoot> {
     error("No NavigationRoot provided")
 }

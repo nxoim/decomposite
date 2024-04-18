@@ -17,6 +17,10 @@ import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import com.nxoim.decomposite.core.common.ultils.ScreenShape
 import com.nxoim.decomposite.core.common.ultils.ScreenShapeCorners
 
+/**
+ * Android specific navigation root provider. Collects the screen size and shape for animations.
+ * Uses [CommonNavigationRootProvider].
+ */
 @NonRestartableComposable
 @Composable
 fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {

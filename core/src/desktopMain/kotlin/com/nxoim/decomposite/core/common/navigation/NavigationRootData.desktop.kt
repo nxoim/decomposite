@@ -7,6 +7,10 @@ import androidx.compose.ui.window.FrameWindowScope
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import com.nxoim.decomposite.core.common.ultils.ScreenShape
 
+/**
+ * JVM specific navigation root provider. Collects the max window size for animations.
+ * Uses [CommonNavigationRootProvider].
+ */
 @NonRestartableComposable
 @Composable
 fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {

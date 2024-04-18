@@ -16,6 +16,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
+ * Creates an animation scope.
+ *
  * [renderUntil] Controls content rendering based on it's position in the stack and animation state.
  * Content at or above [renderUntil] is always rendered if it's the item is index 0 or -1 (top or outside).
  *

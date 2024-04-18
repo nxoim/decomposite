@@ -1,9 +1,16 @@
 package com.nxoim.decomposite.core.common.navigation.animations
 
+/**
+ * Base for the animation status. [animating] is used in the [StackAnimator] for managing content
+ * visibility so it's important to provide it correctly.
+ */
 interface AnimationStatus {
     val animating: Boolean
 }
 
+/**
+ * Default animation status implementation that allows for flexible management of the animation.
+ */
 data class DefaultAnimationStatus(
     val previousLocation: ItemLocation,
     val location: ItemLocation,

@@ -34,6 +34,9 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 inline fun snackController() = LocalNavigationRoot.current.snackController
 
+/**
+ * A separate decompose component for managing snack content.
+ */
 @Immutable
 class SnackController(componentContext: ComponentContext) : ComponentContext by componentContext {
     private val scope = MainScope()
@@ -58,6 +61,9 @@ class SnackController(componentContext: ComponentContext) : ComponentContext by 
         childFactory = { _, context -> DefaultChildInstance(context) }
     )
 
+    /**
+     * Dispatches snack content
+     */
     @OptIn(ExperimentalDecomposeApi::class)
     fun display(
         key: String,
@@ -80,11 +86,17 @@ class SnackController(componentContext: ComponentContext) : ComponentContext by 
         }
     }
 
+    /**
+     * Removes snack's data from the cache
+     */
     fun removeSnackContents(key: String) {
         contentOfSnacks.remove(key)
         animationsForDestinations.remove(key)
     }
 
+    /**
+     * Hides the snack content
+     */
     fun hide(key: String, onComplete: () -> Unit = { }) {
         val stackWithoutThisKeyAsArrayOfKeys = snackStack.backStack
             .filterNot { it.configuration == key }
@@ -94,6 +106,9 @@ class SnackController(componentContext: ComponentContext) : ComponentContext by 
         snackNavigation.replaceAll(*stackWithoutThisKeyAsArrayOfKeys) { onComplete() }
     }
 
+    /**
+     * Clears the snack content queue
+     */
     fun cleanQueue() {
         snackNavigation.replaceAll("empty")
         mutex.unlock()

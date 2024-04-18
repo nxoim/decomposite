@@ -3,6 +3,9 @@ package com.nxoim.decomposite.core.common.navigation
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 
+/**
+ * Simple store for navigation controllers.
+ */
 @Immutable
 class NavControllerStore() {
     val store = hashMapOf<String, Any>()
