@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animate
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -15,7 +14,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.essenty.backhandler.BackCallback
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.arkivanov.essenty.backhandler.BackEvent.SwipeEdge
@@ -54,11 +52,12 @@ fun BackGestureProviderContainer(
     velocityConfirmationThreshold: Dp = 4.dp,
     content: @Composable () -> Unit,
 ) {
+    val backDispatcher = defaultComponentContext.backHandler as BackDispatcher
     val layoutDirection = LocalLayoutDirection.current
 
     Box(
         modifier = modifier.backGestureProvider(
-            backDispatcher = defaultComponentContext.backHandler as BackDispatcher,
+            backDispatcher = backDispatcher,
             leftEdgeEnabled = when (layoutDirection) {
                 LayoutDirection.Ltr -> startEdgeEnabled
                 LayoutDirection.Rtl -> endEdgeEnabled
@@ -74,12 +73,6 @@ fun BackGestureProviderContainer(
         )
     ) {
         content()
-    }
-
-    DisposableEffect(defaultComponentContext.backHandler) {
-        val callback = BackCallback(priority = BackCallback.PRIORITY_MIN, onBack = {  })
-        defaultComponentContext.backHandler.register(callback)
-        onDispose { defaultComponentContext.backHandler.unregister(callback) }
     }
 }
 

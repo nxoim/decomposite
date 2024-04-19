@@ -4,12 +4,14 @@ import android.app.Activity
 import android.os.Build
 import android.view.RoundedCorner
 import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
+import com.arkivanov.decompose.defaultComponentContext
 import com.nxoim.decomposite.core.common.navigation.CommonNavigationRootProvider
 import com.nxoim.decomposite.core.common.navigation.NavigationRoot
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
@@ -66,3 +68,10 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
         content
     )
 }
+
+/**
+ * Creates a default platform-specific instance of [NavigationRootData].
+ *
+ * Initialize this outside of setContent and provide to [NavigationRootProvider].
+ */
+fun ComponentActivity.defaultNavigationRootData() = NavigationRootData(defaultComponentContext())

@@ -4,20 +4,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.nxoim.decomposite.App
 import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
-import com.nxoim.decomposite.core.common.navigation.NavigationRootData
-import com.nxoim.decomposite.core.common.navigation.NavigationRootProvider
+import com.nxoim.decomposite.core.jvm.navigation.NavigationRootProvider
+import com.nxoim.decomposite.core.jvm.navigation.defaultNavigationRootData
 import com.nxoim.decomposite.ui.theme.SampleTheme
 import java.awt.Dimension
 
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
     // initialize this at the root of your app
-    val navigationRootData = NavigationRootData(DefaultComponentContext(LifecycleRegistry()))
+    val navigationRootData = defaultNavigationRootData()
 
     Window(
         title = "Decomposite",

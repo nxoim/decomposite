@@ -25,9 +25,7 @@ import kotlin.math.roundToInt
  * storing view models, and navigation controller instances. View model store by default
  * is wrapped into default component context's instance keeper.
  *
- * Initialize this outside of setContent in the activity, wrap the root of your
- * compose content ON YOUR PLATFORM (unless you provide default component context via
- * dependency injection) with [LocalNavControllerStore] so that the nav hosts can access it.
+ * Initialize this outside of setContent.
  */
 @Immutable
 data class NavigationRootData(
