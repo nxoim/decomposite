@@ -1,13 +1,14 @@
 package com.nxoim.decomposite.core.common.navigation
 
 import androidx.compose.animation.core.animate
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -39,24 +40,25 @@ import kotlinx.coroutines.launch
  * reaching the threshold.
  * @param content a content to be shown under the overlay.
  */
-@ExperimentalDecomposeApi
 @Composable
+@ExperimentalDecomposeApi
 fun BackGestureProviderContainer(
     defaultComponentContext: DefaultComponentContext,
     modifier: Modifier = Modifier,
     startEdgeEnabled: Boolean = true,
     endEdgeEnabled: Boolean = false,
-    edgeWidth: Dp? = null,
-    activationOffsetThreshold: Dp = 16.dp,
+    edgeWidth: Dp? = 16.dp,
+    activationOffsetThreshold: Dp = 4.dp,
     progressConfirmationThreshold: Float = 0.2F,
-    velocityConfirmationThreshold: Dp = 4.dp,
+    velocityConfirmationThreshold: Dp = 8.dp,
+    blockChildDragInputs: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val backDispatcher = defaultComponentContext.backHandler as BackDispatcher
     val layoutDirection = LocalLayoutDirection.current
 
     Box(
-        modifier = modifier.backGestureProvider(
+        modifier = modifier.handleBackGestures(
             backDispatcher = backDispatcher,
             leftEdgeEnabled = when (layoutDirection) {
                 LayoutDirection.Ltr -> startEdgeEnabled
@@ -69,27 +71,71 @@ fun BackGestureProviderContainer(
             edgeWidth = edgeWidth,
             activationOffsetThreshold = activationOffsetThreshold,
             progressConfirmationThreshold = progressConfirmationThreshold,
-            velocityConfirmationThreshold = velocityConfirmationThreshold
-        )
+            velocityConfirmationThreshold = velocityConfirmationThreshold,
+            blockChildDragInputs = blockChildDragInputs
+        ),
     ) {
         content()
     }
 }
 
 /**
- * Manipulates the back dispatcher. When [edgeWidth] is null - the entire composable's width
- * is used.
+ * Detects drag gestures on a composable and dispatches back gestures to a [BackDispatcher].
+ *
+ * @param backDispatcher The [BackDispatcher] instance that will receive the back gestures.
+ * @param leftEdgeEnabled Whether the left edge of the composable is enabled for back gestures.
+ * @param rightEdgeEnabled Whether the right edge of the composable is enabled for back gestures.
+ * @param edgeWidth The width of the edge area that will trigger a back gesture. Defaults to null.
+ * When null - uses the full composable's width
+ * @param activationOffsetThreshold The minimum distance the user must drag to activate a back gesture. Defaults to 4.dp.
+ * @param progressConfirmationThreshold The minimum progress required to confirm a back gesture. Defaults to 0.2F.
+ * @param velocityConfirmationThreshold The minimum velocity required to confirm a back gesture. Defaults to 8.dp.
+ * @param blockChildDragInputs Whether to block child drag inputs. Defaults to false.
  */
-@Stable
-fun Modifier.backGestureProvider(
+fun Modifier.handleBackGestures(
     backDispatcher: BackDispatcher,
     leftEdgeEnabled: Boolean = true,
     rightEdgeEnabled: Boolean = false,
-    edgeWidth: Dp? = null, // if null - use max size
-    activationOffsetThreshold: Dp = 16.dp,
+    edgeWidth: Dp? = null,
+    activationOffsetThreshold: Dp = 4.dp,
     progressConfirmationThreshold: Float = 0.2F,
-    velocityConfirmationThreshold: Dp = 4.dp,
-) = pointerInput(backDispatcher, leftEdgeEnabled, rightEdgeEnabled) {
+    velocityConfirmationThreshold: Dp = 8.dp,
+    blockChildDragInputs: Boolean = false
+) = if (blockChildDragInputs) pointerInput(backDispatcher, leftEdgeEnabled, rightEdgeEnabled) {
+    val triggerWidth = edgeWidth?.toPx() ?: size.width.toFloat()
+
+    awaitEachGesture {
+        val firstDown = awaitFirstDown(pass = PointerEventPass.Initial)
+
+        val startPosition = firstDown.position
+        val isLeftEdge = leftEdgeEnabled && (startPosition.x < triggerWidth)
+        val isRightEdge = rightEdgeEnabled && (startPosition.x > size.width - triggerWidth)
+        val edge = when {
+            isLeftEdge && isRightEdge -> {
+                if (startPosition.x < size.width / 2F)
+                    BackGestureHandler.Edge.LEFT
+                else
+                    BackGestureHandler.Edge.RIGHT
+            }
+
+            isLeftEdge -> BackGestureHandler.Edge.LEFT
+            isRightEdge -> BackGestureHandler.Edge.RIGHT
+            else -> return@awaitEachGesture
+        }
+
+        val handler = BackGestureHandler(
+            pointerId = firstDown.id,
+            startPosition = startPosition,
+            edge = edge,
+            ignoreOffsetThreshold = triggerWidth,
+            activationOffsetThreshold = activationOffsetThreshold.toPx(),
+            progressConfirmationThreshold = progressConfirmationThreshold,
+            velocityConfirmationThreshold = velocityConfirmationThreshold.toPx(),
+            backDispatcher = backDispatcher,
+        )
+        with(handler) { handleGesture() }
+    }
+} else pointerInput(backDispatcher, leftEdgeEnabled, rightEdgeEnabled) {
     val triggerWidth = edgeWidth?.let { it.value * density } ?: size.width.toFloat()
     var edge: SwipeEdge = SwipeEdge.UNKNOWN
     var progress = 0f
@@ -186,6 +232,137 @@ fun Modifier.backGestureProvider(
             }
         )
     }
+}
+
+/**
+ * Handles a back gesture event.
+ *
+ * @param pointerId The ID of the pointer that triggered the gesture.
+ * @param startPosition The starting position of the gesture.
+ * @param edge The edge of the composable that triggered the gesture.
+ * @param ignoreOffsetThreshold The minimum distance to ignore when detecting the gesture.
+ * @param activationOffsetThreshold The minimum distance the user must drag to activate a back gesture.
+ * @param progressConfirmationThreshold The minimum progress required to confirm a back gesture.
+ * @param velocityConfirmationThreshold The minimum velocity required to confirm a back gesture.
+ * @param backDispatcher The [BackDispatcher] instance that will receive the back gestures.
+ *
+ */
+private class BackGestureHandler(
+    private val pointerId: PointerId,
+    private val startPosition: Offset,
+    private val edge: Edge,
+    private val ignoreOffsetThreshold: Float,
+    private val activationOffsetThreshold: Float,
+    private val progressConfirmationThreshold: Float,
+    private val velocityConfirmationThreshold: Float,
+    private val backDispatcher: BackDispatcher,
+) {
+    private var changesIterator: Iterator<PointerInputChange>? = null
+    private var progress = 0f
+
+    private suspend fun AwaitPointerEventScope.awaitStart(): Boolean {
+        val change = awaitStartChange().also { it?.consume() } ?: return false
+        val position = change.position
+
+        return backDispatcher.startPredictiveBack(
+            BackEvent(
+                progress = progress,
+                swipeEdge = edge.toSwipeEdge(),
+                touchX = position.x,
+                touchY = position.y,
+            )
+        )
+    }
+
+    suspend fun AwaitPointerEventScope.handleGesture() {
+        if (awaitStart()) processGesture()
+    }
+
+    private suspend fun AwaitPointerEventScope.awaitChange(): PointerInputChange {
+        while (true) {
+            var iterator = changesIterator
+
+            while ((iterator == null) || !iterator.hasNext()) {
+                val changes = awaitPointerEvent(pass = PointerEventPass.Initial).changes
+
+                iterator = changes.iterator()
+                changesIterator = iterator
+            }
+
+            iterator.next().takeIf { it.id == pointerId }?.also {
+                println(it)
+                return it
+            }
+        }
+    }
+
+    private suspend fun AwaitPointerEventScope.awaitStartChange(): PointerInputChange? {
+        while (true) {
+            val change = awaitChange()
+            val position = change.position
+
+            if (!change.pressed ||
+                (position.y < startPosition.y - ignoreOffsetThreshold) ||
+                (position.y > startPosition.y + ignoreOffsetThreshold)
+            ) {
+                return null
+            }
+
+            when (edge) {
+                Edge.LEFT ->
+                    when {
+                        position.x < startPosition.x - ignoreOffsetThreshold -> return null
+                        position.x > startPosition.x + activationOffsetThreshold -> return change
+                    }
+
+                Edge.RIGHT ->
+                    when {
+                        position.x > startPosition.x + ignoreOffsetThreshold -> return null
+                        position.x < startPosition.x - activationOffsetThreshold -> return change
+                    }
+            }
+        }
+    }
+
+    private suspend fun AwaitPointerEventScope.processGesture() {
+        while (true) {
+            val change = awaitChange().also { it.consume() }
+            val velocity = change.positionChangeIgnoreConsumed().x
+
+            progress = when (edge) {
+                Edge.LEFT -> progress + (velocity / size.width)
+                Edge.RIGHT -> progress + (velocity / -size.width)
+            }.coerceIn(0f, 1f)
+
+            backDispatcher.progressPredictiveBack(
+                BackEvent(
+                    progress = progress,
+                    swipeEdge = edge.toSwipeEdge(),
+                    touchX = change.position.x,
+                    touchY = change.position.y,
+                )
+            )
+
+            val reachedProgressThreshold = progress > progressConfirmationThreshold
+            val reachedVelocityThreshold = velocity >= velocityConfirmationThreshold
+
+            if (!change.pressed) {
+                if (reachedProgressThreshold || reachedVelocityThreshold)
+                    backDispatcher.back()
+                else
+                    backDispatcher.cancelPredictiveBack()
+
+                return
+            }
+        }
+    }
+
+    private fun Edge.toSwipeEdge() = when (this) {
+        Edge.LEFT -> SwipeEdge.LEFT
+        Edge.RIGHT -> SwipeEdge.RIGHT
+    }
+
+    enum class Edge { LEFT, RIGHT }
 }
 
 
