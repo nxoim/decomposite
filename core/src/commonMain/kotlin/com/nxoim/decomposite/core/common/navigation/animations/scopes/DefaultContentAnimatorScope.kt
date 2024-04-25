@@ -5,6 +5,7 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.decompose.hashString
 import com.arkivanov.essenty.backhandler.BackEvent
@@ -61,6 +62,7 @@ class DefaultContentAnimatorScope(
     private var _index by mutableIntStateOf(initialIndex)
     override val index get() = _index
     private val initial get() = _index == 0
+    private val velocityTracker = VelocityTracker()
 
     private val location
         get() = when {
@@ -75,9 +77,6 @@ class DefaultContentAnimatorScope(
 
     // progress - gesture progress
     private val gestureAnimationProgressAnimatable = Animatable(animationProgressAnimatable.value)
-
-    // only for velocity
-    private val rawGestureProgress = Animatable(0f)
 
     private var _backEvent by mutableStateOf(BackEvent())
     val backEvent get() = _backEvent
@@ -111,6 +110,7 @@ class DefaultContentAnimatorScope(
 
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
                 _backEvent = backGesture.event
+                velocityTracker.resetTracking()
 
                 updateStatus(
                     _animationStatus.location,
@@ -131,7 +131,14 @@ class DefaultContentAnimatorScope(
                     AnimationType.Gestures,
                 )
 
-                launch { rawGestureProgress.animateTo(backGesture.event.progress) }
+                launch {
+                    withFrameMillis { frameTimeMillis ->
+                        velocityTracker.addPosition(
+                            timeMillis = frameTimeMillis,
+                            position = Offset(gestureAnimationProgress, 0f)
+                        )
+                    }
+                }
             }
 
             BackGestureEvent.None,
@@ -192,18 +199,20 @@ class DefaultContentAnimatorScope(
     }
 
     private suspend fun animateToTarget() = coroutineScope {
+        val velocity = velocityTracker.calculateVelocity().x
+
         launch {
             gestureAnimationProgressAnimatable.animateTo(
                 targetValue = (_indexFromTop.coerceAtLeast(-1)).toFloat(),
                 animationSpec = animationSpec,
-                initialVelocity = 0.1f + rawGestureProgress.velocity
+                initialVelocity = velocity
             )
         }
 
         animationProgressAnimatable.animateTo(
             targetValue = (_indexFromTop.coerceAtLeast(-1)).toFloat(),
             animationSpec = animationSpec,
-            initialVelocity = 0.1f + rawGestureProgress.velocity
+            initialVelocity = velocity
         )
 
         launch {

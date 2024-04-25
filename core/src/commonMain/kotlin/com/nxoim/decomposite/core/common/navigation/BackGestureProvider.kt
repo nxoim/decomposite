@@ -58,7 +58,7 @@ fun BackGestureProviderContainer(
     val layoutDirection = LocalLayoutDirection.current
 
     Box(
-        modifier = modifier.handleBackGestures(
+        modifier = modifier.backGestureProvider(
             backDispatcher = backDispatcher,
             leftEdgeEnabled = when (layoutDirection) {
                 LayoutDirection.Ltr -> startEdgeEnabled
@@ -92,7 +92,7 @@ fun BackGestureProviderContainer(
  * @param velocityConfirmationThreshold The minimum velocity required to confirm a back gesture. Defaults to 8.dp.
  * @param blockChildDragInputs Whether to block child drag inputs. Defaults to false.
  */
-fun Modifier.handleBackGestures(
+fun Modifier.backGestureProvider(
     backDispatcher: BackDispatcher,
     leftEdgeEnabled: Boolean = true,
     rightEdgeEnabled: Boolean = false,
@@ -290,7 +290,6 @@ private class BackGestureHandler(
             }
 
             iterator.next().takeIf { it.id == pointerId }?.also {
-                println(it)
                 return it
             }
         }
