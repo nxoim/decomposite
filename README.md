@@ -55,8 +55,13 @@ Check out [the android sample](https://github.com/nxoim/decomposite/blob/update/
 
 On everything else:
 ```kotlin
+// outside compose
+val navigationRootData = NavigationRootData()
+
+// ...
+
 // inside any composable at the root
-NavigationRootProvider(NavigationRootData()) { YourContent() }
+NavigationRootProvider(navigationRootData) { YourContent() }
 ```
 
 Navigation host creation:
@@ -113,14 +118,12 @@ fun YourScreen() {
     val vm = viewModel("optional key") { SomeViewModel(someArgument = "some text") }
 
     // just get a view model. 
-    // this does not create a view model due to reflection practically
-    // not existing in the wasm target as of yet
-    val vm = getExistingViewModel<SomeViewModel>("optionalKey")
+    val vm = getExistingViewModel<SomeViewModel>("optional key")
 }
 
 class SomeViewModel(someArgument: String) : ViewModel() {
     // you can retain the view model until the app gets destroyed by overriding 
-    // onDestroy and leaving it empty
+    // onDestroy and not calling removeFromViewModelStore
     override fun onDestroy(removeFromViewModelStore: () -> Unit) {
         // maybe still cancel the scope? maybe
         viewModelScope.coroutineContext.cancelChildren()
@@ -134,7 +137,7 @@ Back gestures on other platforms:
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
         // initialize this at the root of your app
-        val navigationRootData = NavigationRootData(DefaultComponentContext(LifecycleRegistry()))
+        val navigationRootData = NavigationRootData()
 
         Window(
             title = "Decomposite",
@@ -157,7 +160,6 @@ fun main() = application {
                     // detect the gestures
                     BackGestureProviderContainer(
                         navigationRootData.defaultComponentContext,
-                        edgeWidth = (window.size.width / LocalDensity.current.density).dp,
                         content = { NavigationRootProvider(navigationRootData) { App() } }
                     )
                 }
