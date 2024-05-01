@@ -114,7 +114,12 @@ class NavController<C : Any>(
                 screenNavigation.bringToFront(destination)
             else
                 screenNavigation.navigate(
-                    transformer = { stack -> stack.filterNot { it == destination } + destination },
+                    transformer = { stack ->
+                        if (stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+                            stack.dropLast(1)
+                        else
+                            stack.filterNot { it == destination } + destination
+                    },
                     onComplete = { _, _ -> onComplete() }
                 )
 
