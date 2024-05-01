@@ -101,7 +101,8 @@ class NavController<C : Any>(
 
     /**
      * Navigates to a destination. If a destination exists already - moves it to the top instead
-     * of adding a new entry.
+     * of adding a new entry. If the requested [destination] precedes the current one in the stack -
+     * navigate back instead.
      */
     fun navigate(
         destination: C,
@@ -114,7 +115,12 @@ class NavController<C : Any>(
                 screenNavigation.bringToFront(destination)
             else
                 screenNavigation.navigate(
-                    transformer = { stack -> stack.filterNot { it == destination } + destination },
+                    transformer = { stack ->
+                        if (stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+                            stack.dropLast(1)
+                        else
+                            stack.filterNot { it == destination } + destination
+                    },
                     onComplete = { _, _ -> onComplete() }
                 )
 
@@ -126,7 +132,12 @@ class NavController<C : Any>(
                 overlayNavigation.bringToFront(destination)
             else
                 overlayNavigation.navigate(
-                    transformer = { stack -> stack.filterNot { it == destination } + destination },
+                    transformer = { stack ->
+                        if (stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+                            stack.dropLast(1)
+                        else
+                            stack.filterNot { it == destination } + destination
+                    },
                     onComplete = { _, _ -> onComplete() }
                 )
         }
