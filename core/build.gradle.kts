@@ -41,21 +41,20 @@ kotlin {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
-                implementation(compose.material)
-                implementation(libs.decompose)
-                implementation(libs.decompose.extensions)
+                api(libs.decompose)
+                api(libs.decompose.extensions)
             }
         }
         val androidMain by getting {
             dependencies {
                 implementation(libs.androidx.appcompat)
-                implementation(libs.decompose.extensions)
+                api(libs.decompose.extensions)
             }
         }
 
         val jvmMain by getting {
             dependencies {
-                implementation(libs.kotlinx.coroutines.swing)
+                api(libs.kotlinx.coroutines.swing)
             }
         }
     }
