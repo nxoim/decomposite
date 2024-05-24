@@ -1,9 +1,24 @@
 package com.nxoim.decomposite.core.common.navigation
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.router.stack.*
-import com.nxoim.decomposite.core.common.ultils.*
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.active
+import com.arkivanov.decompose.router.stack.backStack
+import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.popTo
+import com.arkivanov.decompose.router.stack.replaceAll
+import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.nxoim.decomposite.core.common.ultils.ContentType
+import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
+import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
+import com.nxoim.decomposite.core.common.ultils.activeAsState
+import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import kotlin.jvm.JvmInline
@@ -14,7 +29,7 @@ import kotlin.jvm.JvmInline
 @ReadOnlyComposable
 @Composable
 inline fun <reified T : Any> getExistingNavController(
-    navStore: NavControllerStore = LocalNavControllerStore.current
+	navStore: NavControllerStore = LocalNavControllerStore.current
 ) = navStore.get<T>()
 
 /**
@@ -24,39 +39,42 @@ inline fun <reified T : Any> getExistingNavController(
  * navigation controller. The instance is not retained, therefore on configuration changes
  * components will die and get recreated. By default inherits parent's [ComponentContext].
  * [childFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
+ * [key] is used for identifying [childStack]'s.
  *
  * On death removes itself from the [NavControllerStore] right after the composition's death.
  */
 @Composable
 inline fun <reified C : Any> navController(
-    startingDestination: C,
-    serializer: KSerializer<C>? = null,
-    navStore: NavControllerStore = LocalNavControllerStore.current,
-    componentContext: ComponentContext = LocalComponentContext.current,
-    noinline childFactory: (
-        config: C,
-        childComponentContext: ComponentContext
-    ) -> DecomposeChildInstance = { _, childComponentContext ->
-        DefaultChildInstance(childComponentContext)
-    }
+	startingDestination: C,
+	serializer: KSerializer<C>? = serializer(),
+	navStore: NavControllerStore = LocalNavControllerStore.current,
+	componentContext: ComponentContext = LocalComponentContext.current,
+	key: String = startingDestination::class.toString(),
+	noinline childFactory: (
+		config: C,
+		childComponentContext: ComponentContext
+	) -> DecomposeChildInstance = { _, childComponentContext ->
+		DefaultChildInstance(childComponentContext)
+	}
 ): NavController<C> {
-    OnDestinationDisposeEffect(
-        C::class.toString() + " NavHost OnDestinationDisposeEffect",
-        waitForCompositionRemoval = true
-    ) {
-        navStore.remove<C>()
-    }
+	OnDestinationDisposeEffect(
+		"$key NavHost OnDestinationDisposeEffect",
+		waitForCompositionRemoval = true
+	) {
+		navStore.remove<C>()
+	}
 
-    return remember(componentContext) {
-        navStore.getOrCreate<C> {
-            NavController(
-                startingDestination,
-                serializer ?: serializer(),
-                componentContext,
-                childFactory
-            )
-        }
-    }
+	return remember(componentContext) {
+		navStore.getOrCreate<C> {
+			NavController(
+				startingDestination,
+				serializer,
+				componentContext,
+				key,
+				childFactory
+			)
+		}
+	}
 }
 
 inline fun <reified T : Any> getNavController(navStore: NavControllerStore) = navStore.get<T>()
@@ -66,165 +84,165 @@ inline fun <reified T : Any> getNavController(navStore: NavControllerStore) = na
  */
 @Immutable
 class NavController<C : Any>(
-    private val startingDestination: C,
-    serializer: KSerializer<C>? = null,
-    componentContext: ComponentContext,
-    childFactory: (
-        config: C,
-        childComponentContext: ComponentContext
-    ) -> DecomposeChildInstance = { _, childComponentContext ->
-        DefaultChildInstance(childComponentContext)
-    }
+	private val startingDestination: C,
+	serializer: KSerializer<C>? = null,
+	componentContext: ComponentContext,
+	key: String = startingDestination::class.toString(),
+	childFactory: (
+		config: C,
+		childComponentContext: ComponentContext
+	) -> DecomposeChildInstance = { _, childComponentContext ->
+		DefaultChildInstance(childComponentContext)
+	}
 ) : ComponentContext by componentContext {
-    private val screenNavigation = StackNavigation<C>()
-    private val overlayNavigation = StackNavigation<C>()
+	val screenNavigationController = StackNavigation<C>()
+	val overlayNavigationController = StackNavigation<C>()
 
-    val screenStack = childStack(
-        source = screenNavigation,
-        serializer = serializer,
-        initialConfiguration = startingDestination,
-        key = "screenStack" + startingDestination::class.toString(),
-        handleBackButton = true,
-        childFactory = childFactory
-    )
+	val screenStack = childStack(
+		source = screenNavigationController,
+		serializer = serializer,
+		initialConfiguration = startingDestination,
+		key = "screenStack $key",
+		handleBackButton = true,
+		childFactory = childFactory
+	)
 
-    val overlayStack = childStack(
-        source = overlayNavigation,
-        serializer = serializer,
-        initialConfiguration = startingDestination,
-        key = "overlayStack" + startingDestination::class.toString(),
-        handleBackButton = true,
-        childFactory = childFactory
-    )
+	val overlayStack = childStack(
+		source = overlayNavigationController,
+		serializer = serializer,
+		initialConfiguration = startingDestination,
+		key = "overlayStack $key",
+		handleBackButton = true,
+		childFactory = childFactory
+	)
 
-    val currentScreen by screenStack.activeAsState()
+	val currentScreen by screenStack.activeAsState()
 
-    /**
-     * Navigates to a destination. If a destination exists already - moves it to the top instead
-     * of adding a new entry. If the requested [destination] precedes the current one in the stack -
-     * navigate back instead.
-     */
-    fun navigate(
-        destination: C,
-        type: ContentType = ContentType.Contained,
-        useBringToFront: Boolean = false,
-        onComplete: () -> Unit = {}
-    ) = when (type) {
-        ContentType.Contained -> {
-            if (useBringToFront)
-                screenNavigation.bringToFront(destination)
-            else
-                screenNavigation.navigate(
-                    transformer = { stack ->
-                        if (stack.size > 1 && stack[stack.lastIndex - 1] == destination)
-                            stack.dropLast(1)
-                        else
-                            stack.filterNot { it == destination } + destination
-                    },
-                    onComplete = { _, _ -> onComplete() }
-                )
+	/**
+	 * Navigates to a destination. If a destination exists already - moves it to the top instead
+	 * of adding a new entry. If the requested [destination] precedes the current one in the stack -
+	 * navigate back instead.
+	 */
+	fun navigate(
+		destination: C,
+		type: ContentType = ContentType.Contained,
+		// removes the current entry if requested navigation to the preceding one
+		removeIfIsPreceding: Boolean = true,
+		onComplete: () -> Unit = {}
+	) = when (type) {
+		ContentType.Contained -> {
+			screenNavigationController.navigate(
+				transformer = { stack ->
+					if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+						stack.dropLast(1)
+					else
+						stack.filterNot { it == destination } + destination
+				},
+				onComplete = { _, _ -> onComplete() }
+			)
 
-            overlayNavigation.replaceAll(startingDestination)
-        }
+			overlayNavigationController.replaceAll(startingDestination)
+		}
 
-        ContentType.Overlay -> {
-            if (useBringToFront)
-                overlayNavigation.bringToFront(destination)
-            else
-                overlayNavigation.navigate(
-                    transformer = { stack ->
-                        if (stack.size > 1 && stack[stack.lastIndex - 1] == destination)
-                            stack.dropLast(1)
-                        else
-                            stack.filterNot { it == destination } + destination
-                    },
-                    onComplete = { _, _ -> onComplete() }
-                )
-        }
-    }
+		ContentType.Overlay -> {
+			overlayNavigationController.navigate(
+				transformer = { stack ->
+					if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+						stack.dropLast(1)
+					else
+						stack.filterNot { it == destination } + destination
+				},
+				onComplete = { _, _ -> onComplete() }
+			)
+		}
+	}
 
-    /**
-     * Navigates back in this(!) nav controller.
-     */
-    fun navigateBack(onComplete: (Boolean) -> Unit = { }) {
-        if (overlayStack.active.configuration != startingDestination) {
-            overlayNavigation.pop(onComplete)
-        } else {
-            screenNavigation.pop(onComplete)
-        }
-    }
+	/**
+	 * Navigates back in this(!) nav controller.
+	 */
+	fun navigateBack(onComplete: (Boolean) -> Unit = { }) {
+		if (overlayStack.active.configuration != startingDestination) {
+			overlayNavigationController.pop(onComplete)
+		} else {
+			screenNavigationController.pop(onComplete)
+		}
+	}
 
-    /**
-     * Removes destinations that, in the stack, are after the provided one.
-     */
-    fun navigateBackTo(
-        destination: C,
-        type: ContentType,
-        onComplete: (Boolean) -> Unit = { }
-    ) = when (type) {
-        ContentType.Contained -> {
-            val indexOfDestination = screenStack.backStack.indexOfFirst { it.configuration == destination }
-            screenNavigation.popTo(indexOfDestination, onComplete)
-        }
+	/**
+	 * Removes destinations that, in the stack, are after the provided one.
+	 */
+	fun navigateBackTo(
+		destination: C,
+		type: ContentType,
+		onComplete: (Boolean) -> Unit = { }
+	) = when (type) {
+		ContentType.Contained -> {
+			val indexOfDestination =
+				screenStack.backStack.indexOfFirst { it.configuration == destination }
+			screenNavigationController.popTo(indexOfDestination, onComplete)
+		}
 
-        ContentType.Overlay -> {
-            val indexOfDestination = overlayStack.backStack.indexOfFirst { it.configuration == destination }
-            overlayNavigation.popTo(indexOfDestination, onComplete)
-        }
-    }
+		ContentType.Overlay -> {
+			val indexOfDestination =
+				overlayStack.backStack.indexOfFirst { it.configuration == destination }
+			overlayNavigationController.popTo(indexOfDestination, onComplete)
+		}
+	}
 
-    /**
-     * Gets rid of/closes a destination.
-     */
-    fun close(destination: C, type: ContentType, onComplete: () -> Unit = { }) = when (type) {
-        ContentType.Contained -> {
-            screenNavigation.navigate(
-                transformer = { stack -> stack.filterNot { it == destination } },
-                onComplete = { _, _ -> onComplete() }
-            )
-        }
+	/**
+	 * Removes a destination.
+	 */
+	fun close(destination: C, type: ContentType, onComplete: () -> Unit = { }) = when (type) {
+		ContentType.Contained -> {
+			screenNavigationController.navigate(
+				transformer = { stack -> stack.filterNot { it == destination } },
+				onComplete = { _, _ -> onComplete() }
+			)
+		}
 
-        ContentType.Overlay -> {
-            overlayNavigation.navigate(
-                transformer = { stack -> stack.filterNot { it == destination } },
-                onComplete = { _, _ -> onComplete() }
-            )
-        }
-    }
+		ContentType.Overlay -> {
+			overlayNavigationController.navigate(
+				transformer = { stack -> stack.filterNot { it == destination } },
+				onComplete = { _, _ -> onComplete() }
+			)
+		}
+	}
 
-    /**
-     * Replaces the current destination with the provided one.
-     */
-    fun replaceCurrent(
-        withDestination: C,
-        type: ContentType,
-        onComplete: () -> Unit = {}
-    ) = when (type) {
-        ContentType.Contained -> screenNavigation.replaceCurrent(withDestination) { onComplete() }
-        ContentType.Overlay -> overlayNavigation.replaceCurrent(withDestination) { onComplete() }
-    }
+	/**
+	 * Replaces the current destination with the provided one.
+	 */
+	fun replaceCurrent(
+		withDestination: C,
+		type: ContentType,
+		onComplete: () -> Unit = {}
+	) = when (type) {
+		ContentType.Contained -> screenNavigationController.replaceCurrent(withDestination) { onComplete() }
+		ContentType.Overlay -> overlayNavigationController.replaceCurrent(withDestination) { onComplete() }
+	}
 
-    /**
-     * Replaces all destinations with the provided one.
-     */
-    fun replaceAll(
-        vararg destination: C,
-        type: ContentType = ContentType.Contained,
-        onComplete: () -> Unit = {}
-    ) = when (type) {
-        ContentType.Contained -> screenNavigation.replaceAll(*destination) { onComplete() }
-        ContentType.Overlay -> overlayNavigation.replaceAll(*destination) { onComplete() }
-    }
+	/**
+	 * Replaces all destinations with the provided one.
+	 */
+	fun replaceAll(
+		vararg destination: C,
+		type: ContentType = ContentType.Contained,
+		onComplete: () -> Unit = {}
+	) = when (type) {
+		ContentType.Contained -> screenNavigationController.replaceAll(*destination) { onComplete() }
+		ContentType.Overlay -> overlayNavigationController.replaceAll(*destination) { onComplete() }
+	}
 }
 
 @JvmInline
 @Immutable
-value class DefaultChildInstance(override val componentContext: ComponentContext) : DecomposeChildInstance
+value class DefaultChildInstance(
+	override val componentContext: ComponentContext
+) : DecomposeChildInstance
 
 /**
  * Base for child instances. Contains [componentContext] for features like [rememberRetained],
  * [OnDestinationDisposeEffect], [LocalComponentContext].
  */
 interface DecomposeChildInstance {
-    val componentContext: ComponentContext
+	val componentContext: ComponentContext
 }
