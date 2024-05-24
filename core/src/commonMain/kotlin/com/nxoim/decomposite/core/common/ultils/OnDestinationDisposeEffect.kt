@@ -1,6 +1,10 @@
 package com.nxoim.decomposite.core.common.ultils
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisallowComposableCalls
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
@@ -24,15 +28,15 @@ inline fun OnDestinationDisposeEffect(
                 ComponentDestructionDetector()
             }
         }
+        // this works because the component gets destroyed first, triggering
+        // onDestroy, then the composable
         DisposableEffect(true) {
             onDispose { if (componentDestructionDetector.destroyed) block() }
         }
     } else {
-        DisposableEffect(true) {
-            onDispose { componentContext.instanceKeeper.remove(key) }
+        remember(componentContext) {
+            componentContext.onDestroyDisposableEffect(key, block)
         }
-
-        remember { componentContext.onDestroyDisposableEffect(key, block) }
     }
 }
 

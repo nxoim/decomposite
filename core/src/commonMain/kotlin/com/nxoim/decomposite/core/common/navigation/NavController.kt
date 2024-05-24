@@ -58,7 +58,7 @@ inline fun <reified C : Any> navController(
 	}
 ): NavController<C> {
 	OnDestinationDisposeEffect(
-		"$key NavHost OnDestinationDisposeEffect",
+		"$key navController OnDestinationDisposeEffect",
 		waitForCompositionRemoval = true
 	) {
 		navStore.remove<C>()
