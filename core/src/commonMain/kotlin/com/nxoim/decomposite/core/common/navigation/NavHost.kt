@@ -1,11 +1,26 @@
 package com.nxoim.decomposite.core.common.navigation
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.router.stack.items
-import com.nxoim.decomposite.core.common.navigation.animations.*
-import com.nxoim.decomposite.core.common.ultils.*
+import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
+import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
+import com.nxoim.decomposite.core.common.navigation.animations.LocalContentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.StackAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.rememberStackAnimatorScope
+import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
+import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
+import com.nxoim.decomposite.core.common.ultils.ContentType
+import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
+import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
+import com.nxoim.decomposite.core.common.ultils.LocalContentType
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 
@@ -23,7 +38,7 @@ inline fun <reified C : Any> NavHost(
     modifier: Modifier = Modifier,
     noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
         LocalContentAnimator.current,
-    crossinline router: @Composable (child: C) -> Unit,
+    crossinline router: @Composable (destination: C) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val screenStackAnimatorScope = rememberStackAnimatorScope<C>(

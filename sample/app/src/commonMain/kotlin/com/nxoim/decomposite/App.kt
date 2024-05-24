@@ -59,19 +59,19 @@ fun GlobalSampleNavBar() {
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Star,
             icon = { Icon(Icons.Default.Star, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Star) }
+            onClick = { navController.navigate(RootDestinations.Star, useBringToFront = true) }
         )
 
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Tikitoki,
             icon = { Icon(Icons.Default.PanoramaVertical, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Tikitoki) }
+            onClick = { navController.navigate(RootDestinations.Tikitoki, useBringToFront = true) }
         )
 
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Heart,
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Heart) }
+            onClick = { navController.navigate(RootDestinations.Heart, useBringToFront = true) }
         )
     }
 }

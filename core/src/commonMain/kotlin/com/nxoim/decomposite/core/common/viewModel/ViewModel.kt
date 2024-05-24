@@ -24,13 +24,10 @@ inline fun <reified T : ViewModel> getExistingViewModel(key: String = ""): T {
 }
 
 /**
- * Android-like view model instancer. Will get or create a view model instance. Provide
- * [key] if you have multiple instances of the same view model else it will get the first created one.
- *
- * Important: by default gets destroyed based on the local component context's lifecycle.
- * This means the view model will get destroyed on android's configuration changes that
- * destroy the activity or fragment, stopping the view model scope and removing the instance
- * from the view model store. Override [ViewModel.onDestroy] to change this (you can leave it empty).
+ * Android-like view model instancer. Will get or create a [ViewModel] instance in
+ * the [LocalViewModelStore]. Provide [key] if you have multiple instances of
+ * the same view model, or it will get the first created one. [ViewModel.onDestroy] method
+ * will be called when the component/destination is removed and AFTER the composable gets destroyed.
  */
 @Stable
 @Composable
@@ -44,7 +41,7 @@ inline fun <reified T : ViewModel> viewModel(key: String = "", crossinline viewM
     // because of getOrCreate inside OnDestinationDisposeEffect - only the first created
     // instance of it is active
     OnDestinationDisposeEffect(
-        T::class.toString() + "ViewModel",
+        viewModelKey + "ViewModel",
         waitForCompositionRemoval = true
     ) {
         vm.onDestroy(removeFromViewModelStore = { viewModelStore.remove(viewModelKey) })
@@ -67,7 +64,7 @@ inline fun <reified T : ViewModel> prepareLazyViewModel(key: String = "", noinli
 
 /**
  * Creates a view model instance using the prepared (by [prepareLazyViewModel]) reference
- * if an instance does not exist. The first call of this manages the view model's lifecycle.
+ * if an instance does not exist. The first instance manages the view model's lifecycle.
  */
 @Stable
 @Composable
