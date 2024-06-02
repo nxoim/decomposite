@@ -6,8 +6,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
@@ -44,7 +42,7 @@ fun StarNavHost() {
 @Composable
 fun StarTopAppBar() {
     val navController = getExistingNavController<StarDestinations>()
-    val currentScreen by navController.currentScreen.collectAsState()
+    val currentScreen = navController.currentScreen
 
     TopAppBar(
         title = { Text("Star") },

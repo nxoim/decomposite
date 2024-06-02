@@ -1,3 +1,11 @@
+[![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
+
+![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
+![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
+![badge-iOS](https://img.shields.io/badge/Platform-iOS-lightgray)(?)
+![badge-macOS](https://img.shields.io/badge/Platform-macOS-purple)(?)
+(i dont have apple's devices) Some time in the future WASM/JS and maybe WASI.
+
 # What?
 Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, snack bars, custom extensions like animations, etc.
 
@@ -20,9 +28,9 @@ Uhm...
 - Automatically create navigation controller instances upon the creation of nav hosts that are retrievable by just calling navController, again, kind of like view models
 
 # Examples/Getting Started
-In your version catalog add the "com.github.nxoim.Decomposite:decomposite:preferredVersion" artifact. In your toml file that would be:
+In your version catalog add the "com.github.nxoim.decomposite:decomposite" artifact. In your toml file that would be:
 ```
-decomposite = { group = "com.github.nxoim.decomposite", name = "decomposite", version.ref = "version" }
+decomposite = { module = "com.github.nxoim.decomposite:decomposite", version.ref = "version" }
 ```
 
 First you have to set up the app by creating a root of the app. This root sets up stores for view models and nav controllers, overlay stuff, and provides the root component context.
@@ -34,19 +42,26 @@ class YourActivity : ComponentActivity() {
     	super.onCreate(savedInstanceState)
 
         // default component context is included with the decompose library
-        val navigationRootData = navigationRootData(defaultComponentContext())
+        val navigationRootData = NavigationRootData(defaultComponentContext())
 
         setContent {
-            NavigationRoot(navigationRootData) { YourContent() }
+            NavigationRootProvider(navigationRootData) { YourContent() }
         }
     }
 }
 ```
 
+Check out [the android sample](https://github.com/nxoim/decomposite/blob/update/sample/app/src/androidMain/kotlin/com/nxoim/decomposite/App.android.kt) if you want predictive gesture animations application-wide and on older androids. 
+
 On everything else:
 ```kotlin
+// outside compose
+val navigationRootData = NavigationRootData()
+
+// ...
+
 // inside any composable at the root
-NavigationRoot(navigationRootData()) { YourContent() }
+NavigationRootProvider(navigationRootData) { YourContent() }
 ```
 
 Navigation host creation:
@@ -103,14 +118,12 @@ fun YourScreen() {
     val vm = viewModel("optional key") { SomeViewModel(someArgument = "some text") }
 
     // just get a view model. 
-    // this does not create a view model due to reflection practically
-    // not existing in the wasm target as of yet
-    val vm = getExistingViewModel<SomeViewModel>("optionalKey")
+    val vm = getExistingViewModel<SomeViewModel>("optional key")
 }
 
 class SomeViewModel(someArgument: String) : ViewModel() {
     // you can retain the view model until the app gets destroyed by overriding 
-    // onDestroy and leaving it empty
+    // onDestroy and not calling removeFromViewModelStore
     override fun onDestroy(removeFromViewModelStore: () -> Unit) {
         // maybe still cancel the scope? maybe
         viewModelScope.coroutineContext.cancelChildren()
@@ -121,40 +134,41 @@ class SomeViewModel(someArgument: String) : ViewModel() {
 Back gestures on other platforms:
 ```kotlin
 // this is for jvm
+@OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
-    // initialize these at some root
-    val backDispatcher = BackDispatcher()
-    val navigationRootData = navigationRootDataProvider(
-        DefaultComponentContext(LifecycleRegistry(), backHandler = backDispatcher)
-    )
+        // initialize this at the root of your app
+        val navigationRootData = NavigationRootData()
 
-    Window(
-        title = "Decomposite",
-        onCloseRequest = ::exitApplication,
-    ) {
-        window.minimumSize = Dimension(350, 600)
+        Window(
+            title = "Decomposite",
+            onCloseRequest = ::exitApplication,
+        ) {
+            window.minimumSize = Dimension(350, 600)
 
-        SampleTheme {
-            // first wrap your app in a theme.
-            // because of material 3 quirks - surface wraps the root to fix text
-            // colors in overlays.
-            Surface {
-                // also since you need to initialize the component context of the app
-                // on your preferred platform anyway - it's ok to add decomposite to
-                // your entry-point/app module of the project, or combine it with your
-                // navigation module
+            SampleTheme {
+                // first wrap your app in a theme.
+                // because of material 3 quirks - surface wraps the root to fix text
+                // colors in overlays.
+                Surface {
+                    // also since you need to initialize the component context of the app
+                    // on your preferred platform anyway - it's ok to add decomposite to
+                    // your entry-point/app module of the project, or combine it with your
+                    // navigation module
 
-                // then initialize the back gesture overlay that will handle the back gestures.
-                // initialize it first, put NavigationRoot inside it, else overlays will not 
-                // detect the gestures
-                PredictiveBackGestureOverlay(
-                    backDispatcher,
-                    backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
-                    endEdgeEnabled = false, // disable swipes from the right side,
-                    content = { NavigationRoot(navigationRootData) { App() } }
-                )
+                    // then initialize the back gesture overlay that will handle the back gestures.
+                    // initialize it first, put NavigationRoot inside it, else overlays will not
+                    // detect the gestures
+                    BackGestureProviderContainer(
+                        navigationRootData.defaultComponentContext,
+                        content = { NavigationRootProvider(navigationRootData) { App() } }
+                    )
+                }
             }
         }
     }
-}
+```
+
+Or you can apply a modifier to the content you want to handle the back gestures, like:
+```kotlin
+ExampleComposable(Modifier.backGestureProvider(LocalBackDispatcher.current))
 ```

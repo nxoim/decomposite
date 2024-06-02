@@ -6,6 +6,9 @@ import com.arkivanov.essenty.backhandler.BackCallback
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.arkivanov.essenty.backhandler.BackHandler
 
+/**
+ * Handles gestures using the provided back handler, which by default is the chileren's one.
+ */
 @Composable
 fun BackGestureHandler(
     enabled: Boolean = true,

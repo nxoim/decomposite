@@ -14,10 +14,15 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.items
 import com.arkivanov.decompose.value.Value
 import com.nxoim.decomposite.core.common.navigation.DecomposeChildInstance
+import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
+import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlinx.coroutines.launch
 
+/**
+ * Animates the stack. Caches the children for the time of animation.
+ */
 @OptIn(InternalDecomposeApi::class)
 @Composable
 fun <C : Any, T : DecomposeChildInstance> StackAnimator(
@@ -27,7 +32,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
     onBackstackChange: (stackEmpty: Boolean) -> Unit,
     excludeStartingDestination: Boolean = false,
     allowBatchRemoval: Boolean = true,
-    animations: AnimatorChildrenConfigurations<C>.() -> ContentAnimations,
+    animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations,
     content: @Composable (child: Child.Created<C, T>) -> Unit,
 ) = with(stackAnimatorScope) {
     key(stackAnimatorScope.key) {
@@ -107,10 +112,11 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
                         -(removingChildren.indexOf(child) + 1)
 
                     val allAnimations = animations(
-                        AnimatorChildrenConfigurations(
+                        DestinationAnimationsConfiguratorScope(
                             sourceStack.items.elementAt(index - 1).configuration,
                             child,
-                            sourceStack.items.elementAt(index + 1).configuration
+                            sourceStack.items.elementAt(index + 1).configuration,
+                            LocalNavigationRoot.current.screenInformation
                         )
                     )
 
@@ -189,8 +195,12 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 private fun <C : Any> childHolderKey(child: C) =
     child.hashString() + " StackAnimator SaveableStateHolder"
 
-data class AnimatorChildrenConfigurations<C : Any>(
+/**
+ * Provides data helpful for the configuration of animations.
+ */
+data class DestinationAnimationsConfiguratorScope<C : Any>(
     val previousChild: C?,
     val currentChild: C,
-    val nextChild: C?
+    val nextChild: C?,
+    val screenInformation: ScreenInformation
 )

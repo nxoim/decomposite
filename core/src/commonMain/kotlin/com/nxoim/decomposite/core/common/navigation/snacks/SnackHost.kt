@@ -9,10 +9,11 @@ import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 
+/**
+ * Hosts the snack content
+ */
 @Composable
-fun SnackHost() {
-    val snackController = snackController()
-
+fun SnackHost(snackController: SnackController = snackController()) {
     // snacks don't need to be aware of gestures
     StackAnimator(
         stackValue = ImmutableThingHolder(snackController.snackStack),
