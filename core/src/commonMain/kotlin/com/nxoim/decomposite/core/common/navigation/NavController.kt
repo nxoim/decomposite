@@ -29,17 +29,22 @@ import kotlin.jvm.JvmInline
 @ReadOnlyComposable
 @Composable
 inline fun <reified T : Any> getExistingNavController(
+	key: String? = null,
 	navStore: NavControllerStore = LocalNavControllerStore.current
-) = navStore.get<T>()
+) = navStore.get<T>(key)
 
 /**
  * Creates a navigation controller instance in the [NavControllerStore], which allows
  * for sharing the same instance between multiple calls of [navController] or [getExistingNavController].
+ *
  * Is basically a decompose component that replicates the functionality of a generic
  * navigation controller. The instance is not retained, therefore on configuration changes
  * components will die and get recreated. By default inherits parent's [ComponentContext].
+ *
  * [childFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
- * [key] is used for identifying [childStack]'s.
+ *
+ * [key] is used for identifying [childStack]'s during serialization and instances in
+ * [NavControllerStore], which means keys MUST be unique.
  *
  * On death removes itself from the [NavControllerStore] right after the composition's death.
  */
@@ -49,7 +54,7 @@ inline fun <reified C : Any> navController(
 	serializer: KSerializer<C>? = serializer(),
 	navStore: NavControllerStore = LocalNavControllerStore.current,
 	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String = startingDestination::class.toString(),
+	key: String? = null,
 	noinline childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
@@ -58,19 +63,19 @@ inline fun <reified C : Any> navController(
 	}
 ): NavController<C> {
 	OnDestinationDisposeEffect(
-		"$key navController OnDestinationDisposeEffect",
+		"${startingDestination::class} key $key navController OnDestinationDisposeEffect",
 		waitForCompositionRemoval = true
 	) {
 		navStore.remove<C>()
 	}
 
 	return remember(componentContext) {
-		navStore.getOrCreate<C> {
+		navStore.getOrCreate<C>(key) {
 			NavController(
 				startingDestination,
 				serializer,
 				componentContext,
-				key,
+				key ?: startingDestination::class.toString(),
 				childFactory
 			)
 		}
