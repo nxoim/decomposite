@@ -9,17 +9,20 @@ import kotlin.reflect.KClass
  */
 @Immutable
 class NavControllerStore() {
-    val store = hashMapOf<Pair<String?, KClass<*>>, Any>()
+    private val store = hashMapOf<Pair<String?, KClass<*>>, Any>()
 
-    inline fun <reified T : Any> get(key: String? = null) = (store[Pair(key, T::class)] as? NavController<T>) ?: error(
-        "instance of ${T::class.simpleName} was not found in NavControllerStore"
-    )
+    fun <T : Any> get(key: String? = null, kClass: KClass<T>) =
+        (store[Pair(key, kClass)] as? NavController<T>)
+            ?: error("instance of ${kClass.simpleName} was not found in NavControllerStore")
 
-    inline fun <reified T : Any> getOrCreate(key: String? = null, crossinline creator: () -> NavController<T>) =
-        store.getOrPut(Pair(key, T::class)) { creator() } as NavController<T>
+    fun <T : Any> getOrCreate(
+        key: String? = null,
+        kClass: KClass<T>,
+        creator: () -> NavController<T>
+    ) = store.getOrPut(Pair(key, kClass)) { creator() } as NavController<T>
 
-    inline fun <reified T> remove(key: String? = null) {
-        store[Pair(key, T::class)]?.let { store.remove(Pair(key, T::class)) }
+    fun <T : Any> remove(key: String? = null, kClass: KClass<T>) {
+        store[Pair(key, kClass)]?.let { store.remove(Pair(key, kClass)) }
     }
 }
 

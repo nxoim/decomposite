@@ -28,10 +28,10 @@ import kotlin.jvm.JvmInline
  */
 @ReadOnlyComposable
 @Composable
-inline fun <reified T : Any> getExistingNavController(
+inline fun <reified C : Any> getExistingNavController(
 	key: String? = null,
 	navStore: NavControllerStore = LocalNavControllerStore.current
-) = navStore.get<T>(key)
+) = navStore.get(key, C::class)
 
 /**
  * Creates a navigation controller instance in the [NavControllerStore], which allows
@@ -62,27 +62,32 @@ inline fun <reified C : Any> navController(
 		DefaultChildInstance(childComponentContext)
 	}
 ): NavController<C> {
+	val kClass = remember { C::class }
+
 	OnDestinationDisposeEffect(
-		"${startingDestination::class} key $key navController OnDestinationDisposeEffect",
+		"$kClass key $key navController OnDestinationDisposeEffect",
 		waitForCompositionRemoval = true
 	) {
-		navStore.remove<C>()
+		navStore.remove(key, kClass)
 	}
 
 	return remember(componentContext) {
-		navStore.getOrCreate<C>(key) {
+		navStore.getOrCreate(key, kClass) {
 			NavController(
 				startingDestination,
 				serializer,
 				componentContext,
-				key ?: startingDestination::class.toString(),
+				key ?: kClass.toString(),
 				childFactory
 			)
 		}
 	}
 }
 
-inline fun <reified T : Any> getNavController(navStore: NavControllerStore) = navStore.get<T>()
+inline fun <reified C : Any> getNavController(
+	key: String? = null,
+	navStore: NavControllerStore
+) = navStore.get(key, C::class)
 
 /**
  * Generic navigation controller. Contains a stack for overlays and a stack for screens.
@@ -125,7 +130,8 @@ class NavController<C : Any>(
 
 	/**
 	 * Navigates to a destination. If a destination exists already - moves it to the top instead
-	 * of adding a new entry. If the requested [destination] precedes the current one in the stack -
+	 * of adding a new entry. If the [removeIfIsPreceding] is enabled (is by default) and
+	 * the requested [destination] precedes the current one in the stack -
 	 * navigate back instead.
 	 */
 	fun navigate(
