@@ -25,6 +25,7 @@ import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 /**
@@ -202,7 +203,7 @@ class DefaultContentAnimatorScope(
 		val velocity = velocityTracker.calculateVelocity().x
 		updateAnimationStatusAfterAllChanges()
 
-		launch {
+		val gestureProgressAnimation = launch {
 			gestureAnimationProgressAnimatable.animateTo(
 				targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
 				animationSpec = animationSpec,
@@ -210,20 +211,20 @@ class DefaultContentAnimatorScope(
 			)
 		}
 
-		animationProgressAnimatable.animateTo(
-			targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
-			animationSpec = animationSpec,
-			initialVelocity = velocity
-		)
+		val animationProgressAnimation = launch {
+			animationProgressAnimatable.animateTo(
+				targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
+				animationSpec = animationSpec,
+				initialVelocity = velocity
+			)
+		}
 
 		launch {
 			// for a moment this block will be called upon OnBack because that's animateTo's
 			// intended behavior, meaning these will be called unintentionally, unintentionally
 			// updating animation status. adding a delay compensates for this
 			withFrameNanos { }
-			while (gestureAnimationProgressAnimatable.isRunning) {
-				withFrameMillis {  } // wait for both to finish
-			}
+			joinAll(animationProgressAnimation, gestureProgressAnimation)
 
 			direction = Direction.None
 			animationType = AnimationType.None

@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -27,6 +26,7 @@ import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Comp
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -197,17 +197,19 @@ internal class MaterialContainerMorphContentAnimatorScope(
         // if the location is outside - report that a removal from the screen is needed by
         // not animating the progress, as animateTo delays that action
 
-        if (!location.outside) {
-            launch {
-                gestureAnimationProgressAnimatable.animateTo(
-                    targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
-                    animationSpec = animationSpec,
-                    initialVelocity = 0.1f + velocityTracker.calculateVelocity().x
-                )
-            }
+        val gestureProgressAnimation = launch {
+           gestureAnimationProgressAnimatable.animateTo(
+                targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
+                animationSpec = animationSpec,
+                initialVelocity = 0.1f + velocityTracker.calculateVelocity().x
+            )
+        }
 
-            launch { swipeOffsetAnimatable.animateTo(targetValue = IntOffset.Zero) }
+        val swipeOffsetAnimation = launch {
+            swipeOffsetAnimatable.animateTo(IntOffset.Zero)
+        }
 
+        val animationProgressAnimation = launch {
             animationProgressAnimatable.animateTo(
                 targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
                 animationSpec = animationSpec,
@@ -221,9 +223,9 @@ internal class MaterialContainerMorphContentAnimatorScope(
             // updating animation status. adding a delay compensates for this.
 
             // don't need this delay if the item is to be removed, which is when location is outside
-            if (!location.outside) withFrameNanos { }
-            while (gestureAnimationProgressAnimatable.isRunning) {
-                withFrameMillis {  } // wait for both to finish
+            if (!location.outside) {
+                withFrameNanos { }
+                joinAll(animationProgressAnimation, swipeOffsetAnimation, gestureProgressAnimation)
             }
 
             direction = Direction.None
