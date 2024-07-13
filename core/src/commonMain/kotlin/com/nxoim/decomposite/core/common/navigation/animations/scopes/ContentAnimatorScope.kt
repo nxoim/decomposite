@@ -10,9 +10,18 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
  * Base for the content animator scope implementations. Describes the bare minimum
  * needed. When implementing - keep in mind:
  * - elements, appearing and disappearing from the stack, update the state and trigger animations
+ *
  * - [onBackGesture] represents the user's actions and should not be used to manipulate the stack
+ *
  * - in [update], when animating exit - let the animation code (be it animateTo or animate) block
  * the thread so the content removal happens only after the animation has ended.
+ *
+ * - [indexFromTop] represents the index of the item from the top of the stack, with
+ * 0 being the top. Negative numbers represent an item not existing in the stack while being
+ * animated. If several items are being removed and all are animated at the same time - 
+ * [indexFromTop] will be represent the order of the items being removed, -1 being
+ * the latest item that has been removed. Yes, the number can be less than -1.
+ *
  *
  * [animationProgressForScope] describes the current progress of an animation
  * and is used for providing the [AnimatedVisibilityScope] to the content, for

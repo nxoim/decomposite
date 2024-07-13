@@ -43,7 +43,6 @@ import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Comp
 import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
@@ -147,7 +146,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 							LocalNavigationRoot.current.screenInformation
 						)
 					)
-
 					val animData = remember(allAnimations) {
 						getOrCreateAnimationData(
 							key = child,
@@ -179,20 +177,23 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 					val firstAnimData = animData.scopes.values.first()
 
 					// i have no idea how to use EnterExitState. i literally
-					// bruteforced this. it took me 2 days
+					// bruteforced this. it took me 3 days
 					val transitionState = remember {
-						SeekableTransitionState(EnterExitState.PostExit)
+						SeekableTransitionState(EnterExitState.PreEnter)
 					}
 					val transition = rememberTransition(transitionState)
 					val animatedVisibilityScope =
 						remember { AnimatedVisibilityScopeImpl(transition) }
 
 					LaunchedEffect(firstAnimData.animationStatus) {
-						snapshotFlow { firstAnimData.animationProgressForScope.value }
-							.collectLatest() { animationProgress ->
-								val animStatus = firstAnimData.animationStatus as AnimationStatus
-								val targetState = animStatus.toEnterExitState()
+						val animStatus = firstAnimData.animationStatus
+						val currentState = animStatus.toCurrentEnterExitState()
+						val targetState = animStatus.toTargetEnterExitState()
 
+						transitionState.snapTo(currentState)
+
+						snapshotFlow { firstAnimData.animationProgressForScope.value }
+							.collect() { animationProgress ->
 								val targetProgess = calculateTargetProgress(
 									targetState,
 									animationProgress,
@@ -249,8 +250,8 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 								content = {
 									content(instance)
 									BasicText(
-										(firstAnimData.animationStatus as AnimationStatus).toEnterExitState()
-											.toString() + "\n" + firstAnimData.animationStatus.toString(),
+										(firstAnimData.animationStatus as AnimationStatus).toTargetEnterExitState()
+											.toString() + "\n" + firstAnimData.animationStatus.toString() + "\n" + transitionState .toString(),
 										color = { Color.White },
 										modifier = Modifier.offset(y = 20.dp),
 										style = TextStyle(
@@ -286,7 +287,23 @@ private class AnimatedVisibilityScopeImpl(
 	override val transition: Transition<EnterExitState>
 ) : AnimatedVisibilityScope
 
-fun AnimationStatus.toEnterExitState() = when {
+fun AnimationStatus.toCurrentEnterExitState() = when {
+	fromOutsideIntoTop -> EnterExitState.PreEnter
+	fromTopToOutside -> EnterExitState.Visible
+
+	fromTopIntoBack -> EnterExitState.Visible
+	fromBackIntoTop -> EnterExitState.PreEnter
+
+	location.top && animationType.passiveCancelling -> EnterExitState.Visible
+	location.back && animationType.passiveCancelling -> EnterExitState.PostExit
+
+	location.top && !animating -> EnterExitState.Visible
+	(location.back && !animating) || fromBackToBack -> EnterExitState.PreEnter
+
+	else -> error("function toCurrentEnterExitState. $this")
+}
+
+fun AnimationStatus.toTargetEnterExitState() = when {
 	fromOutsideIntoTop -> EnterExitState.Visible
 	fromTopToOutside -> EnterExitState.PostExit
 
@@ -294,12 +311,12 @@ fun AnimationStatus.toEnterExitState() = when {
 	fromBackIntoTop -> EnterExitState.Visible
 
 	location.top && animationType.passiveCancelling -> EnterExitState.PostExit
-	location.back && animationType.passiveCancelling -> EnterExitState.PostExit
+	location.back && animationType.passiveCancelling -> EnterExitState.Visible
 
 	location.top && !animating -> EnterExitState.Visible
 	(location.back && !animating) || fromBackToBack -> EnterExitState.PreEnter
 
-	else -> EnterExitState.PreEnter
+	else -> error("function toTargetEnterExitState. $this")
 }
 
 // Function to calculate progress
@@ -314,29 +331,27 @@ fun calculateTargetProgress(
 ) = when (targetState) {
 	EnterExitState.PreEnter -> {
 		when {
-			animStatus.animationType.passiveCancelling && animStatus.location.top -> 1f - animationProgress
-			else -> 1f
+			animStatus.fromBackIntoTop -> 1f - animationProgress
+			!animStatus.animating && animStatus.location.top -> 1f
+			!animStatus.animating && animStatus.location.back || animStatus.fromBackToBack -> 0f
+			else -> error("function calculateTargetProgress. PreEnter. $animStatus")
 		}
-//		error("this is unused. how did this happen")
 	}
 
 	EnterExitState.Visible -> when {
 		animStatus.fromOutsideIntoTop -> 1f + animationProgress
 		animStatus.fromBackIntoTop -> 1f - animationProgress
-		animStatus.animationType.passiveCancelling && animStatus.location.top -> 1f - animationProgress
-		animStatus.animationType.passiveCancelling && animStatus.location.back -> animationProgress
+		animStatus.animationType.passiveCancelling && animStatus.location.back -> 1f - animationProgress
 		!animStatus.animating && animStatus.location.top -> 1f
 		!animStatus.animating && animStatus.location.back -> 0f
-		else -> error("huh EnterExitState.Visible , $animStatus")
+		else -> error("function calculateTargetProgress. Visible. $animStatus")
 	}
 
 	EnterExitState.PostExit -> when {
 		animStatus.fromTopToOutside -> -animationProgress
 		animStatus.fromTopIntoBack -> animationProgress
-		animStatus.animationType.passiveCancelling && animStatus.location.top -> 1f + animationProgress
-		animStatus.animationType.passiveCancelling && animStatus.location.back -> animationProgress
-		!animStatus.animating || animStatus.fromBackToBack -> 0f
-		else -> error("djhdndbnf")
+		animStatus.animationType.passiveCancelling && animStatus.location.top -> -animationProgress
+		else -> error("function calculateTargetProgress. PostExit. $animStatus")
 	}
 }.coerceIn(0f, 1f)
 

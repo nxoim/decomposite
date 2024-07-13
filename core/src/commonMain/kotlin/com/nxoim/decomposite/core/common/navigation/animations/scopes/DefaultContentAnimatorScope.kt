@@ -122,7 +122,7 @@ class DefaultContentAnimatorScope(
 	)
 
 	override suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
-		when (backGesture) {
+		if (indexFromTop >= 0) when (backGesture) {
 			is BackGestureEvent.OnBackStarted -> {
 				// stop all animations
 				animationProgressAnimatable.stop()
@@ -134,7 +134,7 @@ class DefaultContentAnimatorScope(
 
 				direction = Direction.Outwards
 				animationType = AnimationType.Gestures
-				updateAnimationStatusAfterAllChanges()
+				updateAnimationStatusAfterAllChanges("onBackStarted")
 			}
 
 			is BackGestureEvent.OnBackProgressed -> {
@@ -145,7 +145,7 @@ class DefaultContentAnimatorScope(
 				// while a gesture is in progress. this makes sure that doesn't happen
 				direction = Direction.Outwards
 				animationType = AnimationType.Gestures
-				updateAnimationStatusAfterAllChanges()
+				updateAnimationStatusAfterAllChanges("onBackProgressed")
 
 				gestureAnimationProgressAnimatable
 					.snapTo(animationProgress - backGesture.event.progress)
@@ -164,7 +164,6 @@ class DefaultContentAnimatorScope(
 			BackGestureEvent.OnBackCancelled -> {
 				direction = Direction.Inwards
 				animationType = AnimationType.PassiveCancelling
-//				updateAnimationStatusAfterAllChanges()
 				animateToTarget()
 			}
 
@@ -204,7 +203,7 @@ class DefaultContentAnimatorScope(
 
 	private suspend fun animateToTarget() = coroutineScope {
 		val velocity = velocityTracker.calculateVelocity().x
-		updateAnimationStatusAfterAllChanges()
+		updateAnimationStatusAfterAllChanges("animateToTarget beginning")
 
 		launch {
 			gestureAnimationProgressAnimatable.animateTo(
@@ -234,19 +233,23 @@ class DefaultContentAnimatorScope(
 
 			direction = Direction.None
 			animationType = AnimationType.None
-			updateAnimationStatusAfterAllChanges()
+			updateAnimationStatusAfterAllChanges("animateToTarget launch block")
 
 			backEvent = BackEvent()
 		}
 	}
 
-	private fun updateAnimationStatusAfterAllChanges() {
+	private fun updateAnimationStatusAfterAllChanges(updateFrom: String) {
+		println("current: $animationStatus. updateFrom: $updateFrom")
+
 		val newStatus = AnimationStatus(
 			previousLocation = previousIndexFromTop?.let { toItemLocation(it) },
 			location = toItemLocation(indexFromTop),
 			direction = direction,
 			animationType = animationType
 		)
+
+		println("newStatus: $newStatus. updateFrom: $updateFrom")
 
 		animationStatus = newStatus
 	}
