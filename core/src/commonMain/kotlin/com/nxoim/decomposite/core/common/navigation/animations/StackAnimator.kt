@@ -216,9 +216,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 					LaunchedEffect(indexFromTop, index) {
 						animData.scopes.forEach { (_, scope) ->
 							launch {
-								// to remove
-								println("$child at indexFromTop: $indexFromTop, index: $index")
-
 								scope.update(
 									newIndex = index,
 									newIndexFromTop = indexFromTop,
@@ -251,7 +248,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 									content(instance)
 									BasicText(
 										(firstAnimData.animationStatus as AnimationStatus).toTargetEnterExitState()
-											.toString() + "\n" + firstAnimData.animationStatus.toString() + "\n" + transitionState .toString(),
+											.toString() + "\n" + firstAnimData.animationStatus.toString() + "\n" + transitionState.toString(),
 										color = { Color.White },
 										modifier = Modifier.offset(y = 20.dp),
 										style = TextStyle(
@@ -287,7 +284,7 @@ private class AnimatedVisibilityScopeImpl(
 	override val transition: Transition<EnterExitState>
 ) : AnimatedVisibilityScope
 
-fun AnimationStatus.toCurrentEnterExitState() = when {
+private fun AnimationStatus.toCurrentEnterExitState() = when {
 	fromOutsideIntoTop -> EnterExitState.PreEnter
 	fromTopToOutside -> EnterExitState.Visible
 
@@ -303,7 +300,7 @@ fun AnimationStatus.toCurrentEnterExitState() = when {
 	else -> error("function toCurrentEnterExitState. $this")
 }
 
-fun AnimationStatus.toTargetEnterExitState() = when {
+private fun AnimationStatus.toTargetEnterExitState() = when {
 	fromOutsideIntoTop -> EnterExitState.Visible
 	fromTopToOutside -> EnterExitState.PostExit
 
@@ -319,23 +316,20 @@ fun AnimationStatus.toTargetEnterExitState() = when {
 	else -> error("function toTargetEnterExitState. $this")
 }
 
-// Function to calculate progress
-// animation progress:
-// 1f = in back stack = 0f reported progress
-// 0f = top of the stack/visible content = 1f reported progress
-// -1f = out of the stack/hidden content = 0f reported progress
-fun calculateTargetProgress(
+// Function to calculate target animation progress:
+// 1f = in back stack
+// 0f = top of the stack/visible content
+// -1f = out of the stack/hidden content
+private fun calculateTargetProgress(
 	targetState: EnterExitState,
 	animationProgress: Float,
 	animStatus: AnimationStatus
 ) = when (targetState) {
-	EnterExitState.PreEnter -> {
-		when {
-			animStatus.fromBackIntoTop -> 1f - animationProgress
-			!animStatus.animating && animStatus.location.top -> 1f
-			!animStatus.animating && animStatus.location.back || animStatus.fromBackToBack -> 0f
-			else -> error("function calculateTargetProgress. PreEnter. $animStatus")
-		}
+	EnterExitState.PreEnter -> when {
+		animStatus.fromBackIntoTop -> 1f - animationProgress
+		!animStatus.animating && animStatus.location.top -> 1f
+		!animStatus.animating && animStatus.location.back || animStatus.fromBackToBack -> 0f
+		else -> error("function calculateTargetProgress. PreEnter. $animStatus")
 	}
 
 	EnterExitState.Visible -> when {

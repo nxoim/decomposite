@@ -158,15 +158,14 @@ internal class MaterialContainerMorphContentAnimatorScope(
                 direction = Direction.Inwards
                 animationType = AnimationType.PassiveCancelling
 
-                updateAnimationStatusAfterAllChanges()
                 animateToTarget()
             }
 
             BackGestureEvent.OnBack -> {
                 direction = Direction.Outwards
                 animationType = AnimationType.Passive
-
-                updateAnimationStatusAfterAllChanges()
+                // on BackGestureEvent.OnBack an item is removed, and that will
+                // trigger [update] function, updating the state and triggering an animation
             }
         }
     }
@@ -177,13 +176,10 @@ internal class MaterialContainerMorphContentAnimatorScope(
         animate: Boolean
     ) {
         val newDirection = when {
+            newIndexFromTop <= -1 || newIndexFromTop < indexFromTop -> Direction.Outwards
             newIndexFromTop > indexFromTop -> Direction.Inwards
-            newIndexFromTop < indexFromTop -> Direction.Outwards
             else -> Direction.None
         }
-
-        // to remove
-        println("$newIndexFromTop, $indexFromTop, newDirection: $newDirection")
 
         previousIndexFromTop = indexFromTop
 
@@ -193,12 +189,11 @@ internal class MaterialContainerMorphContentAnimatorScope(
         direction = newDirection
         animationType = if (newDirection.none) AnimationType.None else AnimationType.Passive
 
-        updateAnimationStatusAfterAllChanges()
-
         if (animate) animateToTarget()
     }
 
     private suspend fun animateToTarget() = coroutineScope {
+        updateAnimationStatusAfterAllChanges()
         // if the location is outside - report that a removal from the screen is needed by
         // not animating the progress, as animateTo delays that action
 

@@ -122,7 +122,7 @@ class DefaultContentAnimatorScope(
 	)
 
 	override suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
-		if (indexFromTop >= 0) when (backGesture) {
+		when (backGesture) {
 			is BackGestureEvent.OnBackStarted -> {
 				// stop all animations
 				animationProgressAnimatable.stop()
@@ -170,6 +170,8 @@ class DefaultContentAnimatorScope(
 			BackGestureEvent.OnBack -> {
 				direction = Direction.Outwards
 				animationType = AnimationType.Passive
+				// on BackGestureEvent.OnBack an item is removed, and that will
+				// trigger [update] function, updating the state and triggering an animation
 			}
 		}
 	}
@@ -185,9 +187,6 @@ class DefaultContentAnimatorScope(
 			else -> Direction.None
 		}
 
-		// to remove
-		println("$newIndexFromTop, $indexFromTop, newDirection: $newDirection")
-
 		previousIndexFromTop = indexFromTop
 
 		index = newIndex
@@ -195,8 +194,6 @@ class DefaultContentAnimatorScope(
 
 		direction = newDirection
 		animationType = if (newDirection.none) AnimationType.None else AnimationType.Passive
-//
-//		updateAnimationStatusAfterAllChanges()
 
 		if (animate) animateToTarget()
 	}
@@ -228,9 +225,6 @@ class DefaultContentAnimatorScope(
 				withFrameMillis {  } // wait for both to finish
 			}
 
-			// to remove
-			println("animationEnd")
-
 			direction = Direction.None
 			animationType = AnimationType.None
 			updateAnimationStatusAfterAllChanges()
@@ -240,14 +234,12 @@ class DefaultContentAnimatorScope(
 	}
 
 	private fun updateAnimationStatusAfterAllChanges() {
-		val newStatus = AnimationStatus(
+		animationStatus = AnimationStatus(
 			previousLocation = previousIndexFromTop?.let { toItemLocation(it) },
 			location = toItemLocation(indexFromTop),
 			direction = direction,
 			animationType = animationType
 		)
-
-		animationStatus = newStatus
 	}
 }
 
