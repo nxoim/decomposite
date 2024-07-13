@@ -130,7 +130,7 @@ data class AnimationStatus(
 sealed class ItemLocation(val indexFromTop: Int) {
 	data class Back(private val _indexFromTop: Int) : ItemLocation(_indexFromTop)
 	data object Top : ItemLocation(0)
-	data object Outside : ItemLocation(-1)
+	data class Outside(private val _indexFromTop: Int) : ItemLocation(_indexFromTop)
 
 	companion object {
 		val ItemLocation.top get() = this == Top
@@ -139,7 +139,7 @@ sealed class ItemLocation(val indexFromTop: Int) {
 		/**
 		 * Only happens upon removal of an item from the stack
 		 */
-		val ItemLocation.outside get() = this == Outside
+		val ItemLocation.outside get() = this is Outside
 	}
 }
 

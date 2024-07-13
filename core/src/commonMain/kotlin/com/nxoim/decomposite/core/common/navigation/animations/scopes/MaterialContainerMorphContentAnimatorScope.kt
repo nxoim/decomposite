@@ -257,7 +257,7 @@ internal class MaterialContainerMorphContentAnimatorScope(
 }
 
 private fun toItemLocation(indexFromTop: Int): ItemLocation = when {
-    indexFromTop < 0 -> ItemLocation.Outside
+    indexFromTop < 0 -> ItemLocation.Outside(indexFromTop)
     indexFromTop == 0 -> ItemLocation.Top
     indexFromTop > 0 -> ItemLocation.Back(indexFromTop)
     else -> error("Unexpected indexFromTop value: $indexFromTop")
