@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -107,7 +108,7 @@ internal class MaterialContainerMorphContentAnimatorScope(
     override var animationStatus by mutableStateOf(
         AnimationStatus(
             previousLocation = previousIndexFromTop?.let { toItemLocation(it) },
-            location = toItemLocation(indexFromTop),
+            location = toItemLocation(indexFromTop.coerceAtLeast(0)),
             direction = direction,
             animationType = animationType
         )
@@ -127,6 +128,7 @@ internal class MaterialContainerMorphContentAnimatorScope(
 
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
                 swipeEdge = backGesture.event.swipeEdge
+                velocityTracker.resetTracking()
 
                 direction = Direction.Outwards
                 animationType = AnimationType.Gestures
@@ -150,6 +152,15 @@ internal class MaterialContainerMorphContentAnimatorScope(
                             (backGesture.event.touchY - initialSwipeOffset.y).roundToInt()
                         )
                     )
+
+                    launch {
+                        withFrameMillis { frameTimeMillis ->
+                            velocityTracker.addPosition(
+                                timeMillis = frameTimeMillis,
+                                position = Offset(gestureAnimationProgress, 0f)
+                            )
+                        }
+                    }
                 } else return@coroutineScope
             }
 
