@@ -292,7 +292,7 @@ private fun AnimationStatus.toCurrentEnterExitState() = when {
 	fromBackIntoTop -> EnterExitState.PreEnter
 
 	location.top && animationType.passiveCancelling -> EnterExitState.Visible
-	location.back && animationType.passiveCancelling -> EnterExitState.PostExit
+	location.back && animationType.passiveCancelling -> EnterExitState.PreEnter
 
 	location.top && !animating -> EnterExitState.Visible
 	(location.back && !animating) || fromBackToBack -> EnterExitState.PreEnter

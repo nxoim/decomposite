@@ -136,15 +136,16 @@ internal class MaterialContainerMorphContentAnimatorScope(
             }
 
             is BackGestureEvent.OnBackProgressed -> {
+                // an animation can be kinda cancelled (see AnimationType.PassiveCancelling)
+                // meaning the direction and type might be updated to none
+                // while a gesture is in progress. this makes sure that doesn't happen
+                direction = Direction.Outwards
+                animationType = AnimationType.Gestures
+                updateAnimationStatusAfterAllChanges()
+
+
                 if (location.top) {
                     gestureAnimationProgressAnimatable.snapTo(animationProgress - backGesture.event.progress)
-
-                    // an animation can be kinda cancelled (see AnimationType.PassiveCancelling)
-                    // meaning the direction and type might be updated to none
-                    // while a gesture is in progress. this makes sure that doesn't happen
-                    direction = Direction.Outwards
-                    animationType = AnimationType.Gestures
-                    updateAnimationStatusAfterAllChanges()
 
                     swipeOffsetAnimatable.snapTo(
                         IntOffset(
