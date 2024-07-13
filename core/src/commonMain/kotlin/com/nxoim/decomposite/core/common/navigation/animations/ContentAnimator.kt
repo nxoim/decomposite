@@ -16,7 +16,7 @@ value class ContentAnimations(val items: List<ContentAnimator<*>>)
 
 /**
  * Describes the animator and creates a scope. [key] is used to identify the scopes in
- * [StackAnimatorScope] and to minimize their creation, as scopes with the same animator type
+ * [StackAnimatorScope] and to minimize their creation, as scopes with the same animator animationType
  * and key will always have 1a single instance.
  */
 @Immutable

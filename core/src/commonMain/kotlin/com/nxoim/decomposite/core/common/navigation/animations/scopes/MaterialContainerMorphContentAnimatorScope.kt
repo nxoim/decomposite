@@ -3,18 +3,31 @@ package com.nxoim.decomposite.core.common.navigation.animations.scopes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.VectorConverter
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.IntOffset
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackEvent
-import com.nxoim.decomposite.core.common.navigation.animations.*
+import com.nxoim.decomposite.core.common.navigation.animations.AnimationStatus
+import com.nxoim.decomposite.core.common.navigation.animations.AnimationType
+import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
+import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.Direction
+import com.nxoim.decomposite.core.common.navigation.animations.Direction.Companion.none
+import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation
+import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.outside
+import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
+import com.nxoim.decomposite.core.common.navigation.animations.softSpring
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlin.math.roundToInt
 
 /**
@@ -45,25 +58,28 @@ internal fun materialContainerMorphContentAnimator(
     )
 )
 
-internal class MaterialContainerMorphContentAnimatorScope (
-    initialIndex: Int,
-    initialIndexFromTop: Int,
-    private val animationSpec: AnimationSpec<Float>,
+internal class MaterialContainerMorphContentAnimatorScope(
+    private val initialIndex: Int,
+    private val initialIndexFromTop: Int,
+    private val animationSpec: AnimationSpec<Float>
 ) : ContentAnimatorScope {
-    private val mutex = Mutex()
-    private var _indexFromTop by mutableIntStateOf(initialIndexFromTop)
-    override val indexFromTop get() = _indexFromTop
-    private var _index by mutableIntStateOf(initialIndex)
-    override val index get() = _index
-    private val initial get() = _index == 0
+    override var indexFromTop by mutableIntStateOf(initialIndexFromTop)
+        private set
 
-    private val location
-        get() = when {
-            _indexFromTop <= -1 -> ItemLocation.Outside
-            _indexFromTop == 0 -> ItemLocation.Top
-            _indexFromTop >= 1 -> ItemLocation.Back
-            else -> error("how")
+    override var index by mutableIntStateOf(initialIndex)
+        private set
+
+    private val initial get() = index == 0
+
+    private var previousIndexFromTop by mutableStateOf(
+        when {
+            initial -> 0
+            initialIndexFromTop == 0 -> -1
+            else -> null
         }
+    )
+
+    private val velocityTracker = VelocityTracker()
 
     // standard progress
     private val animationProgressAnimatable = Animatable(indexFromTop.toFloat())
@@ -71,28 +87,35 @@ internal class MaterialContainerMorphContentAnimatorScope (
     private val gestureAnimationProgressAnimatable = Animatable(indexFromTop.toFloat())
     private val swipeOffsetAnimatable = Animatable(IntOffset.Zero, IntOffset.VectorConverter)
 
-    private val _swipeEdge = mutableStateOf(BackEvent.SwipeEdge.LEFT)
-
-    // only for velocity
-    private val rawGestureProgress = Animatable(0f)
-
     private var initialSwipeOffset by mutableStateOf(Offset.Zero)
 
     val animationProgress by animationProgressAnimatable.asState()
     val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
     val swipeOffset by swipeOffsetAnimatable.asState()
-    val swipeEdge by _swipeEdge
+    var swipeEdge by mutableStateOf(BackEvent.SwipeEdge.LEFT)
+        private set
+    // this isn't meant to be animated by gestures because container transform
+    override val animationProgressForScope = animationProgressAnimatable.asState()
 
-    private var _animationStatus by mutableStateOf(
-        DefaultAnimationStatus(
-            previousLocation = if (initial) ItemLocation.Top else ItemLocation.Outside,
-            location = ItemLocation.Top,
-            direction = if (initial) Direction.None else Direction.Inward,
-            type = if (initial) AnimationType.None else AnimationType.Passive
-        )
+    private var direction by mutableStateOf(
+        if (initial) Direction.None else Direction.Inwards
+    )
+    private var animationType by mutableStateOf(
+        if (direction.none) AnimationType.None else AnimationType.Passive
     )
 
-    override val animationStatus get() = _animationStatus
+    override var animationStatus by mutableStateOf(
+        AnimationStatus(
+            previousLocation = previousIndexFromTop?.let { toItemLocation(it) },
+            location = toItemLocation(indexFromTop),
+            direction = direction,
+            animationType = animationType
+        )
+    )
+        private set
+
+    private val location
+        get() = toItemLocation(indexFromTop)
 
     override suspend fun onBackGesture(backGesture: BackGestureEvent) = coroutineScope {
         when (backGesture) {
@@ -103,60 +126,47 @@ internal class MaterialContainerMorphContentAnimatorScope (
                 swipeOffsetAnimatable.stop()
 
                 initialSwipeOffset = Offset(backGesture.event.touchX, backGesture.event.touchY)
-                _swipeEdge.value = backGesture.event.swipeEdge
+                swipeEdge = backGesture.event.swipeEdge
 
-                updateStatus(
-                    _animationStatus.location,
-                    location,
-                    Direction.Outward,
-                    AnimationType.Gestures,
-                )
+                direction = Direction.Outwards
+                animationType = AnimationType.Gestures
+                updateAnimationStatusAfterAllChanges()
             }
 
             is BackGestureEvent.OnBackProgressed -> {
                 if (location.top) {
                     gestureAnimationProgressAnimatable.snapTo(animationProgress - backGesture.event.progress)
+
+                    // an animation can be kinda cancelled (see AnimationType.PassiveCancelling)
+                    // meaning the direction and type might be updated to none
+                    // while a gesture is in progress. this makes sure that doesn't happen
+                    direction = Direction.Outwards
+                    animationType = AnimationType.Gestures
+                    updateAnimationStatusAfterAllChanges()
+
                     swipeOffsetAnimatable.snapTo(
                         IntOffset(
                             (backGesture.event.touchX - initialSwipeOffset.x).roundToInt(),
                             (backGesture.event.touchY - initialSwipeOffset.y).roundToInt()
                         )
                     )
-
-                    launch { rawGestureProgress.animateTo(backGesture.event.progress) }
-                }
-
-                updateStatus(
-                    _animationStatus.location,
-                    location,
-                    Direction.Outward,
-                    AnimationType.Gestures,
-                )
+                } else return@coroutineScope
             }
 
             BackGestureEvent.None,
             BackGestureEvent.OnBackCancelled -> {
-                updateStatus(
-                    _animationStatus.location,
-                    location,
-                    Direction.Inward,
-                    AnimationType.Passive,
-                )
+                direction = Direction.Inwards
+                animationType = AnimationType.PassiveCancelling
+
+                updateAnimationStatusAfterAllChanges()
                 animateToTarget()
             }
 
             BackGestureEvent.OnBack -> {
-                if (location.outside) updateStatus(
-                    _animationStatus.location,
-                    location,
-                    Direction.None,
-                    AnimationType.None
-                ) else updateStatus(
-                    _animationStatus.location,
-                    location,
-                    Direction.Outward,
-                    AnimationType.Passive
-                )
+                direction = Direction.Outwards
+                animationType = AnimationType.Passive
+
+                updateAnimationStatusAfterAllChanges()
             }
         }
     }
@@ -167,53 +177,46 @@ internal class MaterialContainerMorphContentAnimatorScope (
         animate: Boolean
     ) {
         val newDirection = when {
-            newIndexFromTop > _indexFromTop -> Direction.Inward
-            newIndexFromTop < _indexFromTop -> Direction.Outward
-            else -> _animationStatus.direction
+            newIndexFromTop > indexFromTop -> Direction.Inwards
+            newIndexFromTop < indexFromTop -> Direction.Outwards
+            else -> Direction.None
         }
 
-        val newLocation = when {
-            newIndexFromTop <= -1 -> ItemLocation.Outside
-            newIndexFromTop == 0 -> ItemLocation.Top
-            newIndexFromTop >= 1 -> ItemLocation.Back
-            else -> error("how")
-        }
+        // to remove
+        println("$newIndexFromTop, $indexFromTop, newDirection: $newDirection")
 
-        val previousLocation = if (newIndexFromTop == 0 && newDirection == Direction.Inward) {
-            ItemLocation.Outside
-        } else {
-            location
-        }
+        previousIndexFromTop = indexFromTop
 
-        _index = newIndex
-        _indexFromTop = newIndexFromTop
+        index = newIndex
+        indexFromTop = newIndexFromTop
 
-        if (animate) {
-            updateStatus(previousLocation, newLocation, newDirection, AnimationType.Passive)
-            animateToTarget()
-        } else {
-            updateStatus(previousLocation, newLocation, Direction.None, AnimationType.None)
-        }
+        direction = newDirection
+        animationType = if (newDirection.none) AnimationType.None else AnimationType.Passive
+
+        updateAnimationStatusAfterAllChanges()
+
+        if (animate) animateToTarget()
     }
 
     private suspend fun animateToTarget() = coroutineScope {
         // if the location is outside - report that a removal from the screen is needed by
         // not animating the progress, as animateTo delays that action
+
         if (!location.outside) {
             launch {
                 gestureAnimationProgressAnimatable.animateTo(
-                    targetValue = (_indexFromTop.coerceAtLeast(-1)).toFloat(),
+                    targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
                     animationSpec = animationSpec,
-                    initialVelocity = 0.1f + rawGestureProgress.velocity
+                    initialVelocity = 0.1f + velocityTracker.calculateVelocity().x
                 )
             }
 
             launch { swipeOffsetAnimatable.animateTo(targetValue = IntOffset.Zero) }
 
             animationProgressAnimatable.animateTo(
-                targetValue = (_indexFromTop.coerceAtLeast(-1)).toFloat(),
+                targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
                 animationSpec = animationSpec,
-                initialVelocity = 0.1f + rawGestureProgress.velocity
+                initialVelocity = 0.1f + velocityTracker.calculateVelocity().x
             )
         }
 
@@ -222,31 +225,31 @@ internal class MaterialContainerMorphContentAnimatorScope (
             // intended behavior, meaning these will be called unintentionally, unintentionally
             // updating animation status. adding a delay compensates for this.
 
-            // dont need this delay if the item is to be removed, which is when location is outside
-            if (!location.outside) withFrameNanos {  }
+            // don't need this delay if the item is to be removed, which is when location is outside
+            if (!location.outside) withFrameNanos { }
+            while (gestureAnimationProgressAnimatable.isRunning) {
+                withFrameMillis {  } // wait for both to finish
+            }
 
-            updateStatus(
-                _animationStatus.location,
-                location,
-                Direction.None,
-                AnimationType.None
-            )
+            direction = Direction.None
+            animationType = AnimationType.None
+            updateAnimationStatusAfterAllChanges()
         }
     }
 
-    private suspend fun updateStatus(
-        previousLocation: ItemLocation,
-        newItemLocation: ItemLocation,
-        newDirection: Direction,
-        newType: AnimationType
-    ) {
-        mutex.withLock {
-            _animationStatus = DefaultAnimationStatus(
-                previousLocation = previousLocation,
-                location = newItemLocation,
-                direction = newDirection,
-                type = newType
-            )
-        }
+    private fun updateAnimationStatusAfterAllChanges() {
+        animationStatus = AnimationStatus(
+            previousLocation = previousIndexFromTop?.let { toItemLocation(it) },
+            location = toItemLocation(indexFromTop),
+            direction = direction,
+            animationType = animationType
+        )
     }
+}
+
+private fun toItemLocation(indexFromTop: Int): ItemLocation = when {
+    indexFromTop < 0 -> ItemLocation.Outside
+    indexFromTop == 0 -> ItemLocation.Top
+    indexFromTop > 0 -> ItemLocation.Back(indexFromTop)
+    else -> error("Unexpected indexFromTop value: $indexFromTop")
 }

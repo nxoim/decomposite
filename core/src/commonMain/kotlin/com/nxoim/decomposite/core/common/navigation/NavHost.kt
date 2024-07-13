@@ -1,5 +1,6 @@
 package com.nxoim.decomposite.core.common.navigation
 
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.NonRestartableComposable
@@ -38,7 +39,7 @@ inline fun <reified C : Any> NavHost(
     modifier: Modifier = Modifier,
     noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
         LocalContentAnimator.current,
-    crossinline router: @Composable (destination: C) -> Unit,
+    crossinline router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val screenStackAnimatorScope = rememberStackAnimatorScope<C>(
