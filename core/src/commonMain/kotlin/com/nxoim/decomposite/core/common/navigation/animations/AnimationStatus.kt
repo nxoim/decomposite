@@ -67,9 +67,14 @@ data class AnimationStatus(
 	 *
 	 * 	Example: removal of an item from the stack
 	 */
+	// "!location.back" instead of "location.top" because several items
+	// can be removed consecutively and therefore have an indexFromTop
+	// even less than -1, meaning an item can have previousLocation.outside
+	// with location.outside, like backstack items can have previousLocation.back
+	// with location.back
 	val fromTopToOutside
-		get() = (location.top && animationType.gestures && direction.outwards)
-				|| (location.outside && previousLocation != null && previousLocation.top && direction.outwards && !animationType.passiveCancelling)
+		get() = (!location.back && animationType.gestures && direction.outwards)
+				|| (location.outside && previousLocation != null && !previousLocation.back && direction.outwards && !animationType.passiveCancelling)
 
 	/**
 	 * This is true when the animation(passive, excluding the navigation cancellation

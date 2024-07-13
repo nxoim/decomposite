@@ -134,7 +134,7 @@ class DefaultContentAnimatorScope(
 
 				direction = Direction.Outwards
 				animationType = AnimationType.Gestures
-				updateAnimationStatusAfterAllChanges("onBackStarted")
+				updateAnimationStatusAfterAllChanges()
 			}
 
 			is BackGestureEvent.OnBackProgressed -> {
@@ -145,7 +145,7 @@ class DefaultContentAnimatorScope(
 				// while a gesture is in progress. this makes sure that doesn't happen
 				direction = Direction.Outwards
 				animationType = AnimationType.Gestures
-				updateAnimationStatusAfterAllChanges("onBackProgressed")
+				updateAnimationStatusAfterAllChanges()
 
 				gestureAnimationProgressAnimatable
 					.snapTo(animationProgress - backGesture.event.progress)
@@ -180,8 +180,8 @@ class DefaultContentAnimatorScope(
 		animate: Boolean
 	) {
 		val newDirection = when {
+			newIndexFromTop <= -1 || newIndexFromTop < indexFromTop -> Direction.Outwards
 			newIndexFromTop > indexFromTop -> Direction.Inwards
-			newIndexFromTop < indexFromTop -> Direction.Outwards
 			else -> Direction.None
 		}
 
@@ -203,7 +203,7 @@ class DefaultContentAnimatorScope(
 
 	private suspend fun animateToTarget() = coroutineScope {
 		val velocity = velocityTracker.calculateVelocity().x
-		updateAnimationStatusAfterAllChanges("animateToTarget beginning")
+		updateAnimationStatusAfterAllChanges()
 
 		launch {
 			gestureAnimationProgressAnimatable.animateTo(
@@ -233,23 +233,19 @@ class DefaultContentAnimatorScope(
 
 			direction = Direction.None
 			animationType = AnimationType.None
-			updateAnimationStatusAfterAllChanges("animateToTarget launch block")
+			updateAnimationStatusAfterAllChanges()
 
 			backEvent = BackEvent()
 		}
 	}
 
-	private fun updateAnimationStatusAfterAllChanges(updateFrom: String) {
-		println("current: $animationStatus. updateFrom: $updateFrom")
-
+	private fun updateAnimationStatusAfterAllChanges() {
 		val newStatus = AnimationStatus(
 			previousLocation = previousIndexFromTop?.let { toItemLocation(it) },
 			location = toItemLocation(indexFromTop),
 			direction = direction,
 			animationType = animationType
 		)
-
-		println("newStatus: $newStatus. updateFrom: $updateFrom")
 
 		animationStatus = newStatus
 	}
