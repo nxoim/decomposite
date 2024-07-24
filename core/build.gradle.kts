@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.maven.publish)
@@ -8,13 +11,11 @@ plugins {
 }
 
 kotlin {
+    jvm()
     androidTarget {
         publishLibraryVariants("release")
     }
-
-    jvm()
-
-//    js(IR) {
+    //    js(IR) {
 //        browser()
 //    }
 
@@ -34,6 +35,15 @@ kotlin {
         target.binaries.framework {
             baseName = "decomposite"
         }
+    }
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+
+    }
+
+    composeCompiler {
+        enableStrongSkippingMode = true
     }
 
     sourceSets {

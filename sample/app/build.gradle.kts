@@ -1,23 +1,32 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-    androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
-        }
-    }
-
     jvm()
-//
+    androidTarget()
+
+//    macosX64()
+//    macosArm64()
+
+//    listOf(
+//        iosX64(),
+//        iosArm64(),
+//        iosSimulatorArm64(),
+//    ).forEach { target ->
+//        target.binaries.framework {
+//            baseName = "decomposite"
+//        }
+//    }
+
+    //
 //    @OptIn(ExperimentalWasmDsl::class)
 //    wasmJs {
 //        moduleName = "app"
@@ -44,6 +53,15 @@ kotlin {
 //            isStatic = true
 //        }
 //    }
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+
+    }
+
+    composeCompiler {
+        enableStrongSkippingMode = true
+    }
 
     sourceSets {
         all {
