@@ -55,7 +55,7 @@ data class AnimationStatus(
 	 * Example: addition of an item to the stack when this item was at the top
 	 */
 	val fromTopIntoBack
-		get() = location.back
+		get() = location.indexFromTop == 1
 				&& previousLocation != null
 				&& previousLocation.top
 				&& direction.inwards
@@ -87,7 +87,7 @@ data class AnimationStatus(
 				&& animationType.passive
 				&& direction.inwards
 				&& (previousLocation == null || previousLocation.outside)
-
+				&& !animationType.passiveCancelling
 	/**
 	 * This is true when this item is going from a position in the back to another
 	 * position in the back that is closer to the top, e.g. from 2 to
@@ -120,6 +120,21 @@ data class AnimationStatus(
 	 * 1 to 2 (0 being the top of the stack).
 	 */
 	val fromBackToBack = fromUpperBackIntoLower || fromLowerBackIntoUpper
+
+	val targetingTop
+		get() = (location.top && (animationType.passiveCancelling || !direction.outwards))
+				|| fromOutsideIntoTop
+				|| fromBackToBack
+
+	val targetingBack
+		get() = (location.back && (animationType.passiveCancelling || !direction.inwards))
+				|| fromTopToOutside
+				|| fromBackToBack
+
+	val targetingOutside
+		get() = (location.outside && (animationType.passiveCancelling || !direction.inwards))
+				|| fromTopToOutside
+				|| fromBackToBack
 }
 
 /**
