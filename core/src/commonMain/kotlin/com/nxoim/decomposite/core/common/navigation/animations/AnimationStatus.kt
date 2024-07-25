@@ -88,6 +88,20 @@ data class AnimationStatus(
 				&& direction.inwards
 				&& (previousLocation == null || previousLocation.outside)
 				&& !animationType.passiveCancelling
+
+	/**
+	 * This is true when the animation(passive, excluding the navigation cancellation
+	 * animation) targets the outside of the stack from the back.
+	 *
+	 * Example: removal of an item from the stack
+	 */
+	val fromBackToOutside
+		get() = location.outside
+				&& animationType.passive
+				&& direction.outwards
+				&& (previousLocation == null || previousLocation.back)
+				&& !animationType.passiveCancelling
+
 	/**
 	 * This is true when this item is going from a position in the back to another
 	 * position in the back that is closer to the top, e.g. from 2 to
