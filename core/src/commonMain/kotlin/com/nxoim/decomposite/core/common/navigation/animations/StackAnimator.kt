@@ -12,8 +12,6 @@ import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.createChildTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -29,7 +27,6 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
@@ -38,12 +35,8 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -280,22 +273,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 						holder.SaveableStateProvider(childHolderKey(child)) {
 							content(instance)
 						}
-
-						val text = """
-							from ${this.transition.currentState} to ${this.transition.targetState}
-							
-							${this.transition}
-						""".trimIndent()
-
-						BasicText(
-							text,
-							color = { Color.White },
-							modifier = Modifier.offset(y = 60.dp),
-							style = TextStyle(
-								textAlign = TextAlign.Center,
-								fontSize = 8.sp
-							)
-						)
 					}
 				}
 			}
@@ -405,13 +382,13 @@ private class AnimatedEnterExitMeasurePolicy(
 /**
  * Observes lookahead size.
  */
-fun interface OnLookaheadMeasured {
+private fun interface OnLookaheadMeasured {
 	fun invoke(size: IntSize)
 }
 
 @OptIn(InternalAnimationApi::class, ExperimentalTransitionApi::class)
 @Composable
-internal fun <T> AnimatedVisibilityScopeProvider(
+private fun <T> AnimatedVisibilityScopeProvider(
 	transition: Transition<T>,
 	visible: (T) -> Boolean,
 	modifier: Modifier,
