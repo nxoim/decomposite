@@ -14,6 +14,7 @@ import androidx.compose.animation.core.rememberTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -47,12 +48,9 @@ import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.decompose.hashString
 import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.items
-import com.arkivanov.decompose.value.Value
 import com.nxoim.decomposite.core.common.navigation.DecomposeChildInstance
 import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationType.Companion.passiveCancelling
-import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlinx.coroutines.launch
@@ -63,7 +61,7 @@ import kotlinx.coroutines.launch
 @OptIn(InternalDecomposeApi::class)
 @Composable
 fun <C : Any, T : DecomposeChildInstance> StackAnimator(
-	stackValue: ImmutableThingHolder<Value<ChildStack<C, T>>>,
+	stackState: State<ChildStack<C, T>>,
 	stackAnimatorScope: StackAnimatorScope<C>,
 	modifier: Modifier = Modifier,
 	onBackstackChange: (stackEmpty: Boolean) -> Unit,
@@ -74,14 +72,14 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 ) = with(stackAnimatorScope) {
 	key(stackAnimatorScope.key) {
 		val holder = rememberSaveableStateHolder()
-		var sourceStack by remember { mutableStateOf(stackValue.thing.value) }
+		var sourceStack by remember { mutableStateOf(stackState.value) }
 		val removingChildren = remember { mutableStateListOf<C>() }
 		val cachedChildrenInstances = remember {
 			mutableStateMapOf<C, Child.Created<C, T>>().apply {
 				putAll(
-					stackValue.thing.items.subList(
+					stackState.value.items.subList(
 						if (excludeStartingDestination) 1 else 0,
-						stackValue.thing.items.size
+						stackState.value.items.size
 					).associateBy { it.configuration }
 				)
 			}
@@ -94,12 +92,12 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 				removeStaleAnimationDataCache(nonStale = sourceStack.items.fastMap { it.configuration })
 			}
 
-			stackValue.thing.subscribe { newStackRaw ->
+			snapshotFlow { stackState.value }.collect { newStackRaw ->
 				onBackstackChange(newStackRaw.items.size <= 1)
 				val oldStack = sourceStack.items
 				val newStack = newStackRaw.items.subList(
 					if (excludeStartingDestination) 1 else 0,
-					stackValue.thing.items.size
+					stackState.value.items.size
 				)
 
 				val childrenToRemove =

@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.router.stack.items
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
@@ -19,7 +20,6 @@ import com.nxoim.decomposite.core.common.navigation.animations.rememberStackAnim
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.ContentType
-import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.LocalContentType
 import kotlinx.coroutines.cancelChildren
@@ -54,7 +54,7 @@ inline fun <reified C : Any> NavHost(
 
     CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
         StackAnimator(
-            stackValue = ImmutableThingHolder(startingNavControllerInstance.screenStack),
+            stackState = startingNavControllerInstance.screenStack.subscribeAsState(),
             stackAnimatorScope = screenStackAnimatorScope,
             modifier = modifier,
             animations = animations,
@@ -72,7 +72,7 @@ inline fun <reified C : Any> NavHost(
     LocalNavigationRoot.current.overlay {
         CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
             StackAnimator(
-                stackValue = ImmutableThingHolder(startingNavControllerInstance.overlayStack),
+                stackState = startingNavControllerInstance.overlayStack.subscribeAsState(),
                 stackAnimatorScope = overlayStackAnimatorScope,
                 onBackstackChange = { empty ->
                     handlingGesturesInOverlay = !empty
