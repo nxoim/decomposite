@@ -5,12 +5,15 @@ import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.EnterExitState.PostExit
 import androidx.compose.animation.EnterExitState.PreEnter
 import androidx.compose.animation.EnterExitState.Visible
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.ExperimentalTransitionApi
+import androidx.compose.animation.core.InternalAnimationApi
 import androidx.compose.animation.core.SeekableTransitionState
 import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.createChildTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -19,11 +22,14 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.IntrinsicMeasurable
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
@@ -32,8 +38,12 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -48,9 +58,6 @@ import com.arkivanov.decompose.router.stack.items
 import com.arkivanov.decompose.value.Value
 import com.nxoim.decomposite.core.common.navigation.DecomposeChildInstance
 import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
-import com.nxoim.decomposite.core.common.navigation.animations.AnimationType.Companion.passiveCancelling
-import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.back
-import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
 import com.nxoim.decomposite.core.common.ultils.ImmutableThingHolder
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
@@ -59,7 +66,7 @@ import kotlinx.coroutines.launch
 /**
  * Animates the stack. Caches the children for the time of animation.
  */
-@OptIn(InternalDecomposeApi::class)
+@OptIn(InternalDecomposeApi::class, ExperimentalTransitionApi::class)
 @Composable
 fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 	stackValue: ImmutableThingHolder<Value<ChildStack<C, T>>>,
@@ -130,6 +137,10 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 		}
 
 		Box(modifier) {
+			val seekableTransitionState = remember {
+				SeekableTransitionState(sourceStack.active)
+			}
+			val rootTransition = rememberTransition(seekableTransitionState)
 
 			cachedChildrenInstances.forEach { (child, cachedInstance) ->
 				key(child) {
@@ -187,34 +198,51 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 					}
 
 					val firstAnimData = animData.scopes.values.first()
+//					val animStatus = firstAnimData.animationStatus
 
-					// i have no idea how to use EnterExitState. i literally
-					// bruteforced this. it took me 3 days
-					val transitionState = remember {
-						SeekableTransitionState(EnterExitState.PreEnter)
-					}
-					val transition = rememberTransition(transitionState)
-					val animatedVisibilityScope = remember {
-						AnimatedVisibilityScopeImpl(transition)
-					}
 
-					LaunchedEffect(firstAnimData.animationStatus) {
-						val animStatus = firstAnimData.animationStatus
-//						val currentState = animStatus.toCurrentEnterExitState()
-						val targetState = animStatus.toTargetEnterExitState()
+//					val animatedVisibilityScope = remember {
+//						AnimatedVisibilityScopeImpl()
+//					}
+//
+//					val exiting = animStatus.fromTopToOutside
+//							|| animStatus.fromBackToOutside
+//							|| animStatus.fromTopIntoBack
 
-//						transitionState.snapTo(currentState)
+//					val entering = animStatus.fromOutsideIntoTop
+//							|| animStatus.fromBackIntoTop
 
-						snapshotFlow { firstAnimData.animationProgressForScope.value }
-							.collect() { animationProgress ->
-								val targetProgess = calculateTargetProgress(
-									targetState,
-									animationProgress,
-									animStatus
+
+//					val enterEnded = animStatus.location.top && !animStatus.animating
+
+//					val targetForSeeking = when {
+//						animStatus.animationType.passiveCancelling
+//								|| exiting -> EnterExitState.PostExit
+//
+//						entering || enterEnded -> EnterExitState.Visible
+//
+//						else -> EnterExitState.PreEnter
+//
+//					}
+					val progress = firstAnimData.animationProgressForScope.value
+
+					LaunchedEffect(progress) {
+						val previousInstance = sourceStack.backStack.lastOrNull()
+
+						if (indexFromTop == 0) {
+							previousInstance?.let {
+								seekableTransitionState.seekTo(
+									(-progress).coerceIn(0f, 1f),
+									it
 								)
-
-								transitionState.seekTo(targetProgess, targetState)
 							}
+						}
+					}
+
+					LaunchedEffect(indexFromTop) {
+						if (indexFromTop == 0) {
+							seekableTransitionState.animateTo(instance)
+						}
 					}
 
 					LaunchedEffect(allowingAnimation, inStack) {
@@ -235,6 +263,10 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 									animate = scope.indexFromTop != indexFromTop || indexFromTop < 1
 								)
 
+//								if (indexFromTop == 0) seekableTransitionState.snapTo(
+//									instance
+//								)
+
 								// after animating, if is not in stack
 								if (!inStack) cachedChildrenInstances.remove(child)
 							}
@@ -252,51 +284,32 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 						holder.removeState(childHolderKey(child))
 					}
 
-					with(animatedVisibilityScope) {
-						if (displaying) holder.SaveableStateProvider(childHolderKey(child)) {
-//							Box(
-//								Modifier.zIndex((-indexFromTop).toFloat())
-//									.accumulate(animData.modifiers),
-//								content = {
-//									content(instance)
-////									BasicText(
-////										(firstAnimData.animationStatus as AnimationStatus).toTargetEnterExitState()
-////											.toString() + "\n" + firstAnimData.animationStatus.toString() + "\n" + transitionState.toString(),
-////										color = { Color.White },
-////										modifier = Modifier.offset(y = 20.dp),
-////										style = TextStyle(
-////											textAlign = TextAlign.Center,
-////											fontSize = 8.sp
-////										)
-////									)
-//								}
-//							)
-
-							val targetingTop = firstAnimData.animationStatus.targetingTop
-
-							Layout(
-								content = { animatedVisibilityScope.content(instance) },
-								modifier = Modifier
-									.layout { measurable, constraints ->
-										val placeable = measurable.measure(constraints)
-										val (w, h) =
-											if (isLookingAhead && !targetingTop) {
-												IntSize.Zero
-											} else {
-												IntSize(placeable.width, placeable.height)
-											}
-										layout(w, h) {
-											placeable.place(0, 0)
-										}
-									}
-									.accumulate(animData.modifiers)
-									.zIndex((-indexFromTop).toFloat())
-								,
-								measurePolicy = remember {
-									AnimatedEnterExitMeasurePolicy(animatedVisibilityScope)
-								}
-							)
+					AnimatedVisibilityScopeProvider(
+						rootTransition,
+						visible = { it == instance },
+						Modifier.accumulate(animData.modifiers).zIndex((-indexFromTop).toFloat()),
+						displaying = { displaying },
+						shouldDisposeBlock = { _, _ -> false }
+					) {
+						holder.SaveableStateProvider(childHolderKey(child)) {
+							content(instance)
 						}
+
+						val text = """
+							from ${this.transition.currentState} to ${this.transition.targetState}
+							
+							${this.transition}
+						""".trimIndent()
+
+						BasicText(
+							text,
+							color = { Color.White },
+							modifier = Modifier.offset(y = 60.dp),
+							style = TextStyle(
+								textAlign = TextAlign.Center,
+								fontSize = 8.sp
+							)
+						)
 					}
 				}
 			}
@@ -318,19 +331,12 @@ data class DestinationAnimationsConfiguratorScope<C : Any>(
 	val screenInformation: ScreenInformation
 )
 
-private class AnimatedVisibilityScopeImpl(
-	_transition: Transition<EnterExitState>
-) : AnimatedVisibilityScope {
-	override var transition = _transition
-	val targetSize = mutableStateOf(IntSize.Zero)
-}
-
+// This converts Boolean visible to EnterExitState
 @Composable
 private fun <T> Transition<T>.targetEnterExit(
 	visible: (T) -> Boolean,
 	targetState: T
 ): EnterExitState = key(this) {
-
 	if (this.isSeeking) {
 		if (visible(targetState)) {
 			Visible
@@ -359,54 +365,49 @@ private fun <T> Transition<T>.targetEnterExit(
 	}
 }
 
-private fun AnimationStatus.toTargetEnterExitState() = when {
-	fromOutsideIntoTop -> EnterExitState.Visible
-	fromTopToOutside -> EnterExitState.PostExit
 
-	fromTopIntoBack -> EnterExitState.PostExit
-	fromBackIntoTop -> EnterExitState.Visible
+private val Transition<EnterExitState>.exitFinished
+	get() = currentState == PostExit && targetState == PostExit
 
-	location.top && animationType.passiveCancelling -> EnterExitState.PostExit
-	location.back && animationType.passiveCancelling -> EnterExitState.Visible
+//fun <T> Transition<T>.isEnteringAnew() =
+//	currentState == EnterExitState.PreEnter
+//			&& targetState == EnterExitState.Visible
+//
+//fun <T> Transition<T>.isExitingOrCancelling() =
+//	currentState == EnterExitState.Visible
+//			&& targetState == EnterExitState.PostExit
+//
+//fun <T> Transition<T>.isCancelled() =
+//	currentState == EnterExitState.PostExit
+//			&& targetState == EnterExitState.Visible
+//
+//fun <T> Transition<T>.isIllegalState() =
+//	(currentState == targetState)
+//			|| (currentState == EnterExitState.PreEnter && targetState == EnterExitState.PostExit)
+//			|| (currentState == EnterExitState.PostExit && targetState == EnterExitState.PreEnter)
 
-	location.top && !animating -> EnterExitState.Visible
-	(location.back && !animating) || fromBackToBack -> EnterExitState.PreEnter
-
-	else -> error("function toTargetEnterExitState. $this")
+private class AnimatedVisibilityScopeImpl(
+	_transition: Transition<EnterExitState>
+) : AnimatedVisibilityScope {
+	override var transition = _transition
+	val targetSize = mutableStateOf(IntSize.Zero)
 }
 
-// Function to calculate target animation progress:
-// 1f = in back stack
-// 0f = top of the stack/visible content
-// -1f = out of the stack/hidden content
-private fun calculateTargetProgress(
-	targetState: EnterExitState,
-	animationProgress: Float,
-	animStatus: AnimationStatus
-) = when (targetState) {
-	EnterExitState.PreEnter -> when {
-		animStatus.fromBackIntoTop -> 1f - animationProgress
-		!animStatus.animating && animStatus.location.top -> 1f
-		!animStatus.animating && animStatus.location.back || animStatus.fromBackToBack -> 0f
-		else -> error("function calculateTargetProgress. PreEnter. $animStatus")
-	}
-
-	EnterExitState.Visible -> when {
-		animStatus.fromOutsideIntoTop -> 1f + animationProgress
-		animStatus.fromBackIntoTop -> 1f - animationProgress
-		animStatus.animationType.passiveCancelling && animStatus.location.back -> 1f - animationProgress
-		!animStatus.animating && animStatus.location.top -> 1f
-		!animStatus.animating && animStatus.location.back -> 0f
-		else -> error("function calculateTargetProgress. Visible. $animStatus")
-	}
-
-	EnterExitState.PostExit -> when {
-		animStatus.fromTopToOutside -> -animationProgress
-		animStatus.fromTopIntoBack -> animationProgress
-		animStatus.animationType.passiveCancelling && animStatus.location.top -> -animationProgress
-		else -> error("function calculateTargetProgress. PostExit. $animStatus")
-	}
-}.coerceIn(0f, 1f)
+//private fun AnimationStatus.toTargetEnterExitState() = when {
+//	fromOutsideIntoTop -> EnterExitState.Visible
+//	fromTopToOutside -> EnterExitState.PostExit
+//
+//	fromTopIntoBack -> EnterExitState.PostExit
+//	fromBackIntoTop -> EnterExitState.Visible
+//
+//	location.top && animationType.passiveCancelling -> EnterExitState.PostExit
+//	location.back && animationType.passiveCancelling -> EnterExitState.Visible
+//
+//	location.top && !animating -> EnterExitState.Visible
+//	(location.back && !animating) || fromBackToBack -> EnterExitState.PreEnter
+//
+//	else -> error("function toTargetEnterExitState. $this")
+//}
 
 private class AnimatedEnterExitMeasurePolicy(
 	val scope: AnimatedVisibilityScopeImpl
@@ -455,42 +456,199 @@ private class AnimatedEnterExitMeasurePolicy(
 	) = measurables.fastMaxOfOrNull { it.maxIntrinsicHeight(width) } ?: 0
 }
 
-@Composable
-internal fun Transition<EnterExitState>.trackActiveEnter(enter: EnterTransition): EnterTransition {
-	// Active enter & active exit reference the enter and exit transition that is currently being
-	// used. It is important to preserve the active enter/exit that was previously used before
-	// changing target state, such that if the previous enter/exit is interrupted, we still hold
-	// reference to the enter/exit that define those animations and therefore could recover.
-	var activeEnter by remember(this) { mutableStateOf(enter) }
-	if (currentState == targetState && currentState == EnterExitState.Visible) {
-		if (isSeeking) {
-			// When seeking, the timing is different and there's no need to handle interruptions.
-			activeEnter = enter
-		} else {
-			activeEnter = EnterTransition.None
-		}
-	} else if (targetState == EnterExitState.Visible) {
-		activeEnter += enter
-	}
-	return activeEnter
+//enum class Thing { Visible, Hidden }
+
+//@Composable
+//internal fun Transition<EnterExitState>.trackActiveEnter(enter: EnterTransition): EnterTransition {
+//	// Active enter & active exit reference the enter and exit transition that is currently being
+//	// used. It is important to preserve the active enter/exit that was previously used before
+//	// changing target state, such that if the previous enter/exit is interrupted, we still hold
+//	// reference to the enter/exit that define those animations and therefore could recover.
+//	var activeEnter by remember(this) { mutableStateOf(enter) }
+//	if (currentState == targetState && currentState == EnterExitState.Visible) {
+//		if (isSeeking) {
+//			// When seeking, the timing is different and there's no need to handle interruptions.
+//			activeEnter = enter
+//		} else {
+//			activeEnter = EnterTransition.None
+//		}
+//	} else if (targetState == EnterExitState.Visible) {
+//		activeEnter += enter
+//	}
+//	return activeEnter
+//}
+
+//@Composable
+//internal fun Transition<EnterExitState>.trackActiveExit(exit: ExitTransition): ExitTransition {
+//	// Active enter & active exit reference the enter and exit transition that is currently being
+//	// used. It is important to preserve the active enter/exit that was previously used before
+//	// changing target state, such that if the previous enter/exit is interrupted, we still hold
+//	// reference to the enter/exit that define those animations and therefore could recover.
+//	var activeExit by remember(this) { mutableStateOf(exit) }
+//	if (currentState == targetState && currentState == EnterExitState.Visible) {
+//		if (isSeeking) {
+//			// When seeking, the timing is different and there's no need to handle interruptions.
+//			activeExit = exit
+//		} else {
+//			activeExit = ExitTransition.None
+//		}
+//	} else if (targetState != EnterExitState.Visible) {
+//		activeExit += exit
+//	}
+//	return activeExit
+//}
+/**
+ * Observes lookahead size.
+ */
+fun interface OnLookaheadMeasured {
+	fun invoke(size: IntSize)
 }
 
+@OptIn(InternalAnimationApi::class, ExperimentalTransitionApi::class)
 @Composable
-internal fun Transition<EnterExitState>.trackActiveExit(exit: ExitTransition): ExitTransition {
-	// Active enter & active exit reference the enter and exit transition that is currently being
-	// used. It is important to preserve the active enter/exit that was previously used before
-	// changing target state, such that if the previous enter/exit is interrupted, we still hold
-	// reference to the enter/exit that define those animations and therefore could recover.
-	var activeExit by remember(this) { mutableStateOf(exit) }
-	if (currentState == targetState && currentState == EnterExitState.Visible) {
-		if (isSeeking) {
-			// When seeking, the timing is different and there's no need to handle interruptions.
-			activeExit = exit
-		} else {
-			activeExit = ExitTransition.None
+internal fun <T> AnimatedVisibilityScopeProvider(
+	transition: Transition<T>,
+	visible: (T) -> Boolean,
+	modifier: Modifier,
+	displaying: () -> Boolean = {
+		visible(transition.targetState) || visible(transition.currentState) ||
+				transition.isSeeking || transition.hasInitialValueAnimations
+	},
+	shouldDisposeBlock: (EnterExitState, EnterExitState) -> Boolean,
+	onLookaheadMeasured: OnLookaheadMeasured? = null,
+	content: @Composable() AnimatedVisibilityScope.() -> Unit
+) {
+	if (displaying()) {
+		val childTransition = transition.createChildTransition(label = "EnterExitTransition") {
+			transition.targetEnterExit(visible, it)
 		}
-	} else if (targetState != EnterExitState.Visible) {
-		activeExit += exit
+
+		val shouldDisposeBlockUpdated by rememberUpdatedState(shouldDisposeBlock)
+
+		val shouldDisposeAfterExit by produceState(
+			initialValue = shouldDisposeBlock(
+				childTransition.currentState,
+				childTransition.targetState
+			)
+		) {
+			snapshotFlow { childTransition.exitFinished }.collect {
+				value = if (it) {
+					shouldDisposeBlockUpdated(
+						childTransition.currentState,
+						childTransition.targetState
+					)
+				} else {
+					false
+				}
+			}
+		}
+
+		if (!childTransition.exitFinished || !shouldDisposeAfterExit) {
+			val scope = remember(transition) { AnimatedVisibilityScopeImpl(childTransition) }
+
+			Layout(
+				content = { scope.content() },
+				modifier = modifier.let {
+					if (onLookaheadMeasured != null) it.layout { measurable, constraints ->
+						measurable
+							.measure(constraints)
+							.run {
+								if (isLookingAhead) {
+									onLookaheadMeasured.invoke(IntSize(width, height))
+								}
+
+								layout(width, height) { place(0, 0) }
+							}
+					} else
+						it
+				},
+				measurePolicy = remember { AnimatedEnterExitMeasurePolicy(scope) }
+			)
+		}
 	}
-	return activeExit
 }
+
+//private val Transition<EnterExitState>.exitFinished
+//	get() = currentState == PostExit && targetState == PostExit
+//
+//private class AnimatedEnterExitMeasurePolicy(
+//	val scope: androidx.compose.animation.AnimatedVisibilityScopeImpl
+//) : MeasurePolicy {
+//	var hasLookaheadOccurred = false
+//	override fun MeasureScope.measure(
+//		measurables: List<Measurable>,
+//		constraints: Constraints
+//	): MeasureResult {
+//		val placeables = measurables.fastMap { it.measure(constraints) }
+//		val maxWidth: Int = placeables.fastMaxBy { it.width }?.width ?: 0
+//		val maxHeight = placeables.fastMaxBy { it.height }?.height ?: 0
+//		// Position the children.
+//		if (isLookingAhead) {
+//			hasLookaheadOccurred = true
+//			scope.targetSize.value = IntSize(maxWidth, maxHeight)
+//		} else if (!hasLookaheadOccurred) {
+//			// Not in lookahead scope.
+//			scope.targetSize.value = IntSize(maxWidth, maxHeight)
+//		}
+//		return layout(maxWidth, maxHeight) {
+//			placeables.fastForEach {
+//				it.place(0, 0)
+//			}
+//		}
+//	}
+//
+//	override fun IntrinsicMeasureScope.minIntrinsicWidth(
+//		measurables: List<IntrinsicMeasurable>,
+//		height: Int
+//	) = measurables.fastMaxOfOrNull { it.minIntrinsicWidth(height) } ?: 0
+//
+//	override fun IntrinsicMeasureScope.minIntrinsicHeight(
+//		measurables: List<IntrinsicMeasurable>,
+//		width: Int
+//	) = measurables.fastMaxOfOrNull { it.minIntrinsicHeight(width) } ?: 0
+//
+//	override fun IntrinsicMeasureScope.maxIntrinsicWidth(
+//		measurables: List<IntrinsicMeasurable>,
+//		height: Int
+//	) = measurables.fastMaxOfOrNull { it.maxIntrinsicWidth(height) } ?: 0
+//
+//	override fun IntrinsicMeasureScope.maxIntrinsicHeight(
+//		measurables: List<IntrinsicMeasurable>,
+//		width: Int
+//	) = measurables.fastMaxOfOrNull { it.maxIntrinsicHeight(width) } ?: 0
+//}
+
+//// This converts Boolean visible to EnterExitState
+//@Composable
+//private fun <T> Transition<T>.targetEnterExit(
+//	visible: (T) -> Boolean,
+//	targetState: T
+//): EnterExitState = key(this) {
+//
+//	if (this.isSeeking) {
+//		if (visible(targetState)) {
+//			Visible
+//		} else {
+//			if (visible(this.currentState)) {
+//				PostExit
+//			} else {
+//				PreEnter
+//			}
+//		}
+//	} else {
+//		val hasBeenVisible = remember { mutableStateOf(false) }
+//		if (visible(currentState)) {
+//			hasBeenVisible.value = true
+//		}
+//		if (visible(targetState)) {
+//			EnterExitState.Visible
+//		} else {
+//			// If never been visible, visible = false means PreEnter, otherwise PostExit
+//			if (hasBeenVisible.value) {
+//				EnterExitState.PostExit
+//			} else {
+//				EnterExitState.PreEnter
+//			}
+//		}
+//	}
+//}
