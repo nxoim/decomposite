@@ -201,6 +201,12 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 						if (indexFromTop == 0) seekableTransitionState.animateTo(instance)
 					}
 
+					LaunchedEffect(animationStatus.animating) {
+						if (indexFromTop == 0 && !animationStatus.animating) {
+							seekableTransitionState.snapTo(instance)
+						}
+					}
+
 					LaunchedEffect(progress) {
 						if (animationStatus.fromBackIntoTop) {
 							seekableTransitionState.seekTo(
@@ -217,7 +223,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 						}
 
 						if (animationStatus.animationType.passiveCancelling && indexFromTop == 0) {
-							seekableTransitionState.seekTo(-progress.coerceIn(0f, 1f))
+							seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
 						}
 					}
 
