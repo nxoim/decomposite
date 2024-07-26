@@ -217,7 +217,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 						}
 
 						if (animationStatus.animationType.passiveCancelling && indexFromTop == 0) {
-							seekableTransitionState.seekTo(-progress)
+							seekableTransitionState.seekTo(-progress.coerceIn(0f, 1f))
 						}
 					}
 
