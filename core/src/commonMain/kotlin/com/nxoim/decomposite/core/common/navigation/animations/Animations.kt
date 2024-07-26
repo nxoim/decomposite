@@ -25,6 +25,11 @@ fun emptyAnimation(
 fun fade(
     animationSpec: AnimationSpec<Float> = softSpring(),
     clean: Boolean = true,
+    // alpha needs to be 0.00001f at minimum because of measuring quirks
+    // with lookahead with shared transitions. 0f prevents the composition
+    // and the animation breaks (my assumption. i dont actually know
+    // what the hell is going on)
+    minimumAlpha: Float = 0.000001f,
     animateUsingGestures: Boolean = true
 ) = contentAnimator(animationSpec) {
     Modifier.graphicsLayer {
@@ -34,7 +39,7 @@ fun fade(
             else -> animationProgress
         }
 
-        alpha = 1f + (progress * grade).let { -it * it }
+        alpha = (1f + (progress * grade).let { -it * it }).coerceIn(minimumAlpha, 1f)
     }
 }
 
@@ -100,10 +105,12 @@ fun cleanSlideAndFade(
     animationSpec: AnimationSpec<Float> = softSpring(),
     orientation: Orientation = Orientation.Horizontal,
     targetOffsetDp: Int = 64,
+    minimumAlpha: Float = 0.000001f,
     animateFadeUsingGestures: Boolean = false,
 ) = fade(
     clean = true,
     animateUsingGestures = animateFadeUsingGestures,
+    minimumAlpha = minimumAlpha,
     animationSpec = animationSpec
 ) + slide(
     orientation = orientation,
