@@ -95,8 +95,8 @@ internal class MaterialContainerMorphContentAnimatorScope(
     val swipeOffset by swipeOffsetAnimatable.asState()
     var swipeEdge by mutableStateOf(BackEvent.SwipeEdge.LEFT)
         private set
-    // this isn't meant to be animated by gestures because container transform
-    override val animationProgressForScope = animationProgressAnimatable.asState()
+
+    override val animationProgressForScope = gestureAnimationProgressAnimatable.asState()
 
     private var direction by mutableStateOf(
         if (initial) Direction.None else Direction.Inwards
@@ -217,10 +217,6 @@ internal class MaterialContainerMorphContentAnimatorScope(
             )
         }
 
-        val swipeOffsetAnimation = launch {
-            swipeOffsetAnimatable.animateTo(IntOffset.Zero)
-        }
-
         val animationProgressAnimation = launch {
             animationProgressAnimatable.animateTo(
                 targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat(),
@@ -237,7 +233,7 @@ internal class MaterialContainerMorphContentAnimatorScope(
             // don't need this delay if the item is to be removed, which is when location is outside
             if (!location.outside) {
                 withFrameNanos { }
-                joinAll(animationProgressAnimation, swipeOffsetAnimation, gestureProgressAnimation)
+                joinAll(animationProgressAnimation, gestureProgressAnimation)
             }
 
             direction = Direction.None

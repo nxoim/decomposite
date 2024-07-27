@@ -11,6 +11,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.materialContainerMorphContentAnimator
@@ -119,10 +121,9 @@ fun cleanSlideAndFade(
 )
 
 fun DestinationAnimationsConfiguratorScope<*>.materialContainerMorph(
-    sharedElementModifier: Modifier = Modifier,
-    fallbackCornerRadiusDp: Int = 16,
+    fallbackCornerRadius: Dp = 16.dp,
 ) = materialContainerMorphContentAnimator {
-    sharedElementModifier
+    Modifier
         .drawWithContent {
             val color = Color.Black.copy((animationProgress * 0.2f).coerceIn(0f, 1f))
             drawContent()
@@ -161,7 +162,7 @@ fun DestinationAnimationsConfiguratorScope<*>.materialContainerMorph(
                 }
             }
             val animatedFallbackRadius by lazy {
-                (fallbackCornerRadiusDp * density) *
+                fallbackCornerRadius.toPx() *
                         (-gestureAnimationProgress).coerceIn(0f, 1f)
             }
 
