@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.active
@@ -29,7 +28,7 @@ import kotlin.jvm.JvmInline
 @ReadOnlyComposable
 @Composable
 inline fun <reified C : Any> getExistingNavController(
-	key: String? = null,
+	key: String = navControllerKey<C>(),
 	navStore: NavControllerStore = LocalNavControllerStore.current
 ) = navStore.get(key, C::class)
 
@@ -54,7 +53,7 @@ inline fun <reified C : Any> navController(
 	serializer: KSerializer<C>? = serializer(),
 	navStore: NavControllerStore = LocalNavControllerStore.current,
 	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String? = null,
+	key: String = navControllerKey<C>(),
 	noinline childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
@@ -62,32 +61,26 @@ inline fun <reified C : Any> navController(
 		DefaultChildInstance(childComponentContext)
 	}
 ): NavController<C> {
-	val kClass = remember { C::class }
-
 	OnDestinationDisposeEffect(
-		"$kClass key $key navController OnDestinationDisposeEffect",
+		"${C::class} key $key navController OnDestinationDisposeEffect",
 		waitForCompositionRemoval = true
 	) {
-		navStore.remove(key, kClass)
+		navStore.remove(key, C::class)
 	}
 
-	return remember(componentContext) {
-		navStore.getOrCreate(key, kClass) {
-			NavController(
-				startingDestination,
-				serializer,
-				componentContext,
-				key ?: kClass.toString(),
-				childFactory
-			)
-		}
+	return navStore.getOrCreate(key, C::class) {
+		NavController(
+			startingDestination,
+			serializer,
+			componentContext,
+			key,
+			childFactory
+		)
 	}
 }
 
-inline fun <reified C : Any> getNavController(
-	key: String? = null,
-	navStore: NavControllerStore
-) = navStore.get(key, C::class)
+inline fun <reified C : Any> navControllerKey(additionalKey: String = "") =
+	"${C::class}$additionalKey"
 
 /**
  * Generic navigation controller. Contains a stack for overlays and a stack for screens.
