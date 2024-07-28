@@ -27,7 +27,7 @@ fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootDa
     )
 
     CommonNavigationRootProvider(
-        remember { NavigationRoot(navigationRootData.snackController, screenInformation) },
+        remember { NavigationRoot(screenInformation) },
         navigationRootData,
         content
     )

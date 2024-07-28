@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.active
@@ -16,7 +17,6 @@ import com.arkivanov.decompose.router.stack.replaceCurrent
 import com.nxoim.decomposite.core.common.ultils.ContentType
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
-import com.nxoim.decomposite.core.common.ultils.activeAsState
 import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
@@ -119,7 +119,13 @@ class NavController<C : Any>(
 		childFactory = childFactory
 	)
 
-	val currentScreen by screenStack.activeAsState()
+	val currentScreen by screenStack.let {
+		val state = mutableStateOf(it.value.active.configuration)
+
+		it.subscribe { newState -> state.value = newState.active.configuration }
+
+		return@let state
+	}
 
 	/**
 	 * Navigates to a destination. If a destination exists already - moves it to the top instead

@@ -5,6 +5,8 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
+import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlin.jvm.JvmInline
 
 /**
@@ -15,9 +17,27 @@ import kotlin.jvm.JvmInline
 value class ContentAnimations(val items: List<ContentAnimator<*>>)
 
 /**
- * Describes the animator and creates a scope. [key] is used to identify the scopes in
- * [StackAnimatorScope] and to minimize their creation, as scopes with the same animator animationType
- * and key will always have 1a single instance.
+ * Represents the animator used by [StackAnimator] to create the animation scope.
+ *
+ * The [key] parameter helps optimize scope creation by preventing the creation
+ * of a new scope if one with the same key already exists.
+ *
+ * The [renderUntil] parameter controls content rendering based on its position
+ * in the stack, with 0 being the top. [StackAnimator] will not render an item if its
+ * position is greater than [renderUntil]. The animation scope implementation
+ * can be aware of [renderUntil].
+ *
+ * The [requireVisibilityInBackstack] parameter manages the item's visibility in the
+ * backstack after animations are completed. If an item's position exceeds
+ * [renderUntil] and [requireVisibilityInBackstack] is true, the item will remain visible.
+ * Note that if multiple animations (e.g., fade() + scale()) are combined,
+ * and at least one has [requireVisibilityInBackstack] set to true, all items
+ * that do not meet [renderUntil] will be visible in the backstack.
+ *
+ * The [animatorScopeFactory] parameter is used to create the animation scope.
+ * Refer to [contentAnimator] for an example.
+ *
+ * The [animationModifier] parameter provides the animated [Modifier] to the content.
  */
 @Immutable
 data class ContentAnimator<T : ContentAnimatorScope>(
@@ -34,6 +54,17 @@ data class ContentAnimator<T : ContentAnimatorScope>(
 @Stable
 inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAnimations(
     this.items + other.items
+)
+
+/**
+ * Provides data helpful for the configuration of animations.
+ */
+data class DestinationAnimationsConfiguratorScope<C : Any>(
+    val previousChild: C?,
+    val currentChild: C,
+    val nextChild: C?,
+    val exitingChildren: List<C>,
+    val screenInformation: ScreenInformation
 )
 
 val LocalContentAnimator = staticCompositionLocalOf<DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations> {

@@ -7,7 +7,7 @@
 (i dont have apple's devices) Some time in the future WASM/JS and maybe WASI.
 
 # What?
-Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, snack bars, custom extensions like animations, etc.
+Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, custom extensions like animations, etc.
 
 # Why?
 There was existing multiplatform tooling, but it was kinda raw for my taste, so I started learning and experimenting by making DSLs based on it and this is the result.
@@ -20,8 +20,7 @@ Uhm...
 - Custom animation system (inspired by Decompose)
 - Properly store view models, with configuration change handling, view model scope cancellation and allat
 - Convenient view model instance creation
-- Display destinations as overlays 
-- Display snackbars 
+- Display destinations in overlays
 - Pass the backstack entry's component context using CompositionLocalProvider
 - Pass the type (contained/overlay) of the displayed content also using CompositionLocalProvider 
 - Store navigation controller instances like view models
@@ -101,13 +100,6 @@ navController.navigate(YourDestinations.Star, ContentType.Overlay)
 
 // navigate back
 navController.navigateBack()
-```
-
-You can open snack content, even in a coroutine:
-```kotlin
-snackController().display("some key", duration = 5L.seconds) {
-    YourSnackbarComposable()
-}
 ```
 
 View model creation and usage:

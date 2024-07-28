@@ -98,7 +98,8 @@ class DefaultContentAnimatorScope(
 
 	val animationProgress by animationProgressAnimatable.asState()
 	val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
-	override val animationProgressForScope = gestureAnimationProgressAnimatable.asState()
+	override val animationProgressForScope
+		get() = gestureAnimationProgress
 
 	val swipeOffset
 		get() = Offset(

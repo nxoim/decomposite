@@ -35,105 +35,117 @@ import kotlinx.coroutines.launch
 @NonRestartableComposable
 @Composable
 inline fun <reified C : Any> NavHost(
-    startingNavControllerInstance: NavController<C>,
-    modifier: Modifier = Modifier,
-    noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
-        LocalContentAnimator.current,
-    crossinline router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
+	startingNavControllerInstance: NavController<C>,
+	modifier: Modifier = Modifier,
+	noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
+		LocalContentAnimator.current,
+	crossinline router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val screenStackAnimatorScope = rememberStackAnimatorScope<C>(
-        "${C::class.simpleName} routed content"
-    )
-    val overlayStackAnimatorScope = rememberStackAnimatorScope<C>(
-        "${C::class.simpleName} overlay content"
-    )
+	val coroutineScope = rememberCoroutineScope()
+	val screenStackAnimatorScope = rememberStackAnimatorScope<C>(
+		"${C::class.simpleName} routed content"
+	)
+	val overlayStackAnimatorScope = rememberStackAnimatorScope<C>(
+		"${C::class.simpleName} overlay content"
+	)
 
-    var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
-    var handlingGesturesInOverlay by rememberSaveable { mutableStateOf(false) }
+	var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
+	var handlingGesturesInOverlay by rememberSaveable { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
-        StackAnimator(
-            stackState = startingNavControllerInstance.screenStack.subscribeAsState(),
-            stackAnimatorScope = screenStackAnimatorScope,
-            modifier = modifier,
-            animations = animations,
-            onBackstackChange = { empty -> backHandlerEnabled = !empty },
-            content = {
-                CompositionLocalProvider(
-                    LocalComponentContext provides it.instance.componentContext,
-                    LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
-                    content = { router(it.configuration) }
-                )
-            }
-        )
-    }
+	CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
+		StackAnimator(
+			stackState = startingNavControllerInstance.screenStack.subscribeAsState(),
+			stackAnimatorScope = screenStackAnimatorScope,
+			modifier = modifier,
+			animations = animations,
+			onBackstackChange = { empty -> backHandlerEnabled = !empty },
+			content = {
+				CompositionLocalProvider(
+					LocalComponentContext provides it.instance.componentContext,
+					LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
+					content = { router(it.configuration) }
+				)
+			}
+		)
+	}
 
-    LocalNavigationRoot.current.overlay {
-        CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
-            StackAnimator(
-                stackState = startingNavControllerInstance.overlayStack.subscribeAsState(),
-                stackAnimatorScope = overlayStackAnimatorScope,
-                onBackstackChange = { empty ->
-                    handlingGesturesInOverlay = !empty
-                    if (empty) coroutineScope.coroutineContext.cancelChildren()
-                    backHandlerEnabled = if (empty)
-                        startingNavControllerInstance.screenStack.items.size > 1
-                    else
-                        true
-                },
-                animations = animations,
-                excludeStartingDestination = true,
-                content = {
-                    CompositionLocalProvider(
-                        LocalComponentContext provides it.instance.componentContext,
-                        LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
-                        content = { router(it.configuration) }
-                    )
-                }
-            )
-        }
-    }
+	LocalNavigationRoot.current.overlay {
+		CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
+			StackAnimator(
+				stackState = startingNavControllerInstance.overlayStack.subscribeAsState(),
+				stackAnimatorScope = overlayStackAnimatorScope,
+				onBackstackChange = { empty ->
+					handlingGesturesInOverlay = !empty
+					if (empty) coroutineScope.coroutineContext.cancelChildren()
+					backHandlerEnabled = if (empty)
+						startingNavControllerInstance.screenStack.items.size > 1
+					else
+						true
+				},
+				animations = animations,
+				excludeStartingDestination = true,
+				content = {
+					CompositionLocalProvider(
+						LocalComponentContext provides it.instance.componentContext,
+						LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
+						content = { router(it.configuration) }
+					)
+				}
+			)
+		}
+	}
 
-    BackGestureHandler(
-        enabled = backHandlerEnabled,
-        startingNavControllerInstance.backHandler,
-        onBackStarted = {
-            coroutineScope.launch {
-                if (handlingGesturesInOverlay) {
-                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackStarted(it))
-                } else {
-                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackStarted(it))
-                }
-            }
-        },
-        onBackProgressed = {
-            coroutineScope.launch {
-                if (handlingGesturesInOverlay) {
-                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackProgressed(it))
-                } else {
-                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackProgressed(it))
-                }
-            }
-        },
-        onBackCancelled = {
-            coroutineScope.launch {
-                if (handlingGesturesInOverlay) {
-                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
-                } else {
-                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
-                }
-            }
-        },
-        onBack = {
-            startingNavControllerInstance.navigateBack()
-            coroutineScope.launch {
-                if (handlingGesturesInOverlay) {
-                    overlayStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBack)
-                } else {
-                    screenStackAnimatorScope.updateGestureDataInScopes(BackGestureEvent.OnBack)
-                }
-            }
-        }
-    )
+	BackGestureHandler(
+		enabled = backHandlerEnabled,
+		startingNavControllerInstance.backHandler,
+		onBackStarted = {
+			coroutineScope.launch {
+				if (handlingGesturesInOverlay) {
+					overlayStackAnimatorScope.updateGestureDataInScopes(
+						BackGestureEvent.OnBackStarted(it)
+					)
+				} else {
+					screenStackAnimatorScope.updateGestureDataInScopes(
+						BackGestureEvent.OnBackStarted(it)
+					)
+				}
+			}
+		},
+		onBackProgressed = {
+			coroutineScope.launch {
+				if (handlingGesturesInOverlay) {
+					overlayStackAnimatorScope.updateGestureDataInScopes(
+						BackGestureEvent.OnBackProgressed(it)
+					)
+				} else {
+					screenStackAnimatorScope.updateGestureDataInScopes(
+						BackGestureEvent.OnBackProgressed(it)
+					)
+				}
+			}
+		},
+		onBackCancelled = {
+			coroutineScope.launch {
+				if (handlingGesturesInOverlay) {
+					overlayStackAnimatorScope
+						.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
+				} else {
+					screenStackAnimatorScope
+						.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
+				}
+			}
+		},
+		onBack = {
+			startingNavControllerInstance.navigateBack()
+			coroutineScope.launch {
+				if (handlingGesturesInOverlay) {
+					overlayStackAnimatorScope
+						.updateGestureDataInScopes(BackGestureEvent.OnBack)
+				} else {
+					screenStackAnimatorScope
+						.updateGestureDataInScopes(BackGestureEvent.OnBack)
+				}
+			}
+		}
+	)
 }

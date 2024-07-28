@@ -96,7 +96,7 @@ internal class MaterialContainerMorphContentAnimatorScope(
     var swipeEdge by mutableStateOf(BackEvent.SwipeEdge.LEFT)
         private set
 
-    override val animationProgressForScope = gestureAnimationProgressAnimatable.asState()
+    override val animationProgressForScope get() = gestureAnimationProgress
 
     private var direction by mutableStateOf(
         if (initial) Direction.None else Direction.Inwards

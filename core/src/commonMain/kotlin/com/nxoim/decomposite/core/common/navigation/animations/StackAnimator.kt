@@ -52,7 +52,6 @@ import com.nxoim.decomposite.core.common.navigation.DecomposeChildInstance
 import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationType.Companion.passiveCancelling
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
-import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlinx.coroutines.launch
 
 /**
@@ -158,6 +157,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 							sourceStack.items.elementAt(index - 1).configuration,
 							child,
 							sourceStack.items.elementAt(index + 1).configuration,
+							removingChildren,
 							LocalNavigationRoot.current.screenInformation
 						)
 					)
@@ -191,7 +191,7 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 
 					val firstAnimData = animData.scopes.values.first()
 
-					val progress = firstAnimData.animationProgressForScope.value
+					val progress = firstAnimData.animationProgressForScope
 					val animationStatus = firstAnimData.animationStatus
 
 					// TODO: should i keep this
@@ -288,15 +288,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 private fun <C : Any> childHolderKey(child: C) =
 	child.hashString() + " StackAnimator SaveableStateHolder"
 
-/**
- * Provides data helpful for the configuration of animations.
- */
-data class DestinationAnimationsConfiguratorScope<C : Any>(
-	val previousChild: C?,
-	val currentChild: C,
-	val nextChild: C?,
-	val screenInformation: ScreenInformation
-)
 
 // This converts Boolean visible to EnterExitState
 @Composable

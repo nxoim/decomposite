@@ -63,7 +63,7 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
     )
 
     CommonNavigationRootProvider(
-        remember { NavigationRoot(navigationRootData.snackController, screenInformation) },
+        remember { NavigationRoot(screenInformation) },
         navigationRootData,
         content
     )
