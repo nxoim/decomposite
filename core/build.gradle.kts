@@ -67,6 +67,25 @@ kotlin {
                 api(libs.kotlinx.coroutines.swing)
             }
         }
+
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.compose.uiTestJunit4)
+            }
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
+        }
+
+        jvmTest.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.junit.junit)
+            implementation(libs.compose.uiTestJunit4)
+        }
     }
 }
 
