@@ -2,23 +2,29 @@ package com.nxoim.decomposite.core.common.navigation.animations
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.router.stack.ChildStack
+import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.rememberRetained
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 // it's important to use the local instance keeper rather than of the children's for the
@@ -80,7 +86,7 @@ class StackAnimatorScope<C : Any, T : Any>(
 
 	val childAnimPrerequisites = hashMapOf<C, ChildAnimPrerequisites>()
 
-	internal fun getOrCreateAnimationData(
+	fun getOrCreateAnimationData(
 		key: C,
 		source: ContentAnimations,
 		initialIndex: Int,
@@ -107,7 +113,7 @@ class StackAnimatorScope<C : Any, T : Any>(
 	}
 
 	suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) =
-		coroutineScope {
+		withContext(Dispatchers.Default) {
 			kotlin.runCatching {
 				animationDataRegistry.forEach { (configuration, animationData) ->
 					val prerequisites =
@@ -130,15 +136,14 @@ class StackAnimatorScope<C : Any, T : Any>(
 		childAnimPrerequisites[configuration] = ChildAnimPrerequisites(allowAnimation, inStack)
 	}
 
-	// this must be executed on every recomposition
-	// of the launched effect this runs in
-	suspend fun observeAndUpdateAnimatorData() {
+	suspend fun observeAndUpdateAnimatorData() = withContext(Dispatchers.Default) {
 		// check on startup if there's animation data left for nonexistent children, which
 		// can happen during a configuration change
 		removeStaleAnimationDataCache(nonStale = sourceStack.items.fastMap { it.configuration })
 
 		snapshotFlow { stackState.value }.collect { newStackRaw ->
 			onBackstackChange(newStackRaw.items.size <= 1)
+
 			val oldStack = sourceStack.items
 			val newStack = newStackRaw.items.subList(
 				if (excludeStartingDestination) 1 else 0,
@@ -172,6 +177,89 @@ class StackAnimatorScope<C : Any, T : Any>(
 			visibleCachedChildren.putAll(newStack.associateBy { it.configuration })
 		}
 	}
+
+	@Composable
+	fun itemState(
+		child: C,
+		animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations,
+	): State<ItemState> {
+		val inStack = !removingChildren.contains(child)
+
+		val index = if (inStack)
+			sourceStack.items.indexOfFirst { it.configuration == child }
+		else
+			-(removingChildren.indexOf(child) + 1)
+
+		val indexFromTop = if (inStack)
+			sourceStack.items.size - index - 1
+		else
+			-(removingChildren.indexOf(child) + 1)
+
+		val allAnimations = animations(
+			DestinationAnimationsConfiguratorScope(
+				sourceStack.items.elementAt(index - 1).configuration,
+				child,
+				sourceStack.items.elementAt(index + 1).configuration,
+				removingChildren,
+				LocalNavigationRoot.current.screenInformation
+			)
+		)
+		val animData = remember(allAnimations) {
+			getOrCreateAnimationData(
+				key = child,
+				source = allAnimations,
+				initialIndex = index,
+				initialIndexFromTop = if (indexFromTop == 0 && index != 0)
+					-1
+				else
+					indexFromTop
+			)
+		}
+
+		val allowingAnimation = indexFromTop <= (animData.renderUntils.min())
+
+		val animating by remember {
+			derivedStateOf {
+				animData.scopes.any { it.value.animationStatus.animating }
+			}
+		}
+
+		val displaying = remember(animating, allowingAnimation) {
+			val requireVisibilityInBack =
+				animData.requireVisibilityInBackstacks.fastAny { it }
+			val renderingBack = allowingAnimation && animating
+			val renderTopAndAnimatedBack = indexFromTop < 1 || renderingBack
+			if (requireVisibilityInBack) allowingAnimation else renderTopAndAnimatedBack
+		}
+
+		LaunchedEffect(allowingAnimation, inStack) {
+			updateChildAnimPrerequisites(
+				child,
+				allowingAnimation,
+				inStack
+			)
+		}
+
+		return rememberUpdatedState(
+			ItemState(
+				index,
+				indexFromTop,
+				displaying,
+				allowingAnimation,
+				inStack,
+				animData
+			)
+		)
+	}
+
+	data class ItemState(
+		val index: Int,
+		val indexFromTop: Int,
+		val displaying: Boolean,
+		val allowingAnimation: Boolean,
+		val inStack: Boolean,
+		val animationData:  AnimationData
+	)
 }
 
 @Immutable
