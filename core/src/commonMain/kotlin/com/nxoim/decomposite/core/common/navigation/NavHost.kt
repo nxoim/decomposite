@@ -42,23 +42,34 @@ inline fun <reified C : Any> NavHost(
 	crossinline router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
 	val coroutineScope = rememberCoroutineScope()
-	val screenStackAnimatorScope = rememberStackAnimatorScope<C>(
-		"${C::class.simpleName} routed content"
-	)
-	val overlayStackAnimatorScope = rememberStackAnimatorScope<C>(
-		"${C::class.simpleName} overlay content"
-	)
 
 	var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
 	var handlingGesturesInOverlay by rememberSaveable { mutableStateOf(false) }
 
+	val screenStackAnimatorScope = rememberStackAnimatorScope(
+		"${C::class.simpleName} routed content",
+		stackState = startingNavControllerInstance.screenStack.subscribeAsState(),
+		onBackstackChange = { empty -> backHandlerEnabled = !empty },
+	)
+	val overlayStackAnimatorScope = rememberStackAnimatorScope(
+		"${C::class.simpleName} overlay content",
+		stackState = startingNavControllerInstance.overlayStack.subscribeAsState(),
+		onBackstackChange = { empty ->
+			handlingGesturesInOverlay = !empty
+			if (empty) coroutineScope.coroutineContext.cancelChildren()
+			backHandlerEnabled = if (empty)
+				startingNavControllerInstance.screenStack.items.size > 1
+			else
+				true
+		},
+		excludeStartingDestination = true
+	)
+
 	CompositionLocalProvider(LocalContentType provides ContentType.Contained) {
 		StackAnimator(
-			stackState = startingNavControllerInstance.screenStack.subscribeAsState(),
 			stackAnimatorScope = screenStackAnimatorScope,
 			modifier = modifier,
 			animations = animations,
-			onBackstackChange = { empty -> backHandlerEnabled = !empty },
 			content = {
 				CompositionLocalProvider(
 					LocalComponentContext provides it.instance.componentContext,
@@ -72,18 +83,8 @@ inline fun <reified C : Any> NavHost(
 	LocalNavigationRoot.current.overlay {
 		CompositionLocalProvider(LocalContentType provides ContentType.Overlay) {
 			StackAnimator(
-				stackState = startingNavControllerInstance.overlayStack.subscribeAsState(),
 				stackAnimatorScope = overlayStackAnimatorScope,
-				onBackstackChange = { empty ->
-					handlingGesturesInOverlay = !empty
-					if (empty) coroutineScope.coroutineContext.cancelChildren()
-					backHandlerEnabled = if (empty)
-						startingNavControllerInstance.screenStack.items.size > 1
-					else
-						true
-				},
 				animations = animations,
-				excludeStartingDestination = true,
 				content = {
 					CompositionLocalProvider(
 						LocalComponentContext provides it.instance.componentContext,
