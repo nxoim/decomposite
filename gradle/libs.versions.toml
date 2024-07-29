@@ -11,6 +11,7 @@ decompose = "3.0.0"
 maven-publish = "0.25.3"
 dokka = "1.9.0"
 koin = "3.6.0-wasm-alpha2"
+junit = "4.13.2"
 
 [libraries]
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
@@ -25,6 +26,9 @@ decompose-extensions = { group = "com.arkivanov.decompose", name = "extensions-c
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junit" }
+compose-uiTestJunit4 = { group = "org.jetbrains.compose.ui", name = "ui-test-junit4", version.ref = "compose" }
+
 
 [plugins]
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
