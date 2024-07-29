@@ -1,6 +1,9 @@
 package com.nxoim.decomposite.ui.screens.tikitoki
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -48,107 +51,128 @@ import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.ultils.noRippleClickable
 import com.nxoim.decomposite.core.common.viewModel.getExistingViewModel
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
-fun ListPager() {
-    val vm = getExistingViewModel<TikitokiViewModel>()
-    val pagerState = rememberPagerState() { vm.mockVids.size }
+fun ListPager(
+	animatedVisibilityScope: AnimatedVisibilityScope,
+	sharedTransitionScope: SharedTransitionScope
+){
+	val vm = getExistingViewModel<TikitokiViewModel>()
+	val pagerState = rememberPagerState() { vm.mockVids.size }
 
-    Box() {
-        VerticalPager(pagerState) { PageStuff(vm.mockVids[it]) }
-    }
+	Box() {
+		VerticalPager(pagerState) {
+			PageStuff(vm.mockVids[it], animatedVisibilityScope, sharedTransitionScope)
+		}
+	}
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
-private fun PageStuff(mockPage: MockPage) {
-    val navController = getExistingNavController<TikitokiDestinations>()
-    var displayComments by remember { mutableStateOf(false) }
-    var displayOptions by remember { mutableStateOf(false) }
-    val commentsSheetState = rememberModalBottomSheetState()
+private fun PageStuff(
+	mockPage: MockPage,
+	animatedVisibilityScope: AnimatedVisibilityScope,
+	sharedTransitionScope: SharedTransitionScope
+) = with(sharedTransitionScope) {
+	val navController = getExistingNavController<TikitokiDestinations>()
+	var displayComments by remember { mutableStateOf(false) }
+	var displayOptions by remember { mutableStateOf(false) }
+	val commentsSheetState = rememberModalBottomSheetState()
 
-    BoxWithConstraints {
-        val animatedFillFraction by animateFloatAsState(
-            if (commentsSheetState.targetValue != SheetValue.Hidden) 0.5f else 1f
-        )
+	BoxWithConstraints {
+		val animatedFillFraction by animateFloatAsState(
+			if (commentsSheetState.targetValue != SheetValue.Hidden) 0.5f else 1f
+		)
 
-        Box(
-            Modifier
-                .background(MaterialTheme.colorScheme.surfaceDim)
-                .fillMaxSize()
-                .noRippleClickable() { displayOptions = true }
-        ) {
-            Box(Modifier.fillMaxHeight(animatedFillFraction).fillMaxWidth()) {
-                Text(
-                    mockPage.name,
-                    modifier = Modifier.align(Alignment.Center)
-                )
+		Box(
+			Modifier
+				.background(MaterialTheme.colorScheme.surfaceDim)
+				.fillMaxSize()
+				.noRippleClickable() { displayOptions = true }
+		) {
+			Box(Modifier.fillMaxHeight(animatedFillFraction).fillMaxWidth()) {
+				Text(
+					mockPage.name,
+					modifier = Modifier.align(Alignment.Center)
+				)
 
-                AnimatedVisibility(
-                    !displayComments,
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Box(
-                            Modifier
-                                .clip(CircleShape)
-                                .size(64.dp)
-                                .background(Color(mockPage.mockUser.profilePicColorARGB))
-                                .clickable { navController.navigate(TikitokiDestinations.User(mockPage.mockUser)) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Person, contentDescription = null)
-                        }
+				AnimatedVisibility(
+					!displayComments,
+					modifier = Modifier.align(Alignment.CenterEnd),
+					enter = fadeIn(),
+					exit = fadeOut()
+				) {
+					Column(Modifier.padding(16.dp)) {
+						Box(
+							Modifier
+								.sharedBounds(
+									rememberSharedContentState(
+										TikitokiSharedElements.ProfilePicture(mockPage.mockUser)
+									),
+									animatedVisibilityScope
+								)
+								.clip(CircleShape)
+								.size(64.dp)
+								.background(Color(mockPage.mockUser.profilePicColorARGB))
+								.clickable {
+									navController.navigate(
+										TikitokiDestinations.User(
+											mockPage.mockUser
+										)
+									)
+								},
+							contentAlignment = Alignment.Center
+						) {
+							Icon(Icons.Default.Person, contentDescription = null)
+						}
 
-                        Spacer(Modifier.height(8.dp))
+						Spacer(Modifier.height(8.dp))
 
-                        IconButton(onClick = { displayComments = true }) {
-                            Icon(Icons.Default.Message, contentDescription = null)
-                        }
-                    }
-                }
-            }
+						IconButton(onClick = { displayComments = true }) {
+							Icon(Icons.Default.Message, contentDescription = null)
+						}
+					}
+				}
+			}
 
-            if (displayOptions) ModalBottomSheet(
-                onDismissRequest = { displayOptions = false },
-                contentWindowInsets = { CorrectBottomSheetWindowInsets() }
-            ) {
-                Box(
-                    Modifier.fillMaxWidth().height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Options for ${mockPage.name}")
-                }
-            }
+			if (displayOptions) ModalBottomSheet(
+				onDismissRequest = { displayOptions = false },
+				contentWindowInsets = { CorrectBottomSheetWindowInsets() }
+			) {
+				Box(
+					Modifier.fillMaxWidth().height(200.dp),
+					contentAlignment = Alignment.Center
+				) {
+					Text("Options for ${mockPage.name}")
+				}
+			}
 
-            if (displayComments) ModalBottomSheet(
-                sheetState = commentsSheetState,
-                onDismissRequest = { displayComments = false },
-                contentWindowInsets = { CorrectBottomSheetWindowInsets() }
-            ) {
-                Box(
-                    Modifier.fillMaxWidth().fillMaxHeight(0.5f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Comments for ${mockPage.name}")
-                }
-            }
-        }
-    }
+			if (displayComments) ModalBottomSheet(
+				sheetState = commentsSheetState,
+				onDismissRequest = { displayComments = false },
+				contentWindowInsets = { CorrectBottomSheetWindowInsets() }
+			) {
+				Box(
+					Modifier.fillMaxWidth().fillMaxHeight(0.5f),
+					contentAlignment = Alignment.Center
+				) {
+					Text("Comments for ${mockPage.name}")
+				}
+			}
+		}
+	}
 }
 
 @Composable
 private fun CorrectBottomSheetWindowInsets(): WindowInsets {
-    val currentInsets = WindowInsets.statusBars.asPaddingValues()
+	val currentInsets = WindowInsets.statusBars.asPaddingValues()
 
-    return remember {
-        WindowInsets(
-            left = 0.dp,
-            top = currentInsets.calculateTopPadding(),
-            right = 0.dp,
-            bottom = 0.dp
-        )
-    }
+	return remember {
+		WindowInsets(
+			left = 0.dp,
+			top = currentInsets.calculateTopPadding(),
+			right = 0.dp,
+			bottom = 0.dp
+		)
+	}
 }

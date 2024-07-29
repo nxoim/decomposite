@@ -9,3 +9,7 @@ sealed interface TikitokiDestinations {
     @Serializable
     data class User(val mockUser: MockUser) : TikitokiDestinations
 }
+
+sealed interface TikitokiSharedElements {
+    data class ProfilePicture(val mockUser: MockUser)
+}
