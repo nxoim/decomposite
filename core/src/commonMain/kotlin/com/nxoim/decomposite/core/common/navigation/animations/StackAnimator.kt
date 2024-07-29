@@ -116,7 +116,6 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 							scope.update(
 								newIndex = state.index,
 								newIndexFromTop = state.indexFromTop,
-								animate = scope.indexFromTop != state.indexFromTop || state.indexFromTop < 1
 							)
 
 							// note: animations called in scope.update block this

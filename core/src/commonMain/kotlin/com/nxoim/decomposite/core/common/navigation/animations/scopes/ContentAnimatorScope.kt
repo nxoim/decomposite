@@ -40,5 +40,5 @@ interface ContentAnimatorScope {
     val animationProgressForScope: Float
 
     suspend fun onBackGesture(backGesture: BackGestureEvent): Any
-    suspend fun update(newIndex: Int, newIndexFromTop: Int, animate: Boolean = true)
+    suspend fun update(newIndex: Int, newIndexFromTop: Int)
 }
