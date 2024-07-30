@@ -39,7 +39,7 @@ fun <C : Any, T : Any> rememberStackAnimatorScope(
 	key: String,
 	stackState: State<ChildStack<C, T>>,
 	onBackstackChange: (stackEmpty: Boolean) -> Unit,
-	excludeStartingDestination: Boolean = false,
+	excludedDestinations: List<C>? = null,
 	allowBatchRemoval: Boolean = true,
 ): StackAnimatorScope<C, T> {
 	val animationDataRegistry = rememberRetained("$key StackAnimatorScope") {
@@ -51,7 +51,7 @@ fun <C : Any, T : Any> rememberStackAnimatorScope(
 			key,
 			stackState,
 			onBackstackChange,
-			excludeStartingDestination,
+			excludedDestinations,
 			allowBatchRemoval,
 			animationDataRegistry
 		)
@@ -67,7 +67,7 @@ class StackAnimatorScope<C : Any, T : Any>(
 	val key: String?,
 	private val stackState: State<ChildStack<C, T>>,
 	private val onBackstackChange: (stackEmpty: Boolean) -> Unit,
-	private val excludeStartingDestination: Boolean,
+	private val excludedDestinations: List<C>?,
 	private val allowBatchRemoval: Boolean,
 	val animationDataRegistry: AnimationDataRegistry<C>
 ) {
@@ -76,12 +76,13 @@ class StackAnimatorScope<C : Any, T : Any>(
 
 	val removingChildren = mutableStateListOf<C>()
 	val visibleCachedChildren = mutableStateMapOf<C, Child.Created<C, T>>().apply {
-		putAll(
-			stackState.value.items.subList(
-				if (excludeStartingDestination) 1 else 0,
-				stackState.value.items.size
-			).associateBy { it.configuration }
-		)
+		val list = if (excludedDestinations != null) {
+			stackState.value.items.filter { it.configuration !in excludedDestinations }
+		} else {
+			stackState.value.items
+		}
+
+		putAll(list.associateBy { it.configuration })
 	}
 
 	val childAnimPrerequisites = hashMapOf<C, ChildAnimPrerequisites>()
@@ -145,10 +146,11 @@ class StackAnimatorScope<C : Any, T : Any>(
 			onBackstackChange(newStackRaw.items.size <= 1)
 
 			val oldStack = sourceStack.items
-			val newStack = newStackRaw.items.subList(
-				if (excludeStartingDestination) 1 else 0,
-				stackState.value.items.size
-			)
+			val newStack = if (excludedDestinations != null) {
+				newStackRaw.items.filter { it.configuration !in excludedDestinations }
+			} else {
+				newStackRaw.items
+			}
 
 			val childrenToRemove =
 				oldStack.filter { it !in newStack && it.configuration !in removingChildren }

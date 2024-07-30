@@ -7,14 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.active
 import com.arkivanov.decompose.router.stack.backStack
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.router.stack.replaceCurrent
-import com.nxoim.decomposite.core.common.ultils.ContentType
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.rememberRetained
@@ -98,23 +96,13 @@ class NavController<C : Any>(
 		DefaultChildInstance(childComponentContext)
 	}
 ) : ComponentContext by componentContext {
-	val screenNavigationController = StackNavigation<C>()
-	val overlayNavigationController = StackNavigation<C>()
+	val controller = StackNavigation<C>()
 
 	val screenStack = childStack(
-		source = screenNavigationController,
+		source = controller,
 		serializer = serializer,
 		initialConfiguration = startingDestination,
 		key = "screenStack $key",
-		handleBackButton = true,
-		childFactory = childFactory
-	)
-
-	val overlayStack = childStack(
-		source = overlayNavigationController,
-		serializer = serializer,
-		initialConfiguration = startingDestination,
-		key = "overlayStack $key",
 		handleBackButton = true,
 		childFactory = childFactory
 	)
@@ -135,47 +123,26 @@ class NavController<C : Any>(
 	 */
 	fun navigate(
 		destination: C,
-		type: ContentType = ContentType.Contained,
 		// removes the current entry if requested navigation to the preceding one
 		removeIfIsPreceding: Boolean = true,
-		onComplete: () -> Unit = {}
-	) = when (type) {
-		ContentType.Contained -> {
-			screenNavigationController.navigate(
-				transformer = { stack ->
-					if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
-						stack.dropLast(1)
-					else
-						stack.filterNot { it == destination } + destination
-				},
-				onComplete = { _, _ -> onComplete() }
-			)
-
-			overlayNavigationController.replaceAll(startingDestination)
-		}
-
-		ContentType.Overlay -> {
-			overlayNavigationController.navigate(
-				transformer = { stack ->
-					if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
-						stack.dropLast(1)
-					else
-						stack.filterNot { it == destination } + destination
-				},
-				onComplete = { _, _ -> onComplete() }
-			)
-		}
+		onComplete: () -> Unit = { }
+	) {
+		controller.navigate(
+			transformer = { stack ->
+				if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+					stack.dropLast(1)
+				else
+					stack.filterNot { it == destination } + destination
+			},
+			onComplete = { _, _ -> onComplete() }
+		)
 	}
 
 	/**
 	 * Navigates back in this(!) nav controller.
 	 */
 	fun navigateBack(onComplete: (Boolean) -> Unit = { }) {
-		if (overlayStack.active.configuration != startingDestination) {
-			overlayNavigationController.pop(onComplete)
-		} else {
-			screenNavigationController.pop(onComplete)
-		}
+		controller.pop(onComplete)
 	}
 
 	/**
@@ -183,64 +150,40 @@ class NavController<C : Any>(
 	 */
 	fun navigateBackTo(
 		destination: C,
-		type: ContentType,
 		onComplete: (Boolean) -> Unit = { }
-	) = when (type) {
-		ContentType.Contained -> {
-			val indexOfDestination =
-				screenStack.backStack.indexOfFirst { it.configuration == destination }
-			screenNavigationController.popTo(indexOfDestination, onComplete)
-		}
+	) {
+		val indexOfDestination = screenStack.backStack
+			.indexOfFirst { it.configuration == destination }
 
-		ContentType.Overlay -> {
-			val indexOfDestination =
-				overlayStack.backStack.indexOfFirst { it.configuration == destination }
-			overlayNavigationController.popTo(indexOfDestination, onComplete)
-		}
+		controller.popTo(indexOfDestination, onComplete)
 	}
-
+	
 	/**
 	 * Removes a destination.
 	 */
-	fun close(destination: C, type: ContentType, onComplete: () -> Unit = { }) = when (type) {
-		ContentType.Contained -> {
-			screenNavigationController.navigate(
-				transformer = { stack -> stack.filterNot { it == destination } },
-				onComplete = { _, _ -> onComplete() }
-			)
-		}
-
-		ContentType.Overlay -> {
-			overlayNavigationController.navigate(
-				transformer = { stack -> stack.filterNot { it == destination } },
-				onComplete = { _, _ -> onComplete() }
-			)
-		}
-	}
+	fun close(destination: C, onComplete: () -> Unit = { }) = controller
+		.navigate(
+			transformer = { stack -> stack.filterNot { it == destination } },
+			onComplete = { _, _ -> onComplete() }
+		)
 
 	/**
 	 * Replaces the current destination with the provided one.
 	 */
 	fun replaceCurrent(
 		withDestination: C,
-		type: ContentType,
-		onComplete: () -> Unit = {}
-	) = when (type) {
-		ContentType.Contained -> screenNavigationController.replaceCurrent(withDestination) { onComplete() }
-		ContentType.Overlay -> overlayNavigationController.replaceCurrent(withDestination) { onComplete() }
-	}
+		onComplete: () -> Unit = { }
+	) = controller
+		.replaceCurrent(withDestination) { onComplete() }
 
 	/**
 	 * Replaces all destinations with the provided one.
 	 */
 	fun replaceAll(
 		vararg destination: C,
-		type: ContentType = ContentType.Contained,
-		onComplete: () -> Unit = {}
-	) = when (type) {
-		ContentType.Contained -> screenNavigationController.replaceAll(*destination) { onComplete() }
-		ContentType.Overlay -> overlayNavigationController.replaceAll(*destination) { onComplete() }
-	}
+		onComplete: () -> Unit = { }
+	) = controller
+		.replaceAll(*destination) { onComplete() }
 }
 
 @JvmInline

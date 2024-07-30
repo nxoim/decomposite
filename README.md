@@ -95,9 +95,6 @@ val navController = getExistingNavController<YourDestinations>()
 // in any clickable
 navController.navigate(YourDestinations.Heart)
 
-// or if you want to display a destination as an overlay
-navController.navigate(YourDestinations.Star, ContentType.Overlay)
-
 // navigate back
 navController.navigateBack()
 ```

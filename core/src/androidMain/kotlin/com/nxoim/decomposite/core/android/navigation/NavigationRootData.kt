@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
 import com.arkivanov.decompose.defaultComponentContext
 import com.nxoim.decomposite.core.common.navigation.CommonNavigationRootProvider
+import com.nxoim.decomposite.core.common.navigation.InternalNavigationRootApi
 import com.nxoim.decomposite.core.common.navigation.NavigationRoot
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
@@ -62,6 +63,7 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
         )
     )
 
+    @OptIn(InternalNavigationRootApi::class)
     CommonNavigationRootProvider(
         remember { NavigationRoot(screenInformation) },
         navigationRootData,

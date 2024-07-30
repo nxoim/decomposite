@@ -53,7 +53,7 @@ class NavigationRoot(val screenInformation: ScreenInformation) {
 	internal val overlays = mutableStateListOf<@Composable () -> Unit>()
 
 	@Composable
-	fun overlay(content: @Composable () -> Unit) {
+	internal fun overlay(content: @Composable () -> Unit) {
 		remember { overlays.add(content) }
 		DisposableEffect(Unit) { onDispose { overlays.remove(content) } }
 	}
@@ -63,9 +63,10 @@ class NavigationRoot(val screenInformation: ScreenInformation) {
  * Provides navigation controller and view model stores, default component context, navigation
  * root for overlays, and the back dispatcher vis [CompositionLocalProvider], displays overlays.
  */
+@InternalNavigationRootApi
 @NonRestartableComposable
 @Composable
-internal fun CommonNavigationRootProvider(
+fun CommonNavigationRootProvider(
 	navigationRoot: NavigationRoot,
 	navigationRootData: NavigationRootData,
 	content: @Composable () -> Unit
@@ -106,6 +107,7 @@ fun NavigationRootProvider(
 			)
 		)
 
+		@OptIn(InternalNavigationRootApi::class)
 		CommonNavigationRootProvider(
 			remember { NavigationRoot(screenInformation) },
 			navigationRootData,
@@ -129,4 +131,7 @@ val LocalNavigationRoot = staticCompositionLocalOf<NavigationRoot> {
     """
 )
 annotation class FallbackNavigationRootImplementation()
+
+@RequiresOptIn
+annotation class InternalNavigationRootApi()
 

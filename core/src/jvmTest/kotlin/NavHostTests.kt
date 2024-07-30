@@ -17,7 +17,7 @@ import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.nxoim.decomposite.core.common.navigation.animations.iosLikeSlide
 import com.nxoim.decomposite.core.common.navigation.animations.materialContainerMorph
 import com.nxoim.decomposite.core.common.navigation.navController
-import com.nxoim.decomposite.core.common.ultils.ContentType
+import com.nxoim.decomposite.core.common.ultils.InOverlay
 import org.junit.Rule
 import org.junit.Test
 
@@ -38,93 +38,89 @@ class NavHostTests {
 				remember { println("creating navigation controller") }
 				val navController = navController<TestDestinations>(TestDestinations.A)
 
-				Box {
-					remember { println("creating navigation host") }
-					NavHost(
-						navController,
-						animations = {
-							when (currentChild) {
-								TestDestinations.A -> cleanSlideAndFade()
-								TestDestinations.B -> iosLikeSlide()
-								is TestDestinations.Random -> materialContainerMorph()
-							}
-						},
-					) { destination ->
-						when (destination) {
-							TestDestinations.A -> {
-								remember { println("Displaying $destination") }
-							}
-
-							TestDestinations.B -> {
-								remember { println("Displaying $destination") }
-							}
-
-							is TestDestinations.Random -> {
-								remember { println("Displaying $destination") }
-							}
-						}
-					}
-
-					Column {
-						Button(
-							onClick = { navController.navigate(TestDestinations.Random()) },
-							modifier = Modifier.testTag("navigate-to-random")
-						) {
-							Text("Navigate to Random")
-						}
-
-						Button(
-							onClick = { navController.navigate(TestDestinations.A) },
-							modifier = Modifier.testTag("navigate-to-a")
-						) {
-							Text("Navigate to A")
-						}
-
-						Button(
-							onClick = { navController.navigate(TestDestinations.B) },
-							modifier = Modifier.testTag("navigate-to-b")
-						) {
-							Text("Navigate to B")
-						}
-
-						Button(
-							onClick = { navController.navigateBack() },
-							modifier = Modifier.testTag("navigate-back")
-						) {
-							Text("Navigate back")
-						}
-
-						Button(
-							onClick = {
-								navController.navigateBackTo(
-									TestDestinations.A,
-									ContentType.Contained
-								)
+				InOverlay {
+					Box {
+						remember { println("creating navigation host") }
+						NavHost(
+							navController,
+							animations = {
+								when (currentChild) {
+									TestDestinations.A -> cleanSlideAndFade()
+									TestDestinations.B -> iosLikeSlide()
+									is TestDestinations.Random -> materialContainerMorph()
+								}
 							},
-							modifier = Modifier.testTag("navigate-back-to-a")
-						) {
-							Text("Navigate back to A")
+						) { destination ->
+							when (destination) {
+								TestDestinations.A -> {
+									remember { println("Displaying $destination") }
+								}
+
+								TestDestinations.B -> {
+									remember { println("Displaying $destination") }
+								}
+
+								is TestDestinations.Random -> {
+									remember { println("Displaying $destination") }
+								}
+							}
 						}
 
-						Button(
-							onClick = {
-								navController.replaceAll(TestDestinations.A, TestDestinations.B)
-							},
-							modifier = Modifier.testTag("replace-all")
-						) {
-							Text("Replace all with A and B")
-						}
+						Column {
+							Button(
+								onClick = { navController.navigate(TestDestinations.Random()) },
+								modifier = Modifier.testTag("navigate-to-random")
+							) {
+								Text("Navigate to Random")
+							}
 
-						Button(
-							onClick = {
-								navController.replaceCurrent(
-									TestDestinations.Random(),
-									ContentType.Contained
-								)
-							},
-							modifier = Modifier.testTag("replace-current")
-						) {
-							Text("Replace current with Random")
+							Button(
+								onClick = { navController.navigate(TestDestinations.A) },
+								modifier = Modifier.testTag("navigate-to-a")
+							) {
+								Text("Navigate to A")
+							}
+
+							Button(
+								onClick = { navController.navigate(TestDestinations.B) },
+								modifier = Modifier.testTag("navigate-to-b")
+							) {
+								Text("Navigate to B")
+							}
+
+							Button(
+								onClick = { navController.navigateBack() },
+								modifier = Modifier.testTag("navigate-back")
+							) {
+								Text("Navigate back")
+							}
+
+							Button(
+								onClick = {
+									navController.navigateBackTo(TestDestinations.A)
+								},
+								modifier = Modifier.testTag("navigate-back-to-a")
+							) {
+								Text("Navigate back to A")
+							}
+
+							Button(
+								onClick = {
+									navController.replaceAll(TestDestinations.A, TestDestinations.B)
+								},
+								modifier = Modifier.testTag("replace-all")
+							) {
+								Text("Replace all with A and B")
+							}
+
+							Button(
+								onClick = {
+									navController.replaceCurrent(TestDestinations.Random())
+								},
+								modifier = Modifier.testTag("replace-current")
+							) {
+								Text("Replace current with Random")
+							}
 						}
 					}
 				}

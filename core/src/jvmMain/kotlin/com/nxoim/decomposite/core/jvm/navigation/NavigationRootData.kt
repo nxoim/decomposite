@@ -5,6 +5,7 @@ import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.FrameWindowScope
 import com.nxoim.decomposite.core.common.navigation.CommonNavigationRootProvider
+import com.nxoim.decomposite.core.common.navigation.InternalNavigationRootApi
 import com.nxoim.decomposite.core.common.navigation.NavigationRoot
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
@@ -26,6 +27,7 @@ fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootDa
         )
     )
 
+    @OptIn(InternalNavigationRootApi::class)
     CommonNavigationRootProvider(
         remember { NavigationRoot(screenInformation) },
         navigationRootData,
