@@ -3,7 +3,6 @@ package com.nxoim.decomposite.core.common.navigation
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,7 +30,6 @@ import kotlinx.coroutines.launch
  * @param excludedDestinations allows to specify what destinations should not be
  * rendered and animated.
  */
-@NonRestartableComposable
 @Composable
 inline fun <reified C : Any> NavHost(
 	startingNavControllerInstance: NavController<C>,
@@ -45,9 +43,11 @@ inline fun <reified C : Any> NavHost(
 
 	var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
 
+	val stack by startingNavControllerInstance.screenStack.subscribeAsState()
 	val screenStackAnimatorScope = rememberStackAnimatorScope(
 		"${C::class.simpleName} routed content",
-		stackState = startingNavControllerInstance.screenStack.subscribeAsState(),
+		stack = { stack.items },
+		itemKey = { it.configuration },
 		excludedDestinations = excludedDestinations,
 		onBackstackChange = { empty -> backHandlerEnabled = !empty },
 	)

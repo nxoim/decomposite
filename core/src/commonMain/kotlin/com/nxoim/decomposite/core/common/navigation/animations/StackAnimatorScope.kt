@@ -15,9 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
-import com.arkivanov.decompose.Child
-import com.arkivanov.decompose.router.stack.ChildStack
 import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
@@ -35,22 +35,24 @@ import kotlinx.coroutines.withContext
  * the provided [key] for the removal of stale animation data.
  */
 @Composable
-fun <C : Any, T : Any> rememberStackAnimatorScope(
+fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
 	key: String,
-	stackState: State<ChildStack<C, T>>,
+	stack: () -> List<Instance>,
 	onBackstackChange: (stackEmpty: Boolean) -> Unit,
-	excludedDestinations: List<C>? = null,
+	itemKey: (Instance) -> Key,
+	excludedDestinations: List<Key>? = null,
 	allowBatchRemoval: Boolean = true,
-): StackAnimatorScope<C, T> {
+): StackAnimatorScope<Key, Instance> {
 	val animationDataRegistry = rememberRetained("$key StackAnimatorScope") {
-		AnimationDataRegistry<C>()
+		AnimationDataRegistry<Key>()
 	}
 
 	return remember("$key StackAnimatorScope") {
 		StackAnimatorScope(
 			key,
-			stackState,
+			stack,
 			onBackstackChange,
+			itemKey,
 			excludedDestinations,
 			allowBatchRemoval,
 			animationDataRegistry
@@ -63,32 +65,33 @@ fun <C : Any, T : Any> rememberStackAnimatorScope(
  * avoiding duplicates.
  */
 @Immutable
-class StackAnimatorScope<C : Any, T : Any>(
+class StackAnimatorScope<Key : Any, Instance : Any>(
 	val key: String?,
-	private val stackState: State<ChildStack<C, T>>,
+	private val stack: () -> List<Instance>,
 	private val onBackstackChange: (stackEmpty: Boolean) -> Unit,
-	private val excludedDestinations: List<C>?,
+	val itemKey: (Instance) -> Key,
+	private val excludedDestinations: List<Key>?,
 	private val allowBatchRemoval: Boolean,
-	val animationDataRegistry: AnimationDataRegistry<C>
+	val animationDataRegistry: AnimationDataRegistry<Key>
 ) {
-	var sourceStack by mutableStateOf(stackState.value)
+	var sourceStack by mutableStateOf(stack())
 		private set
 
-	val removingChildren = mutableStateListOf<C>()
-	val visibleCachedChildren = mutableStateMapOf<C, Child.Created<C, T>>().apply {
+	val removingChildren = mutableStateListOf<Key>()
+	val visibleCachedChildren = mutableStateMapOf<Key, Instance>().apply {
 		val list = if (excludedDestinations != null) {
-			stackState.value.items.filter { it.configuration !in excludedDestinations }
+			stack().fastFilter { itemKey(it) !in excludedDestinations }
 		} else {
-			stackState.value.items
+			stack()
 		}
 
-		putAll(list.associateBy { it.configuration })
+		putAll(list.associateBy { itemKey(it) })
 	}
 
-	val childAnimPrerequisites = hashMapOf<C, ChildAnimPrerequisites>()
+	val childAnimPrerequisites = hashMapOf<Key, ChildAnimPrerequisites>()
 
 	fun getOrCreateAnimationData(
-		key: C,
+		key: Key,
 		source: ContentAnimations,
 		initialIndex: Int,
 		initialIndexFromTop: Int
@@ -99,7 +102,7 @@ class StackAnimatorScope<C : Any, T : Any>(
 		initialIndexFromTop
 	)
 
-	internal fun removeAnimationDataFromCache(target: C) {
+	internal fun removeAnimationDataFromCache(target: Key) {
 		animationDataRegistry.remove(target)
 		childAnimPrerequisites.remove(target)
 	}
@@ -108,9 +111,9 @@ class StackAnimatorScope<C : Any, T : Any>(
 	 * Removes stale animation data. Stale animation data is the data that was left over
 	 * during a configuration change that is no longer used (no longer exists in the source stack)
 	 */
-	private fun removeStaleAnimationDataCache(nonStale: List<C>) {
+	private fun removeStaleAnimationDataCache(nonStale: List<Key>) {
 		val stale = childAnimPrerequisites.filter { it.key !in nonStale }.map { it.key }
-		stale.forEach(::removeAnimationDataFromCache)
+		stale.fastForEach(::removeAnimationDataFromCache)
 	}
 
 	suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) =
@@ -133,82 +136,82 @@ class StackAnimatorScope<C : Any, T : Any>(
 		}
 
 
-	fun updateChildAnimPrerequisites(configuration: C, allowAnimation: Boolean, inStack: Boolean) {
-		childAnimPrerequisites[configuration] = ChildAnimPrerequisites(allowAnimation, inStack)
+	fun updateChildAnimPrerequisites(key: Key, allowAnimation: Boolean, inStack: Boolean) {
+		childAnimPrerequisites[key] = ChildAnimPrerequisites(allowAnimation, inStack)
 	}
 
 	suspend fun observeAndUpdateAnimatorData() = withContext(Dispatchers.Default) {
 		// check on startup if there's animation data left for nonexistent children, which
 		// can happen during a configuration change
-		removeStaleAnimationDataCache(nonStale = sourceStack.items.fastMap { it.configuration })
+		removeStaleAnimationDataCache(nonStale = sourceStack.fastMap { itemKey(it) })
 
-		snapshotFlow { stackState.value }.collect { newStackRaw ->
-			onBackstackChange(newStackRaw.items.size <= 1)
+		snapshotFlow { stack() }.collect { newStackRaw ->
+			onBackstackChange(newStackRaw.size <= 1)
 
-			val oldStack = sourceStack.items
+			val oldStack = sourceStack
 			val newStack = if (excludedDestinations != null) {
-				newStackRaw.items.filter { it.configuration !in excludedDestinations }
+				newStackRaw.fastFilter { itemKey(it) !in excludedDestinations }
 			} else {
-				newStackRaw.items
+				newStackRaw
 			}
 
 			val childrenToRemove =
-				oldStack.filter { it !in newStack && it.configuration !in removingChildren }
+				oldStack.fastFilter { it !in newStack && itemKey(it) !in removingChildren }
 			val batchRemoval = childrenToRemove.size > 1 && allowBatchRemoval
 
 			// cancel removal of items that appeared again in the stack
-			removingChildren.removeAll(newStackRaw.items.map { it.configuration })
+			removingChildren.removeAll(newStackRaw.fastMap { itemKey(it) })
 
 			if (batchRemoval) {
 				// remove from cache and everything all children, except the last one,
 				// which will be animated
 				val itemsToRemoveImmediately =
 					childrenToRemove.subList(0, childrenToRemove.size - 1)
-				itemsToRemoveImmediately.forEach { (configuration, _) ->
-					visibleCachedChildren.remove(configuration)
+				itemsToRemoveImmediately.fastForEach {
+					visibleCachedChildren.remove(itemKey(it))
 				}
-				removingChildren.add(childrenToRemove.last().configuration)
+				removingChildren.add(itemKey(childrenToRemove.last()))
 			} else {
-				childrenToRemove.forEach {
-					removingChildren.add(it.configuration)
+				childrenToRemove.fastForEach {
+					removingChildren.add(itemKey(it))
 				}
 			}
 
 			sourceStack = newStackRaw
 
-			visibleCachedChildren.putAll(newStack.associateBy { it.configuration })
+			visibleCachedChildren.putAll(newStack.associateBy { itemKey(it) })
 		}
 	}
 
 	@Composable
 	fun itemState(
-		child: C,
-		animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations,
+		key: Key,
+		animations: DestinationAnimationsConfiguratorScope<Key>.() -> ContentAnimations,
 	): State<ItemState> {
-		val inStack = !removingChildren.contains(child)
+		val inSourceStack = !removingChildren.contains(key)
 
-		val index = if (inStack)
-			sourceStack.items.indexOfFirst { it.configuration == child }
+		val index = if (inSourceStack)
+			sourceStack.indexOfFirst { itemKey(it) == key }
 		else
-			-(removingChildren.indexOf(child) + 1)
+			-(removingChildren.indexOf(key) + 1)
 
-		val indexFromTop = if (inStack)
-			sourceStack.items.size - index - 1
+		val indexFromTop = if (inSourceStack)
+			sourceStack.size - index - 1
 		else
-			-(removingChildren.indexOf(child) + 1)
+			-(removingChildren.indexOf(key) + 1)
 
 		val allAnimations = animations(
 			DestinationAnimationsConfiguratorScope(
-				sourceStack.items.elementAt(index - 1).configuration,
-				child,
-				sourceStack.items.elementAt(index + 1).configuration,
+				stack().elementAtOrNull(index - 1)?.let { itemKey(it) },
+				key,
+				stack().elementAtOrNull(index + 1)?.let { itemKey(it) },
 				removingChildren,
 				LocalNavigationRoot.current.screenInformation
 			)
 		)
 		val animData = remember(allAnimations) {
 			getOrCreateAnimationData(
-				key = child,
+				key = key,
 				source = allAnimations,
 				initialIndex = index,
 				initialIndexFromTop = if (indexFromTop == 0 && index != 0)
@@ -218,7 +221,7 @@ class StackAnimatorScope<C : Any, T : Any>(
 			)
 		}
 
-		val allowingAnimation = indexFromTop <= (animData.renderUntils.min())
+		val allowingAnimation = indexFromTop <= (allAnimations.items.minOf { it.renderUntil })
 
 		val animating by remember {
 			derivedStateOf {
@@ -234,12 +237,8 @@ class StackAnimatorScope<C : Any, T : Any>(
 			if (requireVisibilityInBack) allowingAnimation else renderTopAndAnimatedBack
 		}
 
-		LaunchedEffect(allowingAnimation, inStack) {
-			updateChildAnimPrerequisites(
-				child,
-				allowingAnimation,
-				inStack
-			)
+		LaunchedEffect(allowingAnimation, inSourceStack) {
+			updateChildAnimPrerequisites(key, allowingAnimation, inSourceStack)
 		}
 
 		return rememberUpdatedState(
@@ -248,7 +247,7 @@ class StackAnimatorScope<C : Any, T : Any>(
 				indexFromTop,
 				displaying,
 				allowingAnimation,
-				inStack,
+				inSourceStack,
 				animData
 			)
 		)
@@ -277,12 +276,12 @@ data class ChildAnimPrerequisites(
 	val inStack: Boolean
 )
 
-class AnimationDataRegistry<C : Any> {
-	private val animationData = hashMapOf<C, AnimationData>()
-	private val scopeRegistry = hashMapOf<Pair<C, String>, ContentAnimatorScope>()
+class AnimationDataRegistry<Key : Any> {
+	private val animationData = hashMapOf<Key, AnimationData>()
+	private val scopeRegistry = hashMapOf<Pair<Key, String>, ContentAnimatorScope>()
 
 	fun getOrCreateAnimationData(
-		key: C,
+		key: Key,
 		source: ContentAnimations,
 		initialIndex: Int,
 		initialIndexFromTop: Int
@@ -328,7 +327,7 @@ class AnimationDataRegistry<C : Any> {
 			val renderUntils = mutableListOf<Int>()
 			val requireVisibilityInBackstacks = mutableListOf<Boolean>()
 
-			source.items.forEach { animator ->
+			source.items.fastForEach { animator ->
 				val scopeKey = Pair(key, animator.key)
 				val scope = scopeRegistry.getOrPut(scopeKey) {
 					animator.animatorScopeFactory(initialIndex, initialIndexFromTop)
@@ -351,12 +350,12 @@ class AnimationDataRegistry<C : Any> {
 		}
 	}
 
-	fun get(key: C) = animationData[key]
+	fun get(key: Key) = animationData[key]
 		?: error("No animation data for $key in AnimationDataRegistry")
 
-	fun forEach(item: (Map.Entry<C, AnimationData>) -> Unit) = animationData.forEach { item(it) }
+	fun forEach(item: (Map.Entry<Key, AnimationData>) -> Unit) = animationData.forEach { item(it) }
 
-	fun remove(key: C) {
+	fun remove(key: Key) {
 		animationData.remove(key)
 		scopeRegistry.keys.removeAll { it.first == key }
 	}

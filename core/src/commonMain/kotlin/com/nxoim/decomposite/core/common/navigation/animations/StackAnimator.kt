@@ -38,12 +38,11 @@ import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxBy
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.zIndex
-import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.decompose.hashString
-import com.nxoim.decomposite.core.common.navigation.DecomposeChildInstance
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationType.Companion.passiveCancelling
-import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
+import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.outside
+import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
 import kotlinx.coroutines.launch
 
 /**
@@ -51,11 +50,11 @@ import kotlinx.coroutines.launch
  */
 @OptIn(InternalDecomposeApi::class)
 @Composable
-fun <C : Any, T : DecomposeChildInstance> StackAnimator(
-	stackAnimatorScope: StackAnimatorScope<C, T>,
+fun <Key : Any, Instance : Any> StackAnimator(
+	stackAnimatorScope: StackAnimatorScope<Key, Instance>,
 	modifier: Modifier = Modifier,
-	animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations,
-	content: @Composable AnimatedVisibilityScope.(child: Child.Created<C, T>) -> Unit,
+	animations: DestinationAnimationsConfiguratorScope<Key>.() -> ContentAnimations,
+	content: @Composable AnimatedVisibilityScope.(child: Instance) -> Unit,
 ) = key(stackAnimatorScope.key) {
 	val holder = rememberSaveableStateHolder()
 
@@ -63,50 +62,54 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 
 	Box(modifier) {
 		val seekableTransitionState = remember {
-			SeekableTransitionState(stackAnimatorScope.sourceStack.active)
+			SeekableTransitionState(
+				stackAnimatorScope.itemKey(stackAnimatorScope.sourceStack.last())
+			)
 		}
 		val transition = rememberTransition(seekableTransitionState)
 
-		stackAnimatorScope.visibleCachedChildren.forEach { (child, cachedInstance) ->
+		stackAnimatorScope.visibleCachedChildren.forEach { (childKey, cachedInstance) ->
 			// keys are needed for animations to work. something something
 			// correctness something something control flow
-			key(child) {
-				val state by stackAnimatorScope.itemState(child, animations)
+			key(childKey) {
+				val state by stackAnimatorScope.itemState(childKey, animations)
 
 				// for seekable transitions
 				val firstAnimData = state.animationData.scopes.values.first()
-				val progress = firstAnimData.animationProgressForScope
 				val animationStatus = firstAnimData.animationStatus
 
 				// TODO: should i keep this
 				LaunchedEffect(state.indexFromTop) {
-					if (state.indexFromTop == 0) seekableTransitionState.animateTo(cachedInstance)
+					if (state.indexFromTop == 0) seekableTransitionState.animateTo(childKey)
 				}
 
 				LaunchedEffect(animationStatus.animating) {
 					if (state.indexFromTop == 0 && !animationStatus.animating) {
-						seekableTransitionState.snapTo(cachedInstance)
+						seekableTransitionState.snapTo(childKey)
 					}
 				}
 
-				LaunchedEffect(progress) {
-					if (animationStatus.fromBackIntoTop) {
-						seekableTransitionState.seekTo(
-							(1f - progress).coerceIn(0f, 1f),
-							cachedInstance
-						)
-					}
+				LaunchedEffect(Unit) {
+					snapshotFlow { firstAnimData.animationProgressForScope }
+						.collect() {
+							if (animationStatus.fromBackIntoTop) {
+								seekableTransitionState.seekTo(
+									(1f - it).coerceIn(0f, 1f),
+									childKey
+								)
+							}
 
-					if (animationStatus.fromOutsideIntoTop) {
-						seekableTransitionState.seekTo(
-							(1f + progress).coerceIn(0f, 1f),
-							cachedInstance
-						)
-					}
+							if (animationStatus.fromOutsideIntoTop) {
+								seekableTransitionState.seekTo(
+									(1f + it).coerceIn(0f, 1f),
+									childKey
+								)
+							}
 
-					if (animationStatus.animationType.passiveCancelling && state.indexFromTop == 0) {
-						seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
-					}
+							if (animationStatus.run { animationType.passiveCancelling && location.top }) {
+								seekableTransitionState.seekTo((-it).coerceIn(0f, 1f))
+							}
+						}
 				}
 
 				// launch animations if there's changes
@@ -122,25 +125,10 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 							// until theyre finished. snapTo is supposed
 							// to be called when animations are done
 							if (state.indexFromTop == 0) seekableTransitionState.snapTo(
-								cachedInstance
+								childKey
 							)
-
-							// after animating, if is not in stack
-							if (!state.inStack) stackAnimatorScope.visibleCachedChildren.remove(child)
 						}
 					}
-				}
-
-				// wait for the component to be removed from the stack,
-				// then for the composable to disappear from the screen
-				OnDestinationDisposeEffect(
-					cachedInstance.configuration.hashString() + stackAnimatorScope.key + "OnDestinationDisposeEffect",
-					waitForCompositionRemoval = true,
-					componentContext = cachedInstance.instance.componentContext
-				) {
-					stackAnimatorScope.removingChildren.remove(child)
-					stackAnimatorScope.removeAnimationDataFromCache(child)
-					holder.removeState(childHolderKey(child))
 				}
 
 				AnimatedVisibilityScopeProvider(
@@ -152,8 +140,22 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 					displaying = { state.displaying },
 					shouldDisposeBlock = { _, _ -> false }
 				) {
-					holder.SaveableStateProvider(childHolderKey(child)) {
+					holder.SaveableStateProvider(childHolderKey(childKey)) {
 						content(cachedInstance)
+
+						// rely only on the reported animation status
+						if (
+							animationStatus.previousLocation?.outside == false
+							&& animationStatus.location.outside
+							&& !animationStatus.animating
+						) {
+							LaunchedEffect(Unit) {
+								stackAnimatorScope.visibleCachedChildren.remove(childKey)
+								stackAnimatorScope.removingChildren.remove(childKey)
+								stackAnimatorScope.removeAnimationDataFromCache(childKey)
+								holder.removeState(childHolderKey(childKey))
+							}
+						}
 					}
 				}
 			}

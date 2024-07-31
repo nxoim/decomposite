@@ -13,9 +13,6 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
  *
  * - [onBackGesture] represents the user's actions and should not be used to manipulate the stack
  *
- * - in [update], when animating exit - let the animation code (be it animateTo or animate) block
- * the thread so the content removal happens only after the animation has ended.
- *
  * - [indexFromTop] represents the index of the item from the top of the stack, with
  * 0 being the top. Negative numbers represent an item not existing in the stack while being
  * animated. If several items are being removed and all are animated at the same time - 

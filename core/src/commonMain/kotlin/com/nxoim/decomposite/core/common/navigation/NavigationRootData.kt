@@ -26,7 +26,7 @@ import kotlin.math.roundToInt
 
 
 /**
- * Creates the root of the app for back gesture handling, snack content controller,
+ * Creates the root of the app for back gesture handling,
  * storing view models, and navigation controller instances. View model store by default
  * is wrapped into default component context's instance keeper.
  *
@@ -45,7 +45,7 @@ data class NavigationRootData(
 )
 
 /**
- * Sets up the navigation root. Is used for managing overlays and snack content. Contains
+ * Sets up the navigation root. Is used for managing overlays. Contains
  * information about the screen for some animations, like [materialContainerMorph].
  */
 @Immutable
