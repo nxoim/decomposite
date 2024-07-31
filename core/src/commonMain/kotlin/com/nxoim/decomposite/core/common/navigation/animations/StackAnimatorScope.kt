@@ -1,6 +1,7 @@
 package com.nxoim.decomposite.core.common.navigation.animations
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -140,7 +141,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 		childAnimPrerequisites[key] = ChildAnimPrerequisites(allowAnimation, inStack)
 	}
 
-	suspend fun observeAndUpdateAnimatorData() = withContext(Dispatchers.Default) {
+	suspend fun observeAndUpdateAnimatorData() {
 		// check on startup if there's animation data left for nonexistent children, which
 		// can happen during a configuration change
 		removeStaleAnimationDataCache(nonStale = sourceStack.fastMap { itemKey(it) })
@@ -237,8 +238,31 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 			if (requireVisibilityInBack) allowingAnimation else renderTopAndAnimatedBack
 		}
 
+		DisposableEffect(Unit) {
+			onDispose {
+				if (!inSourceStack && !animating) {
+					visibleCachedChildren.remove(key)
+					removingChildren.remove(key)
+					removeAnimationDataFromCache(key)
+				}
+			}
+		}
+
+
 		LaunchedEffect(allowingAnimation, inSourceStack) {
 			updateChildAnimPrerequisites(key, allowingAnimation, inSourceStack)
+		}
+
+		// launch animations if there's changes
+		LaunchedEffect(indexFromTop, index) {
+			animData.scopes.forEach { (_, scope) ->
+				launch {
+					scope.update(
+						newIndex = index,
+						newIndexFromTop = indexFromTop,
+					)
+				}
+			}
 		}
 
 		return rememberUpdatedState(

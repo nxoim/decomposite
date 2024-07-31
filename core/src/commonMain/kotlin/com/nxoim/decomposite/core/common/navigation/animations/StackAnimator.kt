@@ -41,9 +41,7 @@ import androidx.compose.ui.zIndex
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.decompose.hashString
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationType.Companion.passiveCancelling
-import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.outside
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
-import kotlinx.coroutines.launch
 
 /**
  * Animates the stack. Caches the children for the time of animation.
@@ -78,11 +76,6 @@ fun <Key : Any, Instance : Any> StackAnimator(
 				val firstAnimData = state.animationData.scopes.values.first()
 				val animationStatus = firstAnimData.animationStatus
 
-				// TODO: should i keep this
-				LaunchedEffect(state.indexFromTop) {
-					if (state.indexFromTop == 0) seekableTransitionState.animateTo(childKey)
-				}
-
 				LaunchedEffect(animationStatus.animating) {
 					if (state.indexFromTop == 0 && !animationStatus.animating) {
 						seekableTransitionState.snapTo(childKey)
@@ -112,25 +105,6 @@ fun <Key : Any, Instance : Any> StackAnimator(
 						}
 				}
 
-				// launch animations if there's changes
-				LaunchedEffect(state.indexFromTop, state.index) {
-					state.animationData.scopes.forEach { (_, scope) ->
-						launch {
-							scope.update(
-								newIndex = state.index,
-								newIndexFromTop = state.indexFromTop,
-							)
-
-							// note: animations called in scope.update block this
-							// until theyre finished. snapTo is supposed
-							// to be called when animations are done
-							if (state.indexFromTop == 0) seekableTransitionState.snapTo(
-								childKey
-							)
-						}
-					}
-				}
-
 				AnimatedVisibilityScopeProvider(
 					transition,
 					visible = { it == cachedInstance },
@@ -142,20 +116,6 @@ fun <Key : Any, Instance : Any> StackAnimator(
 				) {
 					holder.SaveableStateProvider(childHolderKey(childKey)) {
 						content(cachedInstance)
-
-						// rely only on the reported animation status
-						if (
-							animationStatus.previousLocation?.outside == false
-							&& animationStatus.location.outside
-							&& !animationStatus.animating
-						) {
-							LaunchedEffect(Unit) {
-								stackAnimatorScope.visibleCachedChildren.remove(childKey)
-								stackAnimatorScope.removingChildren.remove(childKey)
-								stackAnimatorScope.removeAnimationDataFromCache(childKey)
-								holder.removeState(childHolderKey(childKey))
-							}
-						}
 					}
 				}
 			}
