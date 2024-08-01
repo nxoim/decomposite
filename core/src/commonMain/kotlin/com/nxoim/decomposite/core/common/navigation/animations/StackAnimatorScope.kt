@@ -34,7 +34,7 @@ import kotlin.contracts.contract
 /**
  * Creates an instance of a [StackAnimatorScope]. It manages instance caching and animations.
  *
- * @param key Without this parameter something breaks
+ *
  */
 @Composable
 fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
@@ -135,6 +135,9 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				.fastFilter { it !in newStack && itemKey(it) !in removingChildren }
 			val batchRemoval = childrenToRemove.size > 1 && allowBatchRemoval
 
+			// cancel removal of items that appeared again in the stack
+			removingChildren.removeAll(newStackRaw.fastMap(itemKey))
+
 			if (batchRemoval) {
 				// remove from cache and everything all children, except the last one,
 				// which will be animated
@@ -142,7 +145,9 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 					childrenToRemove.subList(0, childrenToRemove.size - 1)
 				itemsToRemoveImmediately.fastForEach {
 					visibleCachedChildren.remove(itemKey(it))
+					removeAnimationDataFromCache(itemKey(it))
 				}
+
 				removingChildren.add(itemKey(childrenToRemove.last()))
 			} else {
 				childrenToRemove.fastForEach { removingChildren.add(itemKey(it)) }
@@ -151,9 +156,6 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 			sourceStack = newStackRaw
 
 			visibleCachedChildren.putAll(newStack.associateBy(itemKey))
-
-			// cancel removal of items that appeared again in the stack
-			removingChildren.removeAll(newStackRaw.fastMap(itemKey))
 		}
 	}
 
@@ -190,7 +192,6 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				indexFromTop
 		)
 
-
 		val allowingAnimation = indexFromTop <= (allAnimations.items.minOf { it.renderUntil })
 
 		val animating by remember {
@@ -213,7 +214,6 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				removeAnimationDataFromCache(key)
 			}
 		}
-
 
 		LaunchedEffect(allowingAnimation, inSourceStack) {
 			updateChildAnimPrerequisites(key, allowingAnimation, inSourceStack)

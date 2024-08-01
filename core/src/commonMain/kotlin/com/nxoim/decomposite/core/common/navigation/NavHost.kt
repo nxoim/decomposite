@@ -6,23 +6,24 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.arkivanov.essenty.backhandler.BackHandler
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationDataRegistry
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
 import com.nxoim.decomposite.core.common.navigation.animations.LocalContentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.StackAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.StackAnimatorScope
 import com.nxoim.decomposite.core.common.navigation.animations.rememberStackAnimatorScope
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
-import kotlinx.coroutines.Dispatchers
+import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
@@ -50,8 +51,6 @@ fun <C : Any> NavHost(
 	// when the nav hosts are nested because of forEach loops in stack animator.
 	// maybe related to currentCompositeKeyHash?
 	key(startingNavControllerInstance.key) {
-		val animationsCoroutineScope = rememberCoroutineScope() { Dispatchers.Default }
-
 		var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
 
 		val stack by startingNavControllerInstance.screenStack.subscribeAsState()
@@ -72,7 +71,16 @@ fun <C : Any> NavHost(
 				)
 			},
 			onBackstackChange = { empty -> backHandlerEnabled = !empty },
-			animationDataRegistry = remember { AnimationDataRegistry() }
+			animationDataRegistry = rememberRetained(startingNavControllerInstance.key) {
+				AnimationDataRegistry()
+			}
+		)
+
+		HandleBackGesturesForStackAnimations(
+			stackAnimatorScope = screenStackAnimatorScope,
+			backHandler = startingNavControllerInstance.backHandler,
+			enabled = backHandlerEnabled,
+			onBack = { startingNavControllerInstance.navigateBack() }
 		)
 
 		StackAnimator(
@@ -86,38 +94,50 @@ fun <C : Any> NavHost(
 				)
 			}
 		)
-
-		BackGestureHandler(
-			enabled = backHandlerEnabled,
-			startingNavControllerInstance.backHandler,
-			onBackStarted = {
-				animationsCoroutineScope.launch {
-					screenStackAnimatorScope.updateGestureDataInScopes(
-						BackGestureEvent.OnBackStarted(it)
-					)
-				}
-			},
-			onBackProgressed = {
-				animationsCoroutineScope.launch {
-					screenStackAnimatorScope.updateGestureDataInScopes(
-						BackGestureEvent.OnBackProgressed(it)
-					)
-				}
-			},
-			onBackCancelled = {
-				animationsCoroutineScope.launch {
-					screenStackAnimatorScope
-						.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
-				}
-			},
-			onBack = {
-				startingNavControllerInstance.navigateBack()
-
-				animationsCoroutineScope.launch {
-					screenStackAnimatorScope
-						.updateGestureDataInScopes(BackGestureEvent.OnBack)
-				}
-			}
-		)
 	}
+}
+
+@Composable
+private fun HandleBackGesturesForStackAnimations(
+	stackAnimatorScope: StackAnimatorScope<*, *>,
+	backHandler: BackHandler,
+	enabled: Boolean,
+	onBack: () -> Unit
+) {
+	val animationsCoroutineScope = rememberCoroutineScope()
+
+	BackGestureHandler(
+		enabled = enabled,
+		backHandler,
+		onBackStarted = {
+			animationsCoroutineScope.launch {
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBackStarted(it)
+				)
+			}
+		},
+		onBackProgressed = {
+			animationsCoroutineScope.launch {
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBackProgressed(it)
+				)
+			}
+		},
+		onBackCancelled = {
+			animationsCoroutineScope.launch {
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBackCancelled
+				)
+			}
+		},
+		onBack = {
+			animationsCoroutineScope.launch {
+				onBack()
+
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBack
+				)
+			}
+		}
+	)
 }
