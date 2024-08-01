@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
@@ -31,31 +32,42 @@ import kotlinx.coroutines.launch
  * rendered and animated.
  */
 @Composable
-inline fun <reified C : Any> NavHost(
+fun <C : Any> NavHost(
 	startingNavControllerInstance: NavController<C>,
 	modifier: Modifier = Modifier,
 	excludedDestinations: List<C>? = null,
-	noinline animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
+	animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
 		LocalContentAnimator.current,
-	crossinline router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
+	router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
 	val coroutineScope = rememberCoroutineScope()
 
 	var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
 
 	val stack by startingNavControllerInstance.screenStack.subscribeAsState()
+
 	val screenStackAnimatorScope = rememberStackAnimatorScope(
-		"${C::class.simpleName} routed content",
+		"${startingNavControllerInstance.key} routed content",
 		stack = { stack.items },
 		itemKey = { it.configuration },
-		excludedDestinations = excludedDestinations,
+		excludedDestinations = { false },
+		animations = {
+			animations(
+				DestinationAnimationsConfiguratorScope(
+					previousChild = previousChild?.configuration,
+					currentChild = currentChild.configuration,
+					nextChild = nextChild?.configuration,
+					exitingChildren = exitingChildren.fastMap { it.configuration },
+					screenInformation = screenInformation
+				)
+			)
+		},
 		onBackstackChange = { empty -> backHandlerEnabled = !empty },
 	)
 
 	StackAnimator(
 		stackAnimatorScope = screenStackAnimatorScope,
 		modifier = modifier,
-		animations = animations,
 		content = {
 			CompositionLocalProvider(
 				LocalComponentContext provides it.instance.componentContext,

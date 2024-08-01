@@ -12,9 +12,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.ui.screens.heart.HeartNavHost
 import com.nxoim.decomposite.ui.screens.star.StarNavHost
@@ -29,7 +29,7 @@ fun App() = RootNavHost()
 fun RootNavHost() {
     val rootNavController = navController<RootDestinations>(RootDestinations.Star)
 
-    Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
+    Scaffold(bottomBar = { GlobalSampleNavBar(rootNavController) }) { scaffoldPadding ->
         NavHost<RootDestinations>(
             rootNavController,
             Modifier.padding(bottom = scaffoldPadding.calculateBottomPadding()),
@@ -51,8 +51,9 @@ fun RootNavHost() {
 
 
 @Composable
-fun GlobalSampleNavBar() {
-    val navController = getExistingNavController<RootDestinations>()
+fun GlobalSampleNavBar(
+    navController: NavController<RootDestinations>
+) {
     val currentScreen = navController.currentScreen
 
     NavigationBar {

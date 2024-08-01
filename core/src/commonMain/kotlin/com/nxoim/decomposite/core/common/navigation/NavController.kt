@@ -13,6 +13,7 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.arkivanov.essenty.lifecycle.doOnDestroy
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.rememberRetained
@@ -65,16 +66,19 @@ inline fun <reified C : Any> navController(
 	) {
 		navStore.remove(key, C::class)
 	}
-
-	return navStore.getOrCreate(key, C::class) {
-		NavController(
-			startingDestination,
-			serializer,
-			componentContext,
-			key,
-			childFactory
-		)
+	componentContext.lifecycle.doOnDestroy {
+		navStore.remove(key, C::class)
 	}
+	return navStore.getOrCreate(key, C::class) {
+			NavController(
+				startingDestination,
+				serializer,
+				componentContext,
+				key,
+				childFactory
+			)
+		}
+
 }
 
 inline fun <reified C : Any> navControllerKey(additionalKey: String = "") =
@@ -88,7 +92,7 @@ class NavController<C : Any>(
 	private val startingDestination: C,
 	serializer: KSerializer<C>? = null,
 	componentContext: ComponentContext,
-	key: String = startingDestination::class.toString(),
+	val key: String = startingDestination::class.toString(),
 	childFactory: (
 		config: C,
 		childComponentContext: ComponentContext

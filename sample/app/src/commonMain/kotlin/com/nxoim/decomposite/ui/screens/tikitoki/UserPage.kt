@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -69,7 +70,7 @@ fun UserPage(
 
                 Spacer(Modifier.height(16.dp))
 
-                Text(mockUser.username, style = MaterialTheme.typography.headlineMedium)
+                Text(animatedVisibilityScope.transition.toString(), style = MaterialTheme.typography.headlineMedium)
 
                 Spacer(Modifier.height(8.dp))
 
@@ -98,10 +99,9 @@ fun UserPage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserPageTopAppBar(
-    userName: String
+    userName: String,
+    navController: NavController<TikitokiDestinations> = getExistingNavController()!!
 ) {
-    val navController = getExistingNavController<TikitokiDestinations>()
-
     CenterAlignedTopAppBar(
         title = { Text(userName) },
         navigationIcon = {

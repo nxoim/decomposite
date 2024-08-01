@@ -59,11 +59,11 @@ inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAn
 /**
  * Provides data helpful for the configuration of animations.
  */
-data class DestinationAnimationsConfiguratorScope<C : Any>(
-    val previousChild: C?,
-    val currentChild: C,
-    val nextChild: C?,
-    val exitingChildren: List<C>,
+data class DestinationAnimationsConfiguratorScope<T : Any>(
+    val previousChild: T?,
+    val currentChild: T,
+    val nextChild: T?,
+    val exitingChildren: List<T>,
     val screenInformation: ScreenInformation
 )
 

@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.iosLikeSlide
 import com.nxoim.decomposite.core.common.navigation.getExistingNavController
@@ -58,8 +59,9 @@ fun StarNavHost() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StarTopAppBar() {
-    val navController = getExistingNavController<StarDestinations>()
+fun StarTopAppBar(
+    navController: NavController<StarDestinations> = getExistingNavController()!!
+) {
     val currentScreen = navController.currentScreen
 
     TopAppBar(

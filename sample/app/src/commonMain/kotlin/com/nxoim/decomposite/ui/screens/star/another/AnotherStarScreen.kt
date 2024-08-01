@@ -17,7 +17,7 @@ import com.nxoim.decomposite.ui.screens.star.StarOverlayDestinations
 
 @Composable
 fun AnotherStarScreen(
-    navController: NavController<StarOverlayDestinations> = getExistingNavController()
+    navController: NavController<StarOverlayDestinations> = getExistingNavController()!!
 ) {
     Surface {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {

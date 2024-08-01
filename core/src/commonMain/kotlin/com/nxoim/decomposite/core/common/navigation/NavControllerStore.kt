@@ -12,8 +12,7 @@ class NavControllerStore() {
     private val store = hashMapOf<Pair<String?, KClass<*>>, Any>()
 
     fun <T : Any> get(key: String? = null, kClass: KClass<T>) =
-        (store[Pair(key, kClass)] as? NavController<T>)
-            ?: error("instance of ${kClass.simpleName} was not found in NavControllerStore")
+        (store[Pair(key, kClass)] as NavController<T>?)
 
     fun <T : Any> getOrCreate(
         key: String? = null,
