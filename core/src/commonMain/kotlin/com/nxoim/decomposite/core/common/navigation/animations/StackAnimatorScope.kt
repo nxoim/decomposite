@@ -21,7 +21,6 @@ import androidx.compose.ui.util.fastMap
 import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
-import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,31 +37,25 @@ import kotlin.contracts.contract
  */
 @Composable
 fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
-	key: String,
 	stack: () -> List<Instance>,
 	onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	itemKey: (Instance) -> Key,
 	excludedDestinations: (Instance) -> Boolean,
 	animations: DestinationAnimationsConfiguratorScope<Instance>.() -> ContentAnimations,
 	allowBatchRemoval: Boolean = true,
-): StackAnimatorScope<Key, Instance> {
-	val animationDataRegistry = rememberRetained("$key StackAnimatorScope") {
-		AnimationDataRegistry<Key>()
-	}
-
-	return remember("$key StackAnimatorScope") {
-		StackAnimatorScope(
-			key,
-			stack,
-			onBackstackChange,
-			itemKey,
-			excludedDestinations,
-			animations,
-			allowBatchRemoval,
-			animationDataRegistry
-		)
-	}
+	animationDataRegistry: AnimationDataRegistry<Key> = remember() { AnimationDataRegistry() }
+) = remember() {
+	StackAnimatorScope(
+		stack,
+		onBackstackChange,
+		itemKey,
+		excludedDestinations,
+		animations,
+		allowBatchRemoval,
+		animationDataRegistry
+	)
 }
+
 
 /**
  * Manages the children's animation state and modifiers. Creates instances of animator scopes
@@ -70,7 +63,6 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
  */
 @Immutable
 class StackAnimatorScope<Key : Any, Instance : Any>(
-	val key: String?,
 	private val stack: () -> List<Instance>,
 	private val onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	val itemKey: (Instance) -> Key,

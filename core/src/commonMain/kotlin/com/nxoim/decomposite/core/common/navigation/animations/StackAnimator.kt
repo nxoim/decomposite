@@ -53,7 +53,7 @@ fun <Key : Any, Instance : Any> StackAnimator(
 	stackAnimatorScope: StackAnimatorScope<Key, Instance>,
 	modifier: Modifier = Modifier,
 	content: @Composable AnimatedVisibilityScope.(child: Instance) -> Unit,
-) = key(stackAnimatorScope.key) {
+) {
 	val holder = rememberSaveableStateHolder()
 
 	LaunchedEffect(Unit) { stackAnimatorScope.observeAndUpdateAnimatorData() }

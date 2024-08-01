@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.nxoim.decomposite.core.common.navigation.animations.AnimationDataRegistry
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
 import com.nxoim.decomposite.core.common.navigation.animations.LocalContentAnimator
@@ -19,6 +20,7 @@ import com.nxoim.decomposite.core.common.navigation.animations.rememberStackAnim
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
+import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -50,7 +52,6 @@ fun <C : Any> NavHost(
 	val stack by startingNavControllerInstance.screenStack.subscribeAsState()
 
 	val screenStackAnimatorScope = rememberStackAnimatorScope(
-		"${startingNavControllerInstance.key} routed content",
 		stack = { stack.items },
 		itemKey = { it.configuration },
 		excludedDestinations = { excludedDestinations?.contains(it.configuration) == true },
@@ -66,6 +67,7 @@ fun <C : Any> NavHost(
 			)
 		},
 		onBackstackChange = { empty -> backHandlerEnabled = !empty },
+		animationDataRegistry = rememberRetained() { AnimationDataRegistry() }
 	)
 
 	StackAnimator(
