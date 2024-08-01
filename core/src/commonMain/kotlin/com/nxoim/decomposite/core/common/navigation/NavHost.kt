@@ -50,7 +50,7 @@ fun <C : Any> NavHost(
 		"${startingNavControllerInstance.key} routed content",
 		stack = { stack.items },
 		itemKey = { it.configuration },
-		excludedDestinations = { false },
+		excludedDestinations = { excludedDestinations?.contains(it.configuration) == true },
 		animations = {
 			animations(
 				DestinationAnimationsConfiguratorScope(
