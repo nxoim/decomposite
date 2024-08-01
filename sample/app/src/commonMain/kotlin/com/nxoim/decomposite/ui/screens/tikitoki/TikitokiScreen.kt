@@ -13,20 +13,23 @@ import com.nxoim.decomposite.core.common.viewModel.viewModel
 fun TikitokiScreen() = SharedTransitionLayout {
     // initializing the view model here, and will be using the getter everywhere else
     viewModel() { TikitokiViewModel() }
+    val navController = navController<TikitokiDestinations>(TikitokiDestinations.Pager)
 
     NavHost(
-        navController<TikitokiDestinations>(TikitokiDestinations.Pager),
+        navController,
         animations = { iosLikeSlide() }
     ) {
         when (it) {
             TikitokiDestinations.Pager -> ListPager(
                 animatedVisibilityScope = this,
-                sharedTransitionScope = this@SharedTransitionLayout
+                sharedTransitionScope = this@SharedTransitionLayout,
+                navController
             )
             is TikitokiDestinations.User -> UserPage(
                 mockUser = it.mockUser,
                 animatedVisibilityScope = this,
-                sharedTransitionScope = this@SharedTransitionLayout
+                sharedTransitionScope = this@SharedTransitionLayout,
+                navController
             )
         }
     }

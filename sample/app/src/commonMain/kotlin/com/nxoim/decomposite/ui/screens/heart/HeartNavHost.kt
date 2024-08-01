@@ -37,9 +37,9 @@ fun HeartNavHost() {
             }
         ) { destination ->
             when (destination) {
-                HeartDestinations.Home -> HeartHomeScreen()
+                HeartDestinations.Home -> HeartHomeScreen(heartNavController)
 
-                is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
+                is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text, heartNavController)
             }
         }
     }

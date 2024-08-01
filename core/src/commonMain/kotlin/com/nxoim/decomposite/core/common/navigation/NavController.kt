@@ -2,9 +2,9 @@ package com.nxoim.decomposite.core.common.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.backStack
@@ -19,17 +19,6 @@ import com.nxoim.decomposite.core.common.ultils.rememberRetained
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import kotlin.jvm.JvmInline
-
-/**
- * Gets an existing navigation controller instance
- */
-@ReadOnlyComposable
-@Composable
-inline fun <reified C : Any> getExistingNavController(
-	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String = navControllerKey<C>(componentContext = componentContext),
-	navStore: NavControllerStore = LocalNavControllerStore.current
-) = navStore.get(key, C::class)
 
 /**
  * Creates a navigation controller instance in the [NavControllerStore], which allows
@@ -68,24 +57,27 @@ inline fun <reified C : Any> navController(
 		navStore.remove(key, C::class)
 	}
 
-	return navStore.getOrCreate(key, C::class) {
-		NavController(
-			startingDestination,
-			serializer,
-			componentContext,
-			key,
-			childFactory
-		)
+	return remember(componentContext, key) {
+		navStore.getOrCreate(key, C::class) {
+			NavController(
+				startingDestination,
+				serializer,
+				componentContext,
+				key,
+				childFactory
+			)
+		}
 	}
 }
 
-// During navigation a component context might get recreated,
-// and if we do not create a new key for the new component context -
+// During navigation a component context might get recreated (specifically
+// when coming back to a component that's currently being removed from the
+// stack animator), and if we do not create a new key for the new component context -
 // navigation stops working in the component
 inline fun <reified C : Any> navControllerKey(
-	additionalKey: String = "",
+	additionalKey: Any = "",
 	componentContext: ComponentContext
-) = "${C::class}$additionalKey${componentContext.hashCode()}"
+) = "${C::class}$additionalKey${componentContext}"
 
 /**
  * Generic navigation controller. Contains a stack for overlays and a stack for screens.
@@ -113,7 +105,6 @@ class NavController<C : Any>(
 		handleBackButton = true,
 		childFactory = childFactory
 	)
-
 
 	val currentScreen by screenStack.let {
 		val state = mutableStateOf(it.value.active.configuration)

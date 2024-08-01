@@ -33,19 +33,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.nxoim.decomposite.core.common.navigation.NavController
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserPage(
     mockUser: MockUser,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    sharedTransitionScope: SharedTransitionScope
+    sharedTransitionScope: SharedTransitionScope,
+    navController: NavController<TikitokiDestinations>
 ) = with(sharedTransitionScope) {
     Surface {
         Scaffold(
             Modifier.fillMaxSize(),
-            topBar = { UserPageTopAppBar(mockUser.username) }
+            topBar = { UserPageTopAppBar(mockUser.username, navController) }
         ) { scaffoldPadding ->
             Column(
                 Modifier
@@ -100,7 +100,7 @@ fun UserPage(
 @Composable
 private fun UserPageTopAppBar(
     userName: String,
-    navController: NavController<TikitokiDestinations> = getExistingNavController()!!
+    navController: NavController<TikitokiDestinations>
 ) {
     CenterAlignedTopAppBar(
         title = { Text(userName) },

@@ -13,12 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nxoim.decomposite.core.common.navigation.NavController
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.ui.screens.heart.HeartDestinations
 
 @Composable
 fun HeartHomeScreen(
-    navController: NavController<HeartDestinations> = getExistingNavController()!!
+    navController: NavController<HeartDestinations>
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),

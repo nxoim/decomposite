@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
 
+// i think this im gonna deprecate this soon
 @Immutable
 class ViewModelStore {
     val lazyVmReferences = hashMapOf<Any, Any>()

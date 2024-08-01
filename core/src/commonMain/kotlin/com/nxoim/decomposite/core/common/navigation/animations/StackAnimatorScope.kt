@@ -37,15 +37,17 @@ import kotlin.contracts.contract
  */
 @Composable
 fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
+	key: String,
 	stack: () -> List<Instance>,
 	onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	itemKey: (Instance) -> Key,
 	excludedDestinations: (Instance) -> Boolean,
 	animations: DestinationAnimationsConfiguratorScope<Instance>.() -> ContentAnimations,
 	allowBatchRemoval: Boolean = true,
-	animationDataRegistry: AnimationDataRegistry<Key> = remember() { AnimationDataRegistry() }
-) = remember() {
+	animationDataRegistry: AnimationDataRegistry<Key> = remember { AnimationDataRegistry() }
+) = remember("$key StackAnimatorScope") {
 	StackAnimatorScope(
+		key,
 		stack,
 		onBackstackChange,
 		itemKey,
@@ -63,6 +65,7 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
  */
 @Immutable
 class StackAnimatorScope<Key : Any, Instance : Any>(
+	val key: String?,
 	private val stack: () -> List<Instance>,
 	private val onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	val itemKey: (Instance) -> Key,

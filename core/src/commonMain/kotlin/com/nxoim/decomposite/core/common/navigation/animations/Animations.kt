@@ -17,7 +17,7 @@ import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.materialContainerMorphContentAnimator
 
-fun softSpring() = spring(1.8f, 2500f, 0.0005f)
+fun softSpring() = spring(3.8f, 2500f, 0.0005f)
 
 fun emptyAnimation(
     renderUntil: Int = Int.MAX_VALUE,

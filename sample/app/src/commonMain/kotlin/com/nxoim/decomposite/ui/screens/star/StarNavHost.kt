@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.iosLikeSlide
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.core.common.ultils.InOverlay
 import com.nxoim.decomposite.ui.screens.star.another.AnotherStarScreen
@@ -28,7 +27,7 @@ fun StarNavHost() {
         StarOverlayDestinations.Empty
     )
 
-    Scaffold(topBar = { StarTopAppBar() }) { scaffoldPadding ->
+    Scaffold(topBar = { StarTopAppBar(starNavController) }) { scaffoldPadding ->
         NavHost(
             starNavController,
             Modifier.padding(scaffoldPadding)
@@ -51,7 +50,7 @@ fun StarNavHost() {
         ) { destination ->
             when (destination) {
                 StarOverlayDestinations.Empty -> {}
-                StarOverlayDestinations.AnotherStar -> AnotherStarScreen()
+                StarOverlayDestinations.AnotherStar -> AnotherStarScreen(starOverlayNavController)
             }
         }
     }
@@ -60,7 +59,7 @@ fun StarNavHost() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StarTopAppBar(
-    navController: NavController<StarDestinations> = getExistingNavController()!!
+    navController: NavController<StarDestinations>
 ) {
     val currentScreen = navController.currentScreen
 
