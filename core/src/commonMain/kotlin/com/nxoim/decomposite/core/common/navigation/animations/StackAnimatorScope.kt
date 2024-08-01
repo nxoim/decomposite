@@ -32,12 +32,12 @@ import kotlin.contracts.contract
 // scopes not to be recreated which is useful in case the exit animation of a config is
 // interrupted by the same config appearing in the stack again while the animation is running
 /**
- * Creates a retained instance of a [StackAnimatorScope]. The [StackAnimator] relies on
- * the provided [key] for the removal of stale animation data.
+ * Creates an instance of a [StackAnimatorScope]. It manages instance caching and animations.
+ *
+ * @param key Without this parameter something breaks
  */
 @Composable
 fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
-	key: String,
 	stack: () -> List<Instance>,
 	onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	itemKey: (Instance) -> Key,
@@ -45,9 +45,8 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
 	animations: DestinationAnimationsConfiguratorScope<Instance>.() -> ContentAnimations,
 	allowBatchRemoval: Boolean = true,
 	animationDataRegistry: AnimationDataRegistry<Key> = remember { AnimationDataRegistry() }
-) = remember("$key StackAnimatorScope") {
+) = remember() {
 	StackAnimatorScope(
-		key,
 		stack,
 		onBackstackChange,
 		itemKey,
@@ -65,7 +64,6 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
  */
 @Immutable
 class StackAnimatorScope<Key : Any, Instance : Any>(
-	val key: String?,
 	private val stack: () -> List<Instance>,
 	private val onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	val itemKey: (Instance) -> Key,

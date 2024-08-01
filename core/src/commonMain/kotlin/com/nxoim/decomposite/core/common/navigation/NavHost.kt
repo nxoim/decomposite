@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,74 +46,78 @@ fun <C : Any> NavHost(
 		LocalContentAnimator.current,
 	router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
-	val animationsCoroutineScope = rememberCoroutineScope() { Dispatchers.Default }
+	// a key is needed because theres some caching issues with animations
+	// when the nav hosts are nested because of forEach loops in stack animator.
+	// maybe related to currentCompositeKeyHash?
+	key(startingNavControllerInstance.key) {
+		val animationsCoroutineScope = rememberCoroutineScope() { Dispatchers.Default }
 
-	var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
+		var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
 
-	val stack by startingNavControllerInstance.screenStack.subscribeAsState()
+		val stack by startingNavControllerInstance.screenStack.subscribeAsState()
 
-	val screenStackAnimatorScope = rememberStackAnimatorScope(
-		"${startingNavControllerInstance.key} routed content",
-		stack = { stack.items },
-		itemKey = { it.configuration },
-		excludedDestinations = { excludedDestinations?.contains(it.configuration) == true },
-		animations = {
-			animations(
-				DestinationAnimationsConfiguratorScope(
-					previousChild = previousChild?.configuration,
-					currentChild = currentChild.configuration,
-					nextChild = nextChild?.configuration,
-					exitingChildren = exitingChildren.fastMap { it.configuration },
-					screenInformation = screenInformation
+		val screenStackAnimatorScope = rememberStackAnimatorScope(
+			stack = { stack.items },
+			itemKey = { it.configuration },
+			excludedDestinations = { excludedDestinations?.contains(it.configuration) == true },
+			animations = {
+				animations(
+					DestinationAnimationsConfiguratorScope(
+						previousChild = previousChild?.configuration,
+						currentChild = currentChild.configuration,
+						nextChild = nextChild?.configuration,
+						exitingChildren = exitingChildren.fastMap { it.configuration },
+						screenInformation = screenInformation
+					)
 				)
-			)
-		},
-		onBackstackChange = { empty -> backHandlerEnabled = !empty },
-		animationDataRegistry = remember { AnimationDataRegistry() }
-	)
+			},
+			onBackstackChange = { empty -> backHandlerEnabled = !empty },
+			animationDataRegistry = remember { AnimationDataRegistry() }
+		)
 
-	StackAnimator(
-		stackAnimatorScope = screenStackAnimatorScope,
-		modifier = modifier,
-		content = {
-			CompositionLocalProvider(
-				LocalComponentContext provides it.instance.componentContext,
-				LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
-				content = { router(it.configuration) }
-			)
-		}
-	)
-
-	BackGestureHandler(
-		enabled = backHandlerEnabled,
-		startingNavControllerInstance.backHandler,
-		onBackStarted = {
-			animationsCoroutineScope.launch {
-				screenStackAnimatorScope.updateGestureDataInScopes(
-					BackGestureEvent.OnBackStarted(it)
+		StackAnimator(
+			stackAnimatorScope = screenStackAnimatorScope,
+			modifier = modifier,
+			content = {
+				CompositionLocalProvider(
+					LocalComponentContext provides it.instance.componentContext,
+					LocalContentAnimator provides animations as DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations,
+					content = { router(it.configuration) }
 				)
 			}
-		},
-		onBackProgressed = {
-			animationsCoroutineScope.launch {
-				screenStackAnimatorScope.updateGestureDataInScopes(
-					BackGestureEvent.OnBackProgressed(it)
-				)
-			}
-		},
-		onBackCancelled = {
-			animationsCoroutineScope.launch {
-				screenStackAnimatorScope
-					.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
-			}
-		},
-		onBack = {
-			startingNavControllerInstance.navigateBack()
+		)
 
-			animationsCoroutineScope.launch {
-				screenStackAnimatorScope
-					.updateGestureDataInScopes(BackGestureEvent.OnBack)
+		BackGestureHandler(
+			enabled = backHandlerEnabled,
+			startingNavControllerInstance.backHandler,
+			onBackStarted = {
+				animationsCoroutineScope.launch {
+					screenStackAnimatorScope.updateGestureDataInScopes(
+						BackGestureEvent.OnBackStarted(it)
+					)
+				}
+			},
+			onBackProgressed = {
+				animationsCoroutineScope.launch {
+					screenStackAnimatorScope.updateGestureDataInScopes(
+						BackGestureEvent.OnBackProgressed(it)
+					)
+				}
+			},
+			onBackCancelled = {
+				animationsCoroutineScope.launch {
+					screenStackAnimatorScope
+						.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
+				}
+			},
+			onBack = {
+				startingNavControllerInstance.navigateBack()
+
+				animationsCoroutineScope.launch {
+					screenStackAnimatorScope
+						.updateGestureDataInScopes(BackGestureEvent.OnBack)
+				}
 			}
-		}
-	)
+		)
+	}
 }
