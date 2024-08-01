@@ -11,7 +11,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
-import com.arkivanov.decompose.defaultComponentContext
+import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.decompose.retainedComponent
 import com.nxoim.decomposite.core.common.navigation.CommonNavigationRootProvider
 import com.nxoim.decomposite.core.common.navigation.InternalNavigationRootApi
 import com.nxoim.decomposite.core.common.navigation.NavigationRoot
@@ -76,4 +77,13 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
  *
  * Initialize this outside of setContent and provide to [NavigationRootProvider].
  */
-fun ComponentActivity.defaultNavigationRootData() = NavigationRootData(defaultComponentContext())
+fun ComponentActivity.defaultNavigationRootData() = retainedComponent {
+    NavigationRootData(
+        DefaultComponentContext(
+            it.lifecycle,
+            it.stateKeeper,
+            it.instanceKeeper,
+            it.backHandler
+        )
+    )
+}
