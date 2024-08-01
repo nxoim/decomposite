@@ -19,6 +19,8 @@ import com.nxoim.decomposite.core.common.navigation.animations.rememberStackAnim
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 /**
@@ -31,6 +33,7 @@ import kotlinx.coroutines.launch
  * @param excludedDestinations allows to specify what destinations should not be
  * rendered and animated.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @Composable
 fun <C : Any> NavHost(
 	startingNavControllerInstance: NavController<C>,
@@ -40,7 +43,7 @@ fun <C : Any> NavHost(
 		LocalContentAnimator.current,
 	router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
-	val coroutineScope = rememberCoroutineScope()
+	val animationsCoroutineScope = rememberCoroutineScope() { Dispatchers.Default }
 
 	var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
 
@@ -81,21 +84,21 @@ fun <C : Any> NavHost(
 		enabled = backHandlerEnabled,
 		startingNavControllerInstance.backHandler,
 		onBackStarted = {
-			coroutineScope.launch {
+			animationsCoroutineScope.launch {
 				screenStackAnimatorScope.updateGestureDataInScopes(
 					BackGestureEvent.OnBackStarted(it)
 				)
 			}
 		},
 		onBackProgressed = {
-			coroutineScope.launch {
+			animationsCoroutineScope.launch {
 				screenStackAnimatorScope.updateGestureDataInScopes(
 					BackGestureEvent.OnBackProgressed(it)
 				)
 			}
 		},
 		onBackCancelled = {
-			coroutineScope.launch {
+			animationsCoroutineScope.launch {
 				screenStackAnimatorScope
 					.updateGestureDataInScopes(BackGestureEvent.OnBackCancelled)
 			}
@@ -103,7 +106,7 @@ fun <C : Any> NavHost(
 		onBack = {
 			startingNavControllerInstance.navigateBack()
 
-			coroutineScope.launch {
+			animationsCoroutineScope.launch {
 				screenStackAnimatorScope
 					.updateGestureDataInScopes(BackGestureEvent.OnBack)
 			}

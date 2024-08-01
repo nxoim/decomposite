@@ -84,7 +84,7 @@ fun <Key : Any, Instance : Any> StackAnimator(
 					}
 				}
 
-				LaunchedEffect(Unit) {
+				LaunchedEffect(animationStatus) {
 					snapshotFlow { firstAnimData.animationProgressForScope }
 						.collect() { progress ->
 							if (animationStatus.fromBackIntoTop) {
@@ -92,7 +92,6 @@ fun <Key : Any, Instance : Any> StackAnimator(
 									(1f - progress).coerceIn(0f, 1f),
 									childKey
 								)
-								println("fromBackIntoTop")
 							}
 
 							if (animationStatus.fromOutsideIntoTop) {
@@ -100,12 +99,10 @@ fun <Key : Any, Instance : Any> StackAnimator(
 									(1f + progress).coerceIn(0f, 1f),
 									childKey
 								)
-								println("fromOutsideIntoTop $animationStatus")
 							}
 
 							if (animationStatus.run { animationType.passiveCancelling && location.top }) {
 								seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
-								println("passiveCancelling")
 							}
 						}
 				}
@@ -121,9 +118,7 @@ fun <Key : Any, Instance : Any> StackAnimator(
 				) {
 					DisposableEffect(Unit) {
 						onDispose {
-							if (!state.inStack) holder.removeState(childHolderKey(childKey)).also {
-								println("dispose")
-							}
+							if (!state.inStack) holder.removeState(childHolderKey(childKey))
 						}
 					}
 

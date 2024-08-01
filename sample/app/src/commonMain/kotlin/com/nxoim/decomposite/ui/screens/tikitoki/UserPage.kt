@@ -70,7 +70,7 @@ fun UserPage(
 
                 Spacer(Modifier.height(16.dp))
 
-                Text(animatedVisibilityScope.transition.toString(), style = MaterialTheme.typography.headlineMedium)
+                Text(mockUser.username, style = MaterialTheme.typography.headlineMedium)
 
                 Spacer(Modifier.height(8.dp))
 

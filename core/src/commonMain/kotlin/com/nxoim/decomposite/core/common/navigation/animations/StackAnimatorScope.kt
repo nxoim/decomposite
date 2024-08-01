@@ -138,8 +138,8 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 			val oldStack = sourceStack
 			val newStack = newStackRaw.fastFilterNot(excludedDestinations)
 
-			val childrenToRemove =
-				oldStack.fastFilter { it !in newStack && itemKey(it) !in removingChildren }
+			val childrenToRemove = oldStack
+				.fastFilter { it !in newStack && itemKey(it) !in removingChildren }
 			val batchRemoval = childrenToRemove.size > 1 && allowBatchRemoval
 
 			// cancel removal of items that appeared again in the stack
@@ -155,9 +155,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				}
 				removingChildren.add(itemKey(childrenToRemove.last()))
 			} else {
-				childrenToRemove.fastForEach {
-					removingChildren.add(itemKey(it))
-				}
+				childrenToRemove.fastForEach { removingChildren.add(itemKey(it)) }
 			}
 
 			sourceStack = newStackRaw
@@ -214,6 +212,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 			if (requireVisibilityInBack) allowingAnimation else renderTopAndAnimatedBack
 		}
 
+
 		remember(animating) {
 			if (!inSourceStack && !animating) {
 				visibleCachedChildren.remove(key)
@@ -221,6 +220,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				removeAnimationDataFromCache(key)
 			}
 		}
+
 
 		LaunchedEffect(allowingAnimation, inSourceStack) {
 			updateChildAnimPrerequisites(key, allowingAnimation, inSourceStack)
