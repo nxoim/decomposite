@@ -142,9 +142,6 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				.fastFilter { it !in newStack && itemKey(it) !in removingChildren }
 			val batchRemoval = childrenToRemove.size > 1 && allowBatchRemoval
 
-			// cancel removal of items that appeared again in the stack
-			removingChildren.removeAll(newStackRaw.fastMap(itemKey))
-
 			if (batchRemoval) {
 				// remove from cache and everything all children, except the last one,
 				// which will be animated
@@ -161,6 +158,9 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 			sourceStack = newStackRaw
 
 			visibleCachedChildren.putAll(newStack.associateBy(itemKey))
+
+			// cancel removal of items that appeared again in the stack
+			removingChildren.removeAll(newStackRaw.fastMap(itemKey))
 		}
 	}
 

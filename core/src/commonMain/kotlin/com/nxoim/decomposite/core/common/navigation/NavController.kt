@@ -26,7 +26,8 @@ import kotlin.jvm.JvmInline
 @ReadOnlyComposable
 @Composable
 inline fun <reified C : Any> getExistingNavController(
-	key: String = navControllerKey<C>(),
+	componentContext: ComponentContext = LocalComponentContext.current,
+	key: String = navControllerKey<C>(componentContext = componentContext),
 	navStore: NavControllerStore = LocalNavControllerStore.current
 ) = navStore.get(key, C::class)
 
@@ -51,7 +52,7 @@ inline fun <reified C : Any> navController(
 	serializer: KSerializer<C>? = serializer(),
 	navStore: NavControllerStore = LocalNavControllerStore.current,
 	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String = navControllerKey<C>(),
+	key: String = navControllerKey<C>(componentContext = componentContext),
 	noinline childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
@@ -78,8 +79,13 @@ inline fun <reified C : Any> navController(
 	}
 }
 
-inline fun <reified C : Any> navControllerKey(additionalKey: String = "") =
-	"${C::class}$additionalKey"
+// During navigation a component context might get recreated,
+// and if we do not create a new key for the new component context -
+// navigation stops working in the component
+inline fun <reified C : Any> navControllerKey(
+	additionalKey: String = "",
+	componentContext: ComponentContext
+) = "${C::class}$additionalKey${componentContext.hashCode()}"
 
 /**
  * Generic navigation controller. Contains a stack for overlays and a stack for screens.
@@ -107,6 +113,7 @@ class NavController<C : Any>(
 		handleBackButton = true,
 		childFactory = childFactory
 	)
+
 
 	val currentScreen by screenStack.let {
 		val state = mutableStateOf(it.value.active.configuration)
