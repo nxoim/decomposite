@@ -28,9 +28,6 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
 
-// it's important to use the local instance keeper rather than of the children's for the
-// scopes not to be recreated which is useful in case the exit animation of a config is
-// interrupted by the same config appearing in the stack again while the animation is running
 /**
  * Creates an instance of a [StackAnimatorScope]. It manages instance caching and animations.
  *
