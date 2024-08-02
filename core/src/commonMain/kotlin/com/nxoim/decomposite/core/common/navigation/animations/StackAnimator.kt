@@ -92,16 +92,12 @@ fun <Key : Any, Instance : Any> StackAnimator(
 									(1f - progress).coerceIn(0f, 1f),
 									childKey
 								)
-							}
-
-							if (animationStatus.fromOutsideIntoTop) {
+							} else if (animationStatus.fromOutsideIntoTop) {
 								seekableTransitionState.seekTo(
 									(1f + progress).coerceIn(0f, 1f),
 									childKey
 								)
-							}
-
-							if (animationStatus.run { animationType.passiveCancelling && location.top }) {
+							} else if (animationStatus.run { animationType.passiveCancelling && location.top }) {
 								seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
 							}
 						}
