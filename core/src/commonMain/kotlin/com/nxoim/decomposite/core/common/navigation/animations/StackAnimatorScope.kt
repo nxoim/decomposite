@@ -176,7 +176,10 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				stack().elementAtOrNull(index - 1),
 				visibleCachedChildren[key]!!,
 				stack().elementAtOrNull(index + 1),
-				removingChildren.fastMap { visibleCachedChildren[key]!! },
+				// this is more expensive than just storing instances,
+				// but makes sure the instance data is always up to date
+				// in the lambda
+				remember(removingChildren) { removingChildren.fastMap { visibleCachedChildren[key]!! } },
 				LocalNavigationRoot.current.screenInformation
 			)
 		)
