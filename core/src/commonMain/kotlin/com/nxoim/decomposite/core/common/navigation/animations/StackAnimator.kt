@@ -111,7 +111,7 @@ fun <Key : Any, Instance : Any> StackAnimator(
 						transition,
 						visible = { it == childKey },
 						Modifier
-							.accumulate(state.animationData.modifiers())
+							.accumulate(remember(state.animationData) { state.animationData.modifiers() })
 							.zIndex((-state.indexFromTop).toFloat()),
 						displaying = { state.displaying },
 						shouldDisposeBlock = { _, _ -> false }
