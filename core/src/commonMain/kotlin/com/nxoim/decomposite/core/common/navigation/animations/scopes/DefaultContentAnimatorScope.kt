@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
  * set to false - ALL items will be visible while in backstack as if all animations have [requireVisibilityInBackstack]
  * set to true).
  */
+@Suppress("UNCHECKED_CAST")
 @OptIn(InternalDecomposeApi::class)
 fun contentAnimator(
 	animationSpec: AnimationSpec<Float> = softSpring(),
@@ -57,7 +58,7 @@ fun contentAnimator(
 			animatorScopeFactory = { initialIndex, initialIndexFromTop ->
 				DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, animationSpec)
 			},
-			animationModifier = block
+			animationModifier = block as ContentAnimatorScope.() -> Modifier
 		)
 	)
 )

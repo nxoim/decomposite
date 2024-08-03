@@ -34,6 +34,7 @@ import kotlin.math.roundToInt
 /**
  * [animationSpec] is still used for the gesture cancellation animation
  */
+@Suppress("UNCHECKED_CAST")
 @OptIn(InternalDecomposeApi::class)
 internal fun materialContainerMorphContentAnimator(
 	animationSpec: AnimationSpec<Float> = softSpring(),
@@ -54,7 +55,7 @@ internal fun materialContainerMorphContentAnimator(
 					animationSpec,
 				)
 			},
-			animationModifier = block
+			animationModifier = block as ContentAnimatorScope.() -> Modifier
 		)
 	)
 )
