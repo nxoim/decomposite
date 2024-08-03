@@ -54,7 +54,13 @@ fun <Key : Any, Instance : Any> StackAnimator(
 	stackAnimatorScope: StackAnimatorScope<Key, Instance>,
 	modifier: Modifier = Modifier,
 	content: @Composable AnimatedVisibilityScope.(child: Instance) -> Unit,
-) = key(stackAnimatorScope.hashCode()) {
+	// a key is needed because of something related
+	// to generation of composition hash keys (idk). animation data registry
+	// is expected to be a retained instance, so if theres an accidental
+	// recomposition affecting the instance of the stack animator scope
+	// - the stack animator instance won't be affected since the animation
+	// data registry instance will always stay the same
+) = key(stackAnimatorScope.animationDataRegistry) {
 	val holder = rememberSaveableStateHolder()
 
 	LaunchedEffect(Unit) { stackAnimatorScope.observeAndUpdateAnimatorData() }
