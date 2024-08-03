@@ -58,7 +58,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 	private val allowBatchRemoval: Boolean,
 	val animationDataRegistry: AnimationDataRegistry<Key>
 ) {
-	private val stackManager = StackManager(
+	private val stackCacheManager = StackCacheManager(
 		initialStack = stack(),
 		itemKey = itemKey,
 		excludedDestinations = excludedDestinations,
@@ -66,8 +66,8 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 	)
 	val animationDataHandler = AnimationDataHandler(animationDataRegistry)
 
-	val sourceStack get() = stackManager.sourceStack
-	val visibleCachedChildren = stackManager.visibleCachedChildren as Map<Key, Instance>
+	val sourceStack get() = stackCacheManager.sourceStack
+	val visibleCachedChildren = stackCacheManager.visibleCachedChildren as Map<Key, Instance>
 
 	suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) =
 		animationDataHandler.updateGestureDataInScopes(backGestureData)
@@ -79,23 +79,23 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 
 		snapshotFlow(stack).collect { newStackRaw ->
 			onBackstackChange(newStackRaw.size <= 1)
-			stackManager.updateStack(newStackRaw)
+			stackCacheManager.updateVisibleCachedChildren(newStackRaw)
 		}
 	}
 
 	@Composable
 	fun createStackItemState(key: Key): State<ItemState> {
-		val inSourceStack = !stackManager.removingChildren.contains(key)
+		val inSourceStack = !stackCacheManager.removingChildren.contains(key)
 
 		val index = if (inSourceStack)
 			sourceStack.indexOfFirst { itemKey(it) == key }
 		else
-			-(stackManager.removingChildren.indexOf(key) + 1)
+			-(stackCacheManager.removingChildren.indexOf(key) + 1)
 
 		val indexFromTop = if (inSourceStack)
 			sourceStack.size - index - 1
 		else
-			-(stackManager.removingChildren.indexOf(key) + 1)
+			-(stackCacheManager.removingChildren.indexOf(key) + 1)
 
 		val allAnimations = animations(
 			DestinationAnimationsConfiguratorScope(
@@ -105,8 +105,12 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 				// this is more expensive than just storing instances,
 				// but makes sure the instance data is always up to date
 				// in the lambda
-				exitingChildren = remember(stackManager.removingChildren) {
-					stackManager.removingChildren.fastMap { visibleCachedChildren[key]!! }
+				exitingChildren = remember(stackCacheManager.removingChildren) {
+					{
+						stackCacheManager
+							.removingChildren
+							.fastMap { visibleCachedChildren[key]!! }
+					}
 				},
 				screenInformation = LocalNavigationRoot.current.screenInformation
 			)
@@ -140,7 +144,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 
 		remember(animating) {
 			if (!inSourceStack && !animating) {
-				stackManager.removeAllRelatedToItem(key)
+				stackCacheManager.removeAllRelatedToItem(key)
 				animationDataHandler.removeAnimationDataFromCache(key)
 			}
 		}

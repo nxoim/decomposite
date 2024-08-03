@@ -6,6 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlin.jvm.JvmInline
 
@@ -52,9 +53,9 @@ data class ContentAnimator(
 )
 
 @Stable
-inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAnimations(
-    this.items + other.items
-)
+inline operator fun ContentAnimations.plus(
+    other: ContentAnimations
+) = ContentAnimations(this.items + other.items)
 
 /**
  * Provides data helpful for the configuration of animations.
@@ -63,7 +64,7 @@ data class DestinationAnimationsConfiguratorScope<T : Any>(
     val previousChild: T?,
     val currentChild: T,
     val nextChild: T?,
-    val exitingChildren: List<T>,
+    val exitingChildren: () -> List<T>,
     val screenInformation: ScreenInformation
 )
 

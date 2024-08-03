@@ -11,21 +11,36 @@ import androidx.compose.ui.util.fastMap
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
-class StackManager <Key : Any, Instance : Any>(
+/**
+ * Manages the stack cache and helper data for the stack animator.
+ */
+class StackCacheManager <Key : Any, Instance : Any>(
 	private val initialStack: List<Instance>,
 	private val itemKey: (Instance) -> Key,
 	private val excludedDestinations: (Instance) -> Boolean,
 	private val allowBatchRemoval: Boolean
 ) {
-	// do not exclude destinations in this
+	/**
+	 * This is basically a duplicate of the raw source stack. It's necessary
+	 * to control the order of operations for correct animation data calculation.
+	 */
 	var sourceStack by mutableStateOf(initialStack)
 		private set
 
+	/**
+	 * This is useful for tracking exiting children and their order, which is
+	 * not possible with sourceStack.contains(something)
+	 */
 	val removingChildren = mutableStateListOf<Key>()
+
+	/**
+	 * Caching all children in an observable manner, so all updates are
+	 * reflected in the ui.
+	 */
 	val visibleCachedChildren = mutableStateMapOf<Key, Instance>()
 		.apply { putAll(sourceStack.fastFilterNot(excludedDestinations).associateBy(itemKey)) }
 
-	fun updateStack(newStackRaw: List<Instance>) {
+	fun updateVisibleCachedChildren(newStackRaw: List<Instance>) {
 		val newStack = newStackRaw.fastFilterNot(excludedDestinations)
 		val oldStack = sourceStack
 

@@ -5,9 +5,16 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Manages the animation data cache.
+ */
 class AnimationDataHandler<Key : Any>(
 	val animationDataRegistry: AnimationDataRegistry<Key>
 ) {
+	/**
+	 * Cache for child anim prerequisites so they arent recalculated
+	 * hundreds of times per second during gestures
+	 */
 	val childAnimPrerequisites = hashMapOf<Key, ChildAnimPrerequisites>()
 
 	fun removeAnimationDataFromCache(target: Key) {

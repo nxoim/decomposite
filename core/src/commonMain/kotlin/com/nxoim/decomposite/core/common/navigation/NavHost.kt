@@ -65,7 +65,7 @@ fun <C : Any> NavHost(
 						previousChild = previousChild?.configuration,
 						currentChild = currentChild.configuration,
 						nextChild = nextChild?.configuration,
-						exitingChildren = exitingChildren.fastMap { it.configuration },
+						exitingChildren = { exitingChildren().fastMap { it.configuration } },
 						screenInformation = screenInformation
 					)
 				)
