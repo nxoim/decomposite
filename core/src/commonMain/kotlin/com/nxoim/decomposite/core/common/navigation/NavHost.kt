@@ -13,13 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.essenty.backhandler.BackHandler
-import com.nxoim.decomposite.core.common.navigation.animations.AnimationDataRegistry
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
 import com.nxoim.decomposite.core.common.navigation.animations.LocalContentAnimator
-import com.nxoim.decomposite.core.common.navigation.animations.StackAnimator
-import com.nxoim.decomposite.core.common.navigation.animations.StackAnimatorScope
-import com.nxoim.decomposite.core.common.navigation.animations.rememberStackAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.stack.AnimationDataRegistry
+import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.stack.rememberStackAnimatorScope
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext

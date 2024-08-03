@@ -1,4 +1,4 @@
-package com.nxoim.decomposite.core.common.navigation.animations
+package com.nxoim.decomposite.core.common.navigation.animations.stack
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterExitState
