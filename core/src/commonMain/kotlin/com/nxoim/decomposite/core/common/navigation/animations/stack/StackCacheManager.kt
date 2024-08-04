@@ -1,5 +1,6 @@
 package com.nxoim.decomposite.core.common.navigation.animations.stack
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -14,6 +15,7 @@ import kotlin.contracts.contract
 /**
  * Manages the stack cache and helper data for the stack animator.
  */
+@Immutable
 class StackCacheManager <Key : Any, Instance : Any>(
 	private val initialStack: List<Instance>,
 	private val itemKey: (Instance) -> Key,

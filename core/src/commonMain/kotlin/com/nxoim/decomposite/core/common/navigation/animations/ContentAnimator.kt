@@ -60,6 +60,7 @@ inline operator fun ContentAnimations.plus(
 /**
  * Provides data helpful for the configuration of animations.
  */
+@Immutable
 data class DestinationAnimationsConfiguratorScope<T : Any>(
     val previousChild: T?,
     val currentChild: T,

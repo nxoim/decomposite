@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -64,7 +63,6 @@ class NavigationRoot(val screenInformation: ScreenInformation) {
  * root for overlays, and the back dispatcher vis [CompositionLocalProvider], displays overlays.
  */
 @InternalNavigationRootApi
-@NonRestartableComposable
 @Composable
 fun CommonNavigationRootProvider(
 	navigationRoot: NavigationRoot,
@@ -91,7 +89,6 @@ fun CommonNavigationRootProvider(
  * implementation. You are welcome to open an issue or PR.
  */
 @FallbackNavigationRootImplementation
-@NonRestartableComposable
 @Composable
 fun NavigationRootProvider(
 	navigationRootData: NavigationRootData,

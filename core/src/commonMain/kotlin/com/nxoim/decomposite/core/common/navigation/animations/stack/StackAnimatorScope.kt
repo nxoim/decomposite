@@ -67,7 +67,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 	val animationDataHandler = AnimationDataHandler(animationDataRegistry)
 
 	val sourceStack get() = stackCacheManager.sourceStack
-	val visibleCachedChildren = stackCacheManager.visibleCachedChildren as Map<Key, Instance>
+	val visibleCachedChildren = stackCacheManager.visibleCachedChildren
 
 	suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) =
 		animationDataHandler.updateGestureDataInScopes(backGestureData)
@@ -97,24 +97,26 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 		else
 			-(stackCacheManager.removingChildren.indexOf(key) + 1)
 
-		val allAnimations = animations(
-			DestinationAnimationsConfiguratorScope(
-				previousChild = stack().elementAtOrNull(index - 1),
-				currentChild = visibleCachedChildren[key]!!,
-				nextChild = stack().elementAtOrNull(index + 1),
-				// this is more expensive than just storing instances,
-				// but makes sure the instance data is always up to date
-				// in the lambda
-				exitingChildren = remember(stackCacheManager.removingChildren) {
-					{
+		val screenInformation = LocalNavigationRoot.current.screenInformation
+		val allAnimations = remember(sourceStack, stackCacheManager.removingChildren) {
+			animations(
+				DestinationAnimationsConfiguratorScope(
+					previousChild = sourceStack.elementAtOrNull(index - 1),
+					currentChild = visibleCachedChildren[key]!!,
+					nextChild = sourceStack.elementAtOrNull(index + 1),
+					// this is more expensive than just storing instances,
+					// but makes sure the instance data is always up to date
+					// in the lambda
+					exitingChildren = {
 						stackCacheManager
 							.removingChildren
 							.fastMap { visibleCachedChildren[key]!! }
-					}
-				},
-				screenInformation = LocalNavigationRoot.current.screenInformation
+					},
+					screenInformation = screenInformation
+				)
 			)
-		)
+		}
+
 
 		val animData = remember(allAnimations) {
 			animationDataRegistry.getOrCreateAnimationData(
@@ -177,6 +179,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 		)
 	}
 
+	@Immutable
 	data class ItemState(
 		val index: Int,
 		val indexFromTop: Int,
@@ -195,6 +198,7 @@ data class AnimationData(
 	val requireVisibilityInBackstacks: () -> List<Boolean>,
 )
 
+@Immutable
 data class ChildAnimPrerequisites(
 	val allowAnimation: Boolean,
 	val inStack: Boolean

@@ -1,5 +1,6 @@
 package com.nxoim.decomposite.core.common.navigation.animations.stack
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -7,6 +8,7 @@ import androidx.compose.ui.util.fastMapNotNull
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 
+@Immutable
 class AnimationDataRegistry<Key : Any> {
 	private val animationDataCache = hashMapOf<Key, AnimationData>()
 	private val scopeRegistry = mutableStateMapOf<Pair<Key, String>, ContentAnimatorScope>()

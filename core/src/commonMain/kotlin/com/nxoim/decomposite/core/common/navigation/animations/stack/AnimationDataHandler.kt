@@ -1,5 +1,6 @@
 package com.nxoim.decomposite.core.common.navigation.animations.stack
 
+import androidx.compose.runtime.Immutable
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
@@ -8,6 +9,7 @@ import kotlinx.coroutines.withContext
 /**
  * Manages the animation data cache.
  */
+@Immutable
 class AnimationDataHandler<Key : Any>(
 	val animationDataRegistry: AnimationDataRegistry<Key>
 ) {
