@@ -79,7 +79,7 @@ fun <C : Any> NavHost(
 			stackAnimatorScope = screenStackAnimatorScope,
 			backHandler = startingNavControllerInstance.backHandler,
 			enabled = backHandlerEnabled,
-			onBack = { startingNavControllerInstance.navigateBack() }
+			onBack = startingNavControllerInstance::navigateBack
 		)
 
 		StackAnimator(
