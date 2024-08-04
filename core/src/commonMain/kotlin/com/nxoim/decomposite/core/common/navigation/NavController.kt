@@ -84,10 +84,10 @@ inline fun <reified C : Any> navControllerKey(
  */
 @Immutable
 class NavController<C : Any>(
-	private val startingDestination: C,
+	startingDestination: C,
 	serializer: KSerializer<C>? = null,
 	componentContext: ComponentContext,
-	val key: String = startingDestination::class.toString(),
+	val key: String,
 	childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
