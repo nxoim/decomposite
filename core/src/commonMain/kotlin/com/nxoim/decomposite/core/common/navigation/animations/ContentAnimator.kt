@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
-import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import kotlin.jvm.JvmInline
 
 /**
@@ -66,7 +65,6 @@ data class DestinationAnimationsConfiguratorScope<T : Any>(
     val currentChild: T,
     val nextChild: T?,
     val exitingChildren: () -> List<T>,
-    val screenInformation: ScreenInformation
 )
 
 val LocalContentAnimator = staticCompositionLocalOf<DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations> {

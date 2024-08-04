@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.nxoim.decomposite.core.common.navigation.FallbackNavigationRootImplementation
+import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.common.navigation.NavigationRootProvider
@@ -37,6 +38,7 @@ class NavHostTests {
 			NavigationRootProvider(navigationRootData) {
 				remember { println("creating navigation controller") }
 				val navController = navController<TestDestinations>(TestDestinations.A)
+				val screenInfo = LocalNavigationRoot.current.screenInformation
 
 				InOverlay {
 					Box {
@@ -47,7 +49,7 @@ class NavHostTests {
 								when (currentChild) {
 									TestDestinations.A -> cleanSlideAndFade()
 									TestDestinations.B -> iosLikeSlide()
-									is TestDestinations.Random -> materialContainerMorph()
+									is TestDestinations.Random -> materialContainerMorph(screenInfo)
 								}
 							},
 						) { destination ->

@@ -12,7 +12,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
-import com.nxoim.decomposite.core.common.navigation.LocalNavigationRoot
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
@@ -97,7 +96,6 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 		else
 			-(stackCacheManager.removingChildren.indexOf(key) + 1)
 
-		val screenInformation = LocalNavigationRoot.current.screenInformation
 		val allAnimations = remember(sourceStack, stackCacheManager.removingChildren) {
 			animations(
 				DestinationAnimationsConfiguratorScope(
@@ -112,11 +110,9 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 							.removingChildren
 							.fastMap { visibleCachedChildren[key]!! }
 					},
-					screenInformation = screenInformation
 				)
 			)
 		}
-
 
 		val animData = remember(allAnimations) {
 			animationDataRegistry.getOrCreateAnimationData(

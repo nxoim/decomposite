@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.materialContainerMorphContentAnimator
+import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 
 fun softSpring() = spring(1.8f, 2500f, 0.0005f)
 
@@ -120,9 +121,30 @@ fun cleanSlideAndFade(
     animationSpec = animationSpec
 )
 
-fun DestinationAnimationsConfiguratorScope<*>.materialContainerMorph(
-    fallbackCornerRadius: Dp = 16.dp,
+fun materialContainerMorph(
+    screenInformation: ScreenInformation,
+    fallbackCornerRadius: Dp = 16.dp
 ) = materialContainerMorphContentAnimator {
+    val devicesShape = screenInformation.screenShape.path?.let {
+        GenericShape { _, _ -> addPath(it); close() }
+    }
+
+    val devicesCorners by lazy {
+        screenInformation.screenShape.corners?.run {
+            RoundedCornerShape(
+                topLeftPx.toFloat(),
+                topRightPx.toFloat(),
+                bottomLeftPx.toFloat(),
+                bottomRightPx.toFloat()
+            )
+        }
+    }
+
+    val screenSize = Size(
+        screenInformation.widthPx.toFloat(),
+        screenInformation.heightPx.toFloat()
+    )
+
     Modifier
         .drawWithContent {
             val color = Color.Black.copy((animationProgress * 0.2f).coerceIn(0f, 1f))
@@ -148,28 +170,10 @@ fun DestinationAnimationsConfiguratorScope<*>.materialContainerMorph(
             translationX = offsetX
             translationY = offsetY
 
-            val devicesShape = screenInformation.screenShape.path?.let {
-                GenericShape { _, _ -> addPath(it); close() }
-            }
-            val devicesCorners by lazy {
-                screenInformation.screenShape.corners?.run {
-                    RoundedCornerShape(
-                        topLeftPx.toFloat(),
-                        topRightPx.toFloat(),
-                        bottomLeftPx.toFloat(),
-                        bottomRightPx.toFloat()
-                    )
-                }
-            }
             val animatedFallbackRadius by lazy {
                 fallbackCornerRadius.toPx() *
                         (-gestureAnimationProgress).coerceIn(0f, 1f)
             }
-
-            val screenSize = Size(
-                screenInformation.widthPx.toFloat(),
-                screenInformation.heightPx.toFloat()
-            )
 
             clip = true
             shape = if (this.size == screenSize)
