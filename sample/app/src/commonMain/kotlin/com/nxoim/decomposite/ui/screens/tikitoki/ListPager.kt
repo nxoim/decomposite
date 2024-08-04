@@ -47,7 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
+import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.ultils.noRippleClickable
 import com.nxoim.decomposite.core.common.viewModel.getExistingViewModel
 
@@ -55,14 +55,15 @@ import com.nxoim.decomposite.core.common.viewModel.getExistingViewModel
 @Composable
 fun ListPager(
 	animatedVisibilityScope: AnimatedVisibilityScope,
-	sharedTransitionScope: SharedTransitionScope
+	sharedTransitionScope: SharedTransitionScope,
+	navController: NavController<TikitokiDestinations>
 ){
 	val vm = getExistingViewModel<TikitokiViewModel>()
 	val pagerState = rememberPagerState() { vm.mockVids.size }
 
 	Box() {
 		VerticalPager(pagerState) {
-			PageStuff(vm.mockVids[it], animatedVisibilityScope, sharedTransitionScope)
+			PageStuff(vm.mockVids[it], animatedVisibilityScope, sharedTransitionScope, navController)
 		}
 	}
 }
@@ -72,9 +73,9 @@ fun ListPager(
 private fun PageStuff(
 	mockPage: MockPage,
 	animatedVisibilityScope: AnimatedVisibilityScope,
-	sharedTransitionScope: SharedTransitionScope
+	sharedTransitionScope: SharedTransitionScope,
+	navController: NavController<TikitokiDestinations>
 ) = with(sharedTransitionScope) {
-	val navController = getExistingNavController<TikitokiDestinations>()
 	var displayComments by remember { mutableStateOf(false) }
 	var displayOptions by remember { mutableStateOf(false) }
 	val commentsSheetState = rememberModalBottomSheetState()

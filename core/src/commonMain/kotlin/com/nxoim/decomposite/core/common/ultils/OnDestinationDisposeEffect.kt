@@ -3,7 +3,6 @@ package com.nxoim.decomposite.core.common.ultils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisallowComposableCalls
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
@@ -16,50 +15,41 @@ import kotlin.jvm.JvmInline
  * configuration changes. Keys must be unique.
  */
 @Composable
-inline fun OnDestinationDisposeEffect(
+fun OnDestinationDisposeEffect(
     key: Any,
-    waitForCompositionRemoval: Boolean = false,
+    waitForCompositionRemoval: Boolean = true,
     componentContext: ComponentContext = LocalComponentContext.current,
-    crossinline block: @DisallowComposableCalls () -> Unit
+    block: @DisallowComposableCalls () -> Unit
 ) {
     if (waitForCompositionRemoval) {
-        val componentDestructionDetector = remember(componentContext) {
-            componentContext.instanceKeeper.getOrCreate(key) {
-                ComponentDestructionDetector()
-            }
-        }
-        // this works because the component gets destroyed first, triggering
-        // onDestroy, then the composable
-        DisposableEffect(true) {
-            onDispose { if (componentDestructionDetector.destroyed) block() }
+        DisposableEffect(componentContext, key) {
+            componentContext.instanceKeeper.remove(key)
+            onDispose { componentContext.onDestroy(key, block) }
         }
     } else {
-        remember(componentContext) {
-            componentContext.onDestroyDisposableEffect(key, block)
+        remember(componentContext, key) {
+            componentContext.instanceKeeper.remove(key)
+            componentContext.onDestroy(key, block)
         }
     }
 }
 
 /**
  * Saves the call in a container that executes the call before getting fully destroyed,
- * surviving configuration changes, making sure this is only executed when
+ * surviving configuration changes, making sure the block is only executed when
  * a component fully dies,
  */
-inline fun ComponentContext.onDestroyDisposableEffect(
+fun ComponentContext.onDestroy(
     key: Any,
-    crossinline block: @DisallowComposableCalls () -> Unit
-) = instanceKeeper.getOrCreate(key) { OnDestroyActionHolder { block() } }
+    block: @DisallowComposableCalls () -> Unit
+) { instanceKeeper.getOrCreate(key) { OnDestroyActionHolder(block) } }
 
 /**
  * Executes [onDispose] when the component is completely destroyed.
  */
 @JvmInline
-value class OnDestroyActionHolder(val onDispose: () -> Unit) : InstanceKeeper.Instance {
+private value class OnDestroyActionHolder(
+    val onDispose: @DisallowComposableCalls () -> Unit
+) : InstanceKeeper.Instance {
     override fun onDestroy() = onDispose()
-}
-
-@Immutable
-class ComponentDestructionDetector() : InstanceKeeper.Instance {
-    var destroyed = false
-    override fun onDestroy() { destroyed = true }
 }

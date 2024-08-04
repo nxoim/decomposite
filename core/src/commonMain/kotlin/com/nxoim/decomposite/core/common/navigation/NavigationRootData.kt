@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -26,7 +25,7 @@ import kotlin.math.roundToInt
 
 
 /**
- * Creates the root of the app for back gesture handling, snack content controller,
+ * Creates the root of the app for back gesture handling,
  * storing view models, and navigation controller instances. View model store by default
  * is wrapped into default component context's instance keeper.
  *
@@ -45,7 +44,7 @@ data class NavigationRootData(
 )
 
 /**
- * Sets up the navigation root. Is used for managing overlays and snack content. Contains
+ * Sets up the navigation root. Is used for managing overlays. Contains
  * information about the screen for some animations, like [materialContainerMorph].
  */
 @Immutable
@@ -64,7 +63,6 @@ class NavigationRoot(val screenInformation: ScreenInformation) {
  * root for overlays, and the back dispatcher vis [CompositionLocalProvider], displays overlays.
  */
 @InternalNavigationRootApi
-@NonRestartableComposable
 @Composable
 fun CommonNavigationRootProvider(
 	navigationRoot: NavigationRoot,
@@ -91,7 +89,6 @@ fun CommonNavigationRootProvider(
  * implementation. You are welcome to open an issue or PR.
  */
 @FallbackNavigationRootImplementation
-@NonRestartableComposable
 @Composable
 fun NavigationRootProvider(
 	navigationRootData: NavigationRootData,

@@ -1,4 +1,4 @@
-package com.nxoim.decomposite.core.common.navigation.animations
+package com.nxoim.decomposite.core.common.navigation.animations.stack
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterExitState
@@ -13,7 +13,9 @@ import androidx.compose.animation.core.createChildTransition
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -38,122 +40,97 @@ import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxBy
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.zIndex
-import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.decompose.hashString
-import com.nxoim.decomposite.core.common.navigation.DecomposeChildInstance
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationType.Companion.passiveCancelling
-import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
-import kotlinx.coroutines.launch
+import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
 
 /**
  * Animates the stack. Caches the children for the time of animation.
  */
-@OptIn(InternalDecomposeApi::class)
 @Composable
-fun <C : Any, T : DecomposeChildInstance> StackAnimator(
-	stackAnimatorScope: StackAnimatorScope<C, T>,
+fun <Key : Any, Instance : Any> StackAnimator(
+	stackAnimatorScope: StackAnimatorScope<Key, Instance>,
 	modifier: Modifier = Modifier,
-	animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations,
-	content: @Composable AnimatedVisibilityScope.(child: Child.Created<C, T>) -> Unit,
-) = key(stackAnimatorScope.key) {
+	content: @Composable AnimatedVisibilityScope.(child: Instance) -> Unit,
+	// a key is needed because of something related
+	// to generation of composition hash keys (idk). animation data registry
+	// is expected to be a retained instance, so if theres an accidental
+	// recomposition affecting the instance of the stack animator scope
+	// - the stack animator instance won't be affected since the animation
+	// data registry instance will always stay the same
+) = key(stackAnimatorScope.animationDataRegistry) {
 	val holder = rememberSaveableStateHolder()
 
 	LaunchedEffect(Unit) { stackAnimatorScope.observeAndUpdateAnimatorData() }
 
-	Box(modifier) {
+	if (stackAnimatorScope.visibleCachedChildren.isNotEmpty()) Box(modifier) {
 		val seekableTransitionState = remember {
-			SeekableTransitionState(stackAnimatorScope.sourceStack.active)
+			SeekableTransitionState(
+				stackAnimatorScope.itemKey(stackAnimatorScope.sourceStack.last())
+			)
 		}
 		val transition = rememberTransition(seekableTransitionState)
 
-		stackAnimatorScope.visibleCachedChildren.forEach { (child, cachedInstance) ->
+		stackAnimatorScope.visibleCachedChildren.forEach { (childKey, cachedInstance) ->
 			// keys are needed for animations to work. something something
 			// correctness something something control flow
-			key(child) {
-				val state by stackAnimatorScope.itemState(child, animations)
+			key(childKey) {
+				val state by stackAnimatorScope.createStackItemState(childKey)
 
+				val animationScopes = state.animationData.scopes()
 				// for seekable transitions
-				val firstAnimData = state.animationData.scopes.values.first()
-				val progress = firstAnimData.animationProgressForScope
+				val firstAnimData = animationScopes.values.first()
 				val animationStatus = firstAnimData.animationStatus
 
-				// TODO: should i keep this
-				LaunchedEffect(state.indexFromTop) {
-					if (state.indexFromTop == 0) seekableTransitionState.animateTo(cachedInstance)
-				}
-
-				LaunchedEffect(animationStatus.animating) {
-					if (state.indexFromTop == 0 && !animationStatus.animating) {
-						seekableTransitionState.snapTo(cachedInstance)
+				DisposableEffect(Unit) {
+					onDispose {
+						if (!state.inStack) holder.removeState(childHolderKey(childKey))
 					}
 				}
 
-				LaunchedEffect(progress) {
-					if (animationStatus.fromBackIntoTop) {
-						seekableTransitionState.seekTo(
-							(1f - progress).coerceIn(0f, 1f),
-							cachedInstance
-						)
-					}
-
-					if (animationStatus.fromOutsideIntoTop) {
-						seekableTransitionState.seekTo(
-							(1f + progress).coerceIn(0f, 1f),
-							cachedInstance
-						)
-					}
-
-					if (animationStatus.animationType.passiveCancelling && state.indexFromTop == 0) {
-						seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
-					}
-				}
-
-				// launch animations if there's changes
-				LaunchedEffect(state.indexFromTop, state.index) {
-					state.animationData.scopes.forEach { (_, scope) ->
-						launch {
-							scope.update(
-								newIndex = state.index,
-								newIndexFromTop = state.indexFromTop,
-							)
-
-							// note: animations called in scope.update block this
-							// until theyre finished. snapTo is supposed
-							// to be called when animations are done
-							if (state.indexFromTop == 0) seekableTransitionState.snapTo(
-								cachedInstance
-							)
-
-							// after animating, if is not in stack
-							if (!state.inStack) stackAnimatorScope.visibleCachedChildren.remove(child)
+				if (state.allowingAnimation) {
+					LaunchedEffect(animationStatus.animating) {
+						if (animationStatus.location.top && !animationStatus.animating) {
+							seekableTransitionState.snapTo(childKey)
 						}
 					}
-				}
 
-				// wait for the component to be removed from the stack,
-				// then for the composable to disappear from the screen
-				OnDestinationDisposeEffect(
-					cachedInstance.configuration.hashString() + stackAnimatorScope.key + "OnDestinationDisposeEffect",
-					waitForCompositionRemoval = true,
-					componentContext = cachedInstance.instance.componentContext
-				) {
-					stackAnimatorScope.removingChildren.remove(child)
-					stackAnimatorScope.removeAnimationDataFromCache(child)
-					holder.removeState(childHolderKey(child))
-				}
+					LaunchedEffect(animationStatus) {
+						snapshotFlow { firstAnimData.animationProgressForScope }
+							.collect() { progress ->
+								if (animationStatus.fromBackIntoTop) {
+									seekableTransitionState.seekTo(
+										(1f - progress).coerceIn(0f, 1f),
+										childKey
+									)
+								} else if (animationStatus.fromOutsideIntoTop) {
+									seekableTransitionState.seekTo(
+										(1f + progress).coerceIn(0f, 1f),
+										childKey
+									)
+								} else if (animationStatus.run { animationType.passiveCancelling && location.top }) {
+									seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
+								}
+							}
+					}
 
-				AnimatedVisibilityScopeProvider(
-					transition,
-					visible = { it == cachedInstance },
-					Modifier
-						.accumulate(remember { state.animationData.modifiers })
-						.zIndex((-state.indexFromTop).toFloat()),
-					displaying = { state.displaying },
-					shouldDisposeBlock = { _, _ -> false }
-				) {
-					holder.SaveableStateProvider(childHolderKey(child)) {
-						content(cachedInstance)
+					AnimatedVisibilityScopeProvider(
+						transition,
+						visible = { it == childKey },
+						Modifier
+							.accumulate {
+								remember(animationScopes) {
+									state.animationData.modifiers()
+								}
+							}
+							.zIndex((-state.indexFromTop).toFloat()),
+						displaying = { state.displaying },
+						shouldDisposeBlock = { _, _ -> false }
+					) {
+						holder.SaveableStateProvider(childHolderKey(childKey)) {
+							content(cachedInstance)
+						}
 					}
 				}
 			}
@@ -161,8 +138,10 @@ fun <C : Any, T : DecomposeChildInstance> StackAnimator(
 	}
 }
 
-private inline fun Modifier.accumulate(modifiers: List<Modifier>) =
-	modifiers.fold(initial = this) { acc, modifier -> acc.then(modifier) }
+@Stable
+@Composable
+private inline fun Modifier.accumulate(modifiers: () -> List<Modifier>) =
+	modifiers().fold(initial = this) { acc, modifier -> acc.then(modifier) }
 
 @OptIn(InternalDecomposeApi::class)
 private fun <C : Any> childHolderKey(child: C) =

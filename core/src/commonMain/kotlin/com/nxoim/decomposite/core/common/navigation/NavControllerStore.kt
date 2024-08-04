@@ -11,16 +11,27 @@ import kotlin.reflect.KClass
 class NavControllerStore() {
     private val store = hashMapOf<Pair<String?, KClass<*>>, Any>()
 
+    /**
+     * DO NOT CALL DIRECTLY. Use [navController]
+     * @see navController
+     */
     fun <T : Any> get(key: String? = null, kClass: KClass<T>) =
-        (store[Pair(key, kClass)] as? NavController<T>)
-            ?: error("instance of ${kClass.simpleName} was not found in NavControllerStore")
+        (store[Pair(key, kClass)] as NavController<T>?)
 
+    /**
+     * DO NOT CALL DIRECTLY. Use [navController]
+     * @see navController
+     */
     fun <T : Any> getOrCreate(
         key: String? = null,
         kClass: KClass<T>,
         creator: () -> NavController<T>
     ) = store.getOrPut(Pair(key, kClass)) { creator() } as NavController<T>
 
+    /**
+     * DO NOT CALL DIRECTLY. Use [navController]
+     * @see navController
+     */
     fun <T : Any> remove(key: String? = null, kClass: KClass<T>) {
         store[Pair(key, kClass)]?.let { store.remove(Pair(key, kClass)) }
     }

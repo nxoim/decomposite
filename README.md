@@ -68,7 +68,11 @@ Navigation host creation:
 // creating an instance
 val yourNavController = navController<YourDestinations>(startingDestination = YourDestinations.Star)
 
-Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
+Scaffold(
+    bottomBar = { 
+		GlobalSampleNavBar(onBack = { yourNavController.navigateBack() }) 
+	}
+) { scaffoldPadding ->
     NavHost(
         yourNavController,
         Modifier.padding(scaffoldPadding),        
@@ -89,14 +93,11 @@ Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
 
 Navigation controller usage:
 ```kotlin
-// getting the controller instance from the store
-val navController = getExistingNavController<YourDestinations>()
-
 // in any clickable
-navController.navigate(YourDestinations.Heart)
+yourNavController.navigate(YourDestinations.Heart)
 
 // navigate back
-navController.navigateBack()
+yourNavController.navigateBack()
 ```
 
 View model creation and usage:

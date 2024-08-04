@@ -2,9 +2,9 @@ package com.nxoim.decomposite.core.common.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.backStack
@@ -21,18 +21,8 @@ import kotlinx.serialization.serializer
 import kotlin.jvm.JvmInline
 
 /**
- * Gets an existing navigation controller instance
- */
-@ReadOnlyComposable
-@Composable
-inline fun <reified C : Any> getExistingNavController(
-	key: String = navControllerKey<C>(),
-	navStore: NavControllerStore = LocalNavControllerStore.current
-) = navStore.get(key, C::class)
-
-/**
  * Creates a navigation controller instance in the [NavControllerStore], which allows
- * for sharing the same instance between multiple calls of [navController] or [getExistingNavController].
+ * for sharing the same instance between multiple calls of [navController].
  *
  * Is basically a decompose component that replicates the functionality of a generic
  * navigation controller. The instance is not retained, therefore on configuration changes
@@ -51,7 +41,7 @@ inline fun <reified C : Any> navController(
 	serializer: KSerializer<C>? = serializer(),
 	navStore: NavControllerStore = LocalNavControllerStore.current,
 	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String = navControllerKey<C>(),
+	key: String = navControllerKey<C>(componentContext = componentContext),
 	noinline childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
@@ -61,34 +51,43 @@ inline fun <reified C : Any> navController(
 ): NavController<C> {
 	OnDestinationDisposeEffect(
 		"${C::class} key $key navController OnDestinationDisposeEffect",
+		componentContext = componentContext,
 		waitForCompositionRemoval = true
 	) {
 		navStore.remove(key, C::class)
 	}
 
-	return navStore.getOrCreate(key, C::class) {
-		NavController(
-			startingDestination,
-			serializer,
-			componentContext,
-			key,
-			childFactory
-		)
+	return remember(componentContext, key) {
+		navStore.getOrCreate(key, C::class) {
+			NavController(
+				startingDestination,
+				serializer,
+				componentContext,
+				key,
+				childFactory
+			)
+		}
 	}
 }
 
-inline fun <reified C : Any> navControllerKey(additionalKey: String = "") =
-	"${C::class}$additionalKey"
+// During navigation a component context might get recreated (specifically
+// when coming back to a component that's currently being removed from the
+// stack animator), and if we do not create a new key for the new component context -
+// navigation stops working in the component
+inline fun <reified C : Any> navControllerKey(
+	additionalKey: Any = "",
+	componentContext: ComponentContext
+) = "${C::class}$additionalKey${componentContext}"
 
 /**
  * Generic navigation controller. Contains a stack for overlays and a stack for screens.
  */
 @Immutable
 class NavController<C : Any>(
-	private val startingDestination: C,
+	startingDestination: C,
 	serializer: KSerializer<C>? = null,
 	componentContext: ComponentContext,
-	key: String = startingDestination::class.toString(),
+	val key: String,
 	childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
@@ -157,7 +156,7 @@ class NavController<C : Any>(
 
 		controller.popTo(indexOfDestination, onComplete)
 	}
-	
+
 	/**
 	 * Removes a destination.
 	 */

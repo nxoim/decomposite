@@ -5,13 +5,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
 import com.nxoim.decomposite.core.common.navigation.animations.iosLikeSlide
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.ui.screens.heart.another.AnotherHeartScreen
 import com.nxoim.decomposite.ui.screens.heart.home.HeartHomeScreen
@@ -20,8 +25,8 @@ import com.nxoim.decomposite.ui.screens.heart.home.HeartHomeScreen
 fun HeartNavHost() {
     val heartNavController = navController<HeartDestinations>(HeartDestinations.Home)
 
-    Scaffold(topBar = { HeartTopAppBar() }) { scaffoldPadding ->
-        NavHost<HeartDestinations>(
+    Scaffold(topBar = { HeartTopAppBar(heartNavController) }) { scaffoldPadding ->
+        NavHost(
             heartNavController,
             Modifier.padding(scaffoldPadding),
             animations = {
@@ -32,9 +37,9 @@ fun HeartNavHost() {
             }
         ) { destination ->
             when (destination) {
-                HeartDestinations.Home -> HeartHomeScreen()
+                HeartDestinations.Home -> HeartHomeScreen(heartNavController)
 
-                is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text)
+                is HeartDestinations.AnotherHeart -> AnotherHeartScreen(destination.text, heartNavController)
             }
         }
     }
@@ -43,8 +48,9 @@ fun HeartNavHost() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeartTopAppBar() {
-    val navController = getExistingNavController<HeartDestinations>()
+private fun HeartTopAppBar(
+    navController: NavController<HeartDestinations>
+) {
     val currentScreen =  navController.currentScreen
 
     TopAppBar(

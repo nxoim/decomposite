@@ -6,7 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
-import com.nxoim.decomposite.core.common.ultils.ScreenInformation
+import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
 import kotlin.jvm.JvmInline
 
 /**
@@ -14,7 +14,7 @@ import kotlin.jvm.JvmInline
  */
 @JvmInline
 @Immutable
-value class ContentAnimations(val items: List<ContentAnimator<*>>)
+value class ContentAnimations(val items: List<ContentAnimator>)
 
 /**
  * Represents the animator used by [StackAnimator] to create the animation scope.
@@ -40,31 +40,31 @@ value class ContentAnimations(val items: List<ContentAnimator<*>>)
  * The [animationModifier] parameter provides the animated [Modifier] to the content.
  */
 @Immutable
-data class ContentAnimator<T : ContentAnimatorScope>(
+data class ContentAnimator(
     val key: String,
     val renderUntil: Int,
     val requireVisibilityInBackstack: Boolean,
     val animatorScopeFactory: (
         initialIndex: Int,
         initialIndexFromTop: Int
-    ) -> T,
-    val animationModifier: T.() -> Modifier
+    ) -> ContentAnimatorScope,
+    val animationModifier: ContentAnimatorScope.() -> Modifier
 )
 
 @Stable
-inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAnimations(
-    this.items + other.items
-)
+inline operator fun ContentAnimations.plus(
+    other: ContentAnimations
+) = ContentAnimations(this.items + other.items)
 
 /**
  * Provides data helpful for the configuration of animations.
  */
-data class DestinationAnimationsConfiguratorScope<C : Any>(
-    val previousChild: C?,
-    val currentChild: C,
-    val nextChild: C?,
-    val exitingChildren: List<C>,
-    val screenInformation: ScreenInformation
+@Immutable
+data class DestinationAnimationsConfiguratorScope<T : Any>(
+    val previousChild: T?,
+    val currentChild: T,
+    val nextChild: T?,
+    val exitingChildren: () -> List<T>,
 )
 
 val LocalContentAnimator = staticCompositionLocalOf<DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations> {
