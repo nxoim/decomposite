@@ -22,7 +22,7 @@ import kotlin.jvm.JvmInline
 
 /**
  * Creates a navigation controller instance in the [NavControllerStore], which allows
- * for sharing the same instance between multiple calls of [navController] or [getExistingNavController].
+ * for sharing the same instance between multiple calls of [navController].
  *
  * Is basically a decompose component that replicates the functionality of a generic
  * navigation controller. The instance is not retained, therefore on configuration changes
