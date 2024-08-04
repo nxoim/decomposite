@@ -77,8 +77,6 @@ kotlin {
             implementation(compose.components.resources)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
             implementation(project(":core"))
         }
 
@@ -91,16 +89,12 @@ kotlin {
             implementation(libs.androidx.activityCompose)
             implementation(libs.compose.uitooling)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.koin.core)
-            implementation(libs.koin.android)
             implementation(project(":core"))
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.common)
             implementation(compose.desktop.currentOs)
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
             implementation(project(":core"))
         }
     }
