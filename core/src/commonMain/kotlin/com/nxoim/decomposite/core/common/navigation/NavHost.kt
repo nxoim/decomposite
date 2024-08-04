@@ -47,7 +47,6 @@ fun <C : Any> NavHost(
 		LocalContentAnimator.current,
 	router: @Composable AnimatedVisibilityScope.(destination: C) -> Unit,
 ) {
-	println(startingNavControllerInstance.key)
 	// a key is needed because theres some caching issues with animations
 	// when the nav hosts are nested because of forEach loops in stack animator.
 	// maybe related to currentCompositeKeyHash?
