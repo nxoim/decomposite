@@ -78,52 +78,59 @@ fun <Key : Any, Instance : Any> StackAnimator(
 			key(childKey) {
 				val state by stackAnimatorScope.createStackItemState(childKey)
 
+				val animationScopes = state.animationData.scopes()
 				// for seekable transitions
-				val firstAnimData = state.animationData.scopes().values.first()
+				val firstAnimData = animationScopes.values.first()
 				val animationStatus = firstAnimData.animationStatus
 
-				LaunchedEffect(animationStatus.animating) {
-					if (animationStatus.location.top && !animationStatus.animating) {
-						seekableTransitionState.snapTo(childKey)
+				DisposableEffect(Unit) {
+					onDispose {
+						if (!state.inStack) holder.removeState(childHolderKey(childKey))
 					}
 				}
 
-				LaunchedEffect(animationStatus) {
-					snapshotFlow { firstAnimData.animationProgressForScope }
-						.collect() { progress ->
-							if (animationStatus.fromBackIntoTop) {
-								seekableTransitionState.seekTo(
-									(1f - progress).coerceIn(0f, 1f),
-									childKey
-								)
-							} else if (animationStatus.fromOutsideIntoTop) {
-								seekableTransitionState.seekTo(
-									(1f + progress).coerceIn(0f, 1f),
-									childKey
-								)
-							} else if (animationStatus.run { animationType.passiveCancelling && location.top }) {
-								seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
+				if (state.allowingAnimation) {
+					LaunchedEffect(animationStatus.animating) {
+						if (animationStatus.location.top && !animationStatus.animating) {
+							seekableTransitionState.snapTo(childKey)
+						}
+					}
+
+					LaunchedEffect(animationStatus) {
+						snapshotFlow { firstAnimData.animationProgressForScope }
+							.collect() { progress ->
+								if (animationStatus.fromBackIntoTop) {
+									seekableTransitionState.seekTo(
+										(1f - progress).coerceIn(0f, 1f),
+										childKey
+									)
+								} else if (animationStatus.fromOutsideIntoTop) {
+									seekableTransitionState.seekTo(
+										(1f + progress).coerceIn(0f, 1f),
+										childKey
+									)
+								} else if (animationStatus.run { animationType.passiveCancelling && location.top }) {
+									seekableTransitionState.seekTo((-progress).coerceIn(0f, 1f))
+								}
 							}
-						}
-				}
-
-				AnimatedVisibilityScopeProvider(
-					transition,
-					visible = { it == childKey },
-					Modifier
-						.accumulate(remember(state.animationData) { state.animationData.modifiers() })
-						.zIndex((-state.indexFromTop).toFloat()),
-					displaying = { state.displaying },
-					shouldDisposeBlock = { _, _ -> false }
-				) {
-					DisposableEffect(Unit) {
-						onDispose {
-							if (!state.inStack) holder.removeState(childHolderKey(childKey))
-						}
 					}
 
-					holder.SaveableStateProvider(childHolderKey(childKey)) {
-						content(cachedInstance)
+					AnimatedVisibilityScopeProvider(
+						transition,
+						visible = { it == childKey },
+						Modifier
+							.accumulate {
+								remember(animationScopes) {
+									state.animationData.modifiers()
+								}
+							}
+							.zIndex((-state.indexFromTop).toFloat()),
+						displaying = { state.displaying },
+						shouldDisposeBlock = { _, _ -> false }
+					) {
+						holder.SaveableStateProvider(childHolderKey(childKey)) {
+							content(cachedInstance)
+						}
 					}
 				}
 			}
@@ -132,8 +139,9 @@ fun <Key : Any, Instance : Any> StackAnimator(
 }
 
 @Stable
-private inline fun Modifier.accumulate(modifiers: List<Modifier>) =
-	modifiers.fold(initial = this) { acc, modifier -> acc.then(modifier) }
+@Composable
+private inline fun Modifier.accumulate(modifiers: () -> List<Modifier>) =
+	modifiers().fold(initial = this) { acc, modifier -> acc.then(modifier) }
 
 @OptIn(InternalDecomposeApi::class)
 private fun <C : Any> childHolderKey(child: C) =
