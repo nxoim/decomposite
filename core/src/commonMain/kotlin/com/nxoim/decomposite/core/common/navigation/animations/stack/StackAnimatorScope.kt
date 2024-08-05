@@ -57,13 +57,14 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 	private val allowBatchRemoval: Boolean,
 	val animationDataRegistry: AnimationDataRegistry<Key>
 ) {
+	val animationDataHandler = AnimationDataHandler(animationDataRegistry)
 	private val stackCacheManager = StackCacheManager(
 		initialStack = stack(),
 		itemKey = itemKey,
 		excludedDestinations = excludedDestinations,
-		allowBatchRemoval = allowBatchRemoval
+		allowBatchRemoval = allowBatchRemoval,
+		onItemBatchRemoved = { animationDataHandler.removeAnimationDataFromCache(it) }
 	)
-	val animationDataHandler = AnimationDataHandler(animationDataRegistry)
 
 	val sourceStack get() = stackCacheManager.sourceStack
 	val visibleCachedChildren = stackCacheManager.visibleCachedChildren

@@ -20,7 +20,8 @@ class StackCacheManager <Key : Any, Instance : Any>(
 	private val initialStack: List<Instance>,
 	private val itemKey: (Instance) -> Key,
 	private val excludedDestinations: (Instance) -> Boolean,
-	private val allowBatchRemoval: Boolean
+	private val allowBatchRemoval: Boolean,
+	private val onItemBatchRemoved: (Key) -> Unit
 ) {
 	/**
 	 * This is basically a duplicate of the raw source stack. It's necessary
@@ -55,7 +56,10 @@ class StackCacheManager <Key : Any, Instance : Any>(
 		if (batchRemoval) {
 			val itemsToRemoveImmediately = childrenToRemove.dropLast(1)
 
-			itemsToRemoveImmediately.fastForEach { visibleCachedChildren.remove(itemKey(it)) }
+			itemsToRemoveImmediately.fastForEach {
+				visibleCachedChildren.remove(itemKey(it))
+				onItemBatchRemoved(itemKey(it))
+			}
 
 			removingChildren.add(itemKey(childrenToRemove.last()))
 		} else {
