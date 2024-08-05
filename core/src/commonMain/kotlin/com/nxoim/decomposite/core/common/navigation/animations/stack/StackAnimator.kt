@@ -19,9 +19,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -32,7 +30,6 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
@@ -126,7 +123,6 @@ fun <Key : Any, Instance : Any> StackAnimator(
 							}
 							.zIndex((-state.indexFromTop).toFloat()),
 						displaying = { state.displaying },
-						shouldDisposeBlock = { _, _ -> false }
 					) {
 						holder.SaveableStateProvider(childHolderKey(childKey)) {
 							content(cachedInstance)
@@ -149,7 +145,7 @@ private fun <C : Any> childHolderKey(child: C) =
 
 // This converts Boolean visible to EnterExitState
 @Composable
-private fun <T> Transition<T>.targetEnterExit(
+private inline fun <T> Transition<T>.targetEnterExit(
 	visible: (T) -> Boolean,
 	targetState: T
 ): EnterExitState = key(this) {
@@ -232,13 +228,6 @@ private class AnimatedEnterExitMeasurePolicy(
 	) = measurables.fastMaxOfOrNull { it.maxIntrinsicHeight(width) } ?: 0
 }
 
-/**
- * Observes lookahead size.
- */
-private fun interface OnLookaheadMeasured {
-	fun invoke(size: IntSize)
-}
-
 @OptIn(InternalAnimationApi::class, ExperimentalTransitionApi::class)
 @Composable
 private fun <T> AnimatedVisibilityScopeProvider(
@@ -249,8 +238,6 @@ private fun <T> AnimatedVisibilityScopeProvider(
 		visible(transition.targetState) || visible(transition.currentState) ||
 				transition.isSeeking || transition.hasInitialValueAnimations
 	},
-	shouldDisposeBlock: (EnterExitState, EnterExitState) -> Boolean,
-	onLookaheadMeasured: OnLookaheadMeasured? = null,
 	content: @Composable() AnimatedVisibilityScope.() -> Unit
 ) {
 	if (displaying()) {
@@ -258,45 +245,12 @@ private fun <T> AnimatedVisibilityScopeProvider(
 			transition.targetEnterExit(visible, it)
 		}
 
-		val shouldDisposeBlockUpdated by rememberUpdatedState(shouldDisposeBlock)
-
-		val shouldDisposeAfterExit by produceState(
-			initialValue = shouldDisposeBlock(
-				childTransition.currentState,
-				childTransition.targetState
-			)
-		) {
-			snapshotFlow { childTransition.exitFinished }.collect {
-				value = if (it) {
-					shouldDisposeBlockUpdated(
-						childTransition.currentState,
-						childTransition.targetState
-					)
-				} else {
-					false
-				}
-			}
-		}
-
-		if (!childTransition.exitFinished || !shouldDisposeAfterExit) {
+		if (!childTransition.exitFinished) {
 			val scope = remember(transition) { AnimatedVisibilityScopeImpl(childTransition) }
 
 			Layout(
 				content = { scope.content() },
-				modifier = modifier.let {
-					if (onLookaheadMeasured != null) it.layout { measurable, constraints ->
-						measurable
-							.measure(constraints)
-							.run {
-								if (isLookingAhead) {
-									onLookaheadMeasured.invoke(IntSize(width, height))
-								}
-
-								layout(width, height) { place(0, 0) }
-							}
-					} else
-						it
-				},
+				modifier = modifier,
 				measurePolicy = remember { AnimatedEnterExitMeasurePolicy(scope) }
 			)
 		}
