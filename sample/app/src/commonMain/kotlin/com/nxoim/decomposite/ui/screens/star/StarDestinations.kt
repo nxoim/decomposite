@@ -7,6 +7,13 @@ sealed interface StarDestinations {
     @Serializable
     data object Home : StarDestinations
 
+}
+
+@Serializable
+sealed interface StarOverlayDestinations {
     @Serializable
-    data object AnotherStar : StarDestinations
+    data object Empty : StarOverlayDestinations
+
+    @Serializable
+    data object AnotherStar : StarOverlayDestinations
 }

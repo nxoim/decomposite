@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.maven.publish)
@@ -8,13 +11,11 @@ plugins {
 }
 
 kotlin {
+    jvm()
     androidTarget {
         publishLibraryVariants("release")
     }
-
-    jvm("desktop")
-
-//    js(IR) {
+    //    js(IR) {
 //        browser()
 //    }
 
@@ -36,25 +37,54 @@ kotlin {
         }
     }
 
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+
+    }
+
+    composeCompiler {
+        enableStrongSkippingMode = true
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
-                implementation(compose.material)
-                implementation(libs.decompose)
-                implementation(libs.decompose.extensions)
+                api(libs.decompose)
+                api(libs.decompose.extensions)
             }
         }
         val androidMain by getting {
             dependencies {
+                implementation(libs.androidx.appcompat)
+                api(libs.decompose.extensions)
             }
         }
 
-        val desktopMain by getting {
+        val jvmMain by getting {
             dependencies {
-                implementation(libs.kotlinx.coroutines.swing)
+                api(libs.kotlinx.coroutines.swing)
             }
+        }
+
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.compose.uiTestJunit4)
+            }
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+
+            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+            implementation(compose.uiTest)
+        }
+
+        jvmTest.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.junit.junit)
+            implementation(libs.compose.uiTestJunit4)
         }
     }
 }

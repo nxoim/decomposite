@@ -1,23 +1,32 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-    androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
-        }
-    }
-
     jvm()
-//
+    androidTarget()
+
+//    macosX64()
+//    macosArm64()
+
+//    listOf(
+//        iosX64(),
+//        iosArm64(),
+//        iosSimulatorArm64(),
+//    ).forEach { target ->
+//        target.binaries.framework {
+//            baseName = "decomposite"
+//        }
+//    }
+
+    //
 //    @OptIn(ExperimentalWasmDsl::class)
 //    wasmJs {
 //        moduleName = "app"
@@ -45,6 +54,15 @@ kotlin {
 //        }
 //    }
 
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+
+    }
+
+    composeCompiler {
+        enableStrongSkippingMode = true
+    }
+
     sourceSets {
         all {
             languageSettings {
@@ -59,10 +77,6 @@ kotlin {
             implementation(compose.components.resources)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.decompose)
-            implementation(libs.decompose.extensions)
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
             implementation(project(":core"))
         }
 
@@ -75,18 +89,12 @@ kotlin {
             implementation(libs.androidx.activityCompose)
             implementation(libs.compose.uitooling)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.decompose)
-            implementation(libs.decompose.extensions)
-            implementation(libs.koin.core)
-            implementation(libs.koin.android)
             implementation(project(":core"))
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.common)
             implementation(compose.desktop.currentOs)
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
             implementation(project(":core"))
         }
     }

@@ -1,67 +1,72 @@
 package com.nxoim.decomposite.core.common.navigation.animations
 
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import com.arkivanov.decompose.InternalDecomposeApi
-import com.arkivanov.decompose.hashString
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
 import kotlin.jvm.JvmInline
 
+/**
+ * Contains all animations in a list.
+ */
 @JvmInline
 @Immutable
-value class ContentAnimations(val items: List<ContentAnimator<*>>)
+value class ContentAnimations(val items: List<ContentAnimator>)
 
 /**
- * Describes the animator and creates a scope. [key] is used to identify the scopes and
- * minimize their creation, as scopes with the same animator type and key will always have
- * 1 instance only.
+ * Represents the animator used by [StackAnimator] to create the animation scope.
+ *
+ * The [key] parameter helps optimize scope creation by preventing the creation
+ * of a new scope if one with the same key already exists.
+ *
+ * The [renderUntil] parameter controls content rendering based on its position
+ * in the stack, with 0 being the top. [StackAnimator] will not render an item if its
+ * position is greater than [renderUntil]. The animation scope implementation
+ * can be aware of [renderUntil].
+ *
+ * The [requireVisibilityInBackstack] parameter manages the item's visibility in the
+ * backstack after animations are completed. If an item's position exceeds
+ * [renderUntil] and [requireVisibilityInBackstack] is true, the item will remain visible.
+ * Note that if multiple animations (e.g., fade() + scale()) are combined,
+ * and at least one has [requireVisibilityInBackstack] set to true, all items
+ * that do not meet [renderUntil] will be visible in the backstack.
+ *
+ * The [animatorScopeFactory] parameter is used to create the animation scope.
+ * Refer to [contentAnimator] for an example.
+ *
+ * The [animationModifier] parameter provides the animated [Modifier] to the content.
  */
 @Immutable
-data class ContentAnimator<T : ContentAnimatorScope>(
+data class ContentAnimator(
     val key: String,
     val renderUntil: Int,
     val requireVisibilityInBackstack: Boolean,
     val animatorScopeFactory: (
         initialIndex: Int,
         initialIndexFromTop: Int
-    ) -> T,
-    val animationModifier: T.() -> Modifier
-)
-
-/**
- * [renderUntil] Controls content rendering based on it's position in the stack and animation state.
- * Content at or above [renderUntil] is always rendered if it's the item is index 0 or -1 (top or outside).
- *
- * If [requireVisibilityInBackstack] is false (which is by default) - the top and outside items
- * are rendered at all times while the backstack items are only rendered if they're being animated.
- *
- * If [requireVisibilityInBackstack] is set to false - will be visible even when it's not animated
- * (note that if you're combining animations, like fade() + scale(), if one of them has [requireVisibilityInBackstack]
- * set to false - ALL items will be visible while in backstack as if all animations have [requireVisibilityInBackstack]
- * set to true).
- */
-@OptIn(InternalDecomposeApi::class)
-fun contentAnimator(
-    animationSpec: AnimationSpec<Float> = softSpring(),
-    renderUntil: Int = 1,
-    requireVisibilityInBackstack: Boolean = false,
-    block: DefaultContentAnimatorScope.() -> Modifier
-) = ContentAnimations(
-    listOf(
-        ContentAnimator(
-            key = animationSpec.hashString(), // 1 instance per animation spec
-            renderUntil = renderUntil,
-            requireVisibilityInBackstack = requireVisibilityInBackstack,
-            animatorScopeFactory = { initialIndex, initialIndexFromTop ->
-                DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, animationSpec)
-            },
-            animationModifier = block
-        )
-    )
+    ) -> ContentAnimatorScope,
+    val animationModifier: ContentAnimatorScope.() -> Modifier
 )
 
 @Stable
-inline operator fun ContentAnimations.plus(other: ContentAnimations) = ContentAnimations(
-    this.items + other.items
+inline operator fun ContentAnimations.plus(
+    other: ContentAnimations
+) = ContentAnimations(this.items + other.items)
+
+/**
+ * Provides data helpful for the configuration of animations.
+ */
+@Immutable
+data class DestinationAnimationsConfiguratorScope<T : Any>(
+    val previousChild: T?,
+    val currentChild: T,
+    val nextChild: T?,
+    val exitingChildren: () -> List<T>,
 )
+
+val LocalContentAnimator = staticCompositionLocalOf<DestinationAnimationsConfiguratorScope<*>.() -> ContentAnimations> {
+    { cleanSlideAndFade() }
+}

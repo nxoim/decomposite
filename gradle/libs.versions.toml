@@ -1,16 +1,16 @@
 [versions]
-kotlin = "1.9.22"
+kotlin = "2.0.0"
 agp = "8.2.2"
-compose = "1.6.1"
+compose = "1.7.0-alpha01"
 androidx-appcompat = "1.6.1"
 androidx-activityCompose = "1.8.2"
 compose-uitooling = "1.6.3"
 kotlinx-coroutines = "1.8.0"
 kotlinx-serialization = "1.6.2"
-decompose = "3.0.0-alpha09"
+decompose = "3.0.0"
 maven-publish = "0.25.3"
 dokka = "1.9.0"
-koin = "3.6.0-wasm-alpha2"
+junit = "4.13.2"
 
 [libraries]
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
@@ -22,12 +22,12 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }
 decompose-extensions = { group = "com.arkivanov.decompose", name = "extensions-compose", version.ref = "decompose" }
-koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
-koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
-koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junit" }
+compose-uiTestJunit4 = { group = "org.jetbrains.compose.ui", name = "ui-test-junit4", version.ref = "compose" }
 
 [plugins]
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }

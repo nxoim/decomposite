@@ -1,23 +1,36 @@
 package com.nxoim.decomposite.ui.screens.tikitoki
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.iosLikeSlide
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.core.common.viewModel.viewModel
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun TikitokiScreen() {
+fun TikitokiScreen() = SharedTransitionLayout {
     // initializing the view model here, and will be using the getter everywhere else
     viewModel() { TikitokiViewModel() }
+    val navController = navController<TikitokiDestinations>(TikitokiDestinations.Pager)
 
     NavHost(
-        navController<TikitokiDestinations>(TikitokiDestinations.Pager),
+        navController,
         animations = { iosLikeSlide() }
     ) {
         when (it) {
-            TikitokiDestinations.Pager -> ListPager()
-            is TikitokiDestinations.User -> UserPage(it.mockUser)
+            TikitokiDestinations.Pager -> ListPager(
+                animatedVisibilityScope = this,
+                sharedTransitionScope = this@SharedTransitionLayout,
+                navController
+            )
+            is TikitokiDestinations.User -> UserPage(
+                mockUser = it.mockUser,
+                animatedVisibilityScope = this,
+                sharedTransitionScope = this@SharedTransitionLayout,
+                navController
+            )
         }
     }
 }

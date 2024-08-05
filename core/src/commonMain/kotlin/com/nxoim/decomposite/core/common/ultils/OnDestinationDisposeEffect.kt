@@ -1,10 +1,18 @@
 package com.nxoim.decomposite.core.common.ultils
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisallowComposableCalls
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
-import kotlin.jvm.JvmInline
 
 /**
  * Kind of like [DisposableEffect], but relies on [InstanceKeeper.Instance]'s onDestroy
@@ -12,50 +20,49 @@ import kotlin.jvm.JvmInline
  * configuration changes. Keys must be unique.
  */
 @Composable
-inline fun OnDestinationDisposeEffect(
-    key: Any,
-    waitForCompositionRemoval: Boolean = false,
+fun OnDestinationDisposeEffect(
+    key: Any? = null,
+    waitForCompositionRemoval: Boolean = true,
     componentContext: ComponentContext = LocalComponentContext.current,
-    crossinline block: @DisallowComposableCalls () -> Unit
-) {
-    if (waitForCompositionRemoval) {
-        val componentDestructionDetector = remember(componentContext) {
-            componentContext.instanceKeeper.getOrCreate(key) {
-                ComponentDestructionDetector()
-            }
-        }
-        DisposableEffect(true) {
-            onDispose { if (componentDestructionDetector.destroyed) block() }
-        }
+    block: @DisallowComposableCalls () -> Unit
+) = key(componentContext, waitForCompositionRemoval) {
+    val keeper = componentContext.instanceKeeper
+    val finalKey = currentCompositeKeyHash.toString(36) + key.hashCode()
+
+    if (waitForCompositionRemoval) DisposableEffect(Unit) {
+        onDispose { componentContext.onDestroy(finalKey, block) }
     } else {
-        DisposableEffect(true) {
-            onDispose { componentContext.instanceKeeper.remove(key) }
+        var holder by remember {
+            mutableStateOf(
+                keeper.getOrCreate(finalKey) { OnDestroyActionHolder(finalKey, block) }
+            )
         }
 
-        remember { componentContext.onDestroyDisposableEffect(key, block) }
+        SideEffect {
+            if (holder.key != finalKey) {
+                keeper.remove(holder.key)
+                holder = keeper.getOrCreate(finalKey) { OnDestroyActionHolder(finalKey, block) }
+            }
+        }
     }
 }
 
 /**
  * Saves the call in a container that executes the call before getting fully destroyed,
- * surviving configuration changes, making sure this is only executed when
+ * surviving configuration changes, making sure the block is only executed when
  * a component fully dies,
  */
-inline fun ComponentContext.onDestroyDisposableEffect(
+fun ComponentContext.onDestroy(
     key: Any,
-    crossinline block: @DisallowComposableCalls () -> Unit
-) = instanceKeeper.getOrCreate(key) { OnDestroyActionHolder { block() } }
+    block: @DisallowComposableCalls () -> Unit
+) { instanceKeeper.getOrCreate(key) { OnDestroyActionHolder(key, block) } }
 
 /**
  * Executes [onDispose] when the component is completely destroyed.
  */
-@JvmInline
-value class OnDestroyActionHolder(val onDispose: () -> Unit) : InstanceKeeper.Instance {
+private class OnDestroyActionHolder(
+    val key: Any,
+    val onDispose: @DisallowComposableCalls () -> Unit
+) : InstanceKeeper.Instance {
     override fun onDestroy() = onDispose()
-}
-
-@Immutable
-class ComponentDestructionDetector() : InstanceKeeper.Instance {
-    var destroyed = false
-    override fun onDestroy() { destroyed = true }
 }

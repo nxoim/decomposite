@@ -1,25 +1,21 @@
 
 import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.PredictiveBackGestureOverlay
-import com.arkivanov.essenty.backhandler.BackDispatcher
-import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.nxoim.decomposite.App
-import com.nxoim.decomposite.core.common.navigation.NavigationRoot
-import com.nxoim.decomposite.core.common.navigation.navigationRootDataProvider
+import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
+import com.nxoim.decomposite.core.jvm.navigation.NavigationRootProvider
+import com.nxoim.decomposite.core.jvm.navigation.defaultNavigationRootData
 import com.nxoim.decomposite.ui.theme.SampleTheme
 import java.awt.Dimension
 
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
-    // initialize these at some root
-    val backDispatcher = BackDispatcher()
-    val navigationRootData = navigationRootDataProvider(
-        DefaultComponentContext(LifecycleRegistry(), backHandler = backDispatcher)
-    )
+    // initialize this at the root of your app
+    val navigationRootData = defaultNavigationRootData()
 
     Window(
         title = "Decomposite",
@@ -40,11 +36,10 @@ fun main() = application {
                 // then initialize the back gesture overlay that will handle the back gestures.
                 // initialize it first, put NavigationRoot inside it, else overlays will not
                 // detect the gestures
-                PredictiveBackGestureOverlay(
-                    backDispatcher,
-                    backIcon = { _, _ -> }, // no back icon, we handle that on per-screen basis
-                    endEdgeEnabled = false, // disable swipes from the right side,
-                    content = { NavigationRoot(navigationRootData) { App() } }
+                BackGestureProviderContainer(
+                    navigationRootData.defaultComponentContext,
+                    edgeWidth = (window.size.width / LocalDensity.current.density).dp,
+                    content = { NavigationRootProvider(navigationRootData) { App() } }
                 )
             }
         }

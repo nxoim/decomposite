@@ -11,12 +11,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.nxoim.decomposite.core.common.navigation.NavController
 import com.nxoim.decomposite.core.common.navigation.NavHost
 import com.nxoim.decomposite.core.common.navigation.animations.cleanSlideAndFade
-import com.nxoim.decomposite.core.common.navigation.getExistingNavController
 import com.nxoim.decomposite.core.common.navigation.navController
 import com.nxoim.decomposite.ui.screens.heart.HeartNavHost
 import com.nxoim.decomposite.ui.screens.star.StarNavHost
@@ -31,10 +29,10 @@ fun App() = RootNavHost()
 fun RootNavHost() {
     val rootNavController = navController<RootDestinations>(RootDestinations.Star)
 
-    Scaffold(bottomBar = { GlobalSampleNavBar() }) { scaffoldPadding ->
+    Scaffold(bottomBar = { GlobalSampleNavBar(rootNavController) }) { scaffoldPadding ->
         NavHost<RootDestinations>(
             rootNavController,
-            Modifier.padding(scaffoldPadding),
+            Modifier.padding(bottom = scaffoldPadding.calculateBottomPadding()),
             animations = {
                 cleanSlideAndFade(
                     orientation = Orientation.Vertical,
@@ -53,27 +51,28 @@ fun RootNavHost() {
 
 
 @Composable
-fun GlobalSampleNavBar() {
-    val navController = getExistingNavController<RootDestinations>()
-    val currentScreen by navController.currentScreen.collectAsState()
+fun GlobalSampleNavBar(
+    navController: NavController<RootDestinations>
+) {
+    val currentScreen = navController.currentScreen
 
     NavigationBar {
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Star,
             icon = { Icon(Icons.Default.Star, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Star) }
+            onClick = { navController.navigate(RootDestinations.Star, removeIfIsPreceding = false) }
         )
 
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Tikitoki,
             icon = { Icon(Icons.Default.PanoramaVertical, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Tikitoki) }
+            onClick = { navController.navigate(RootDestinations.Tikitoki, removeIfIsPreceding = false) }
         )
 
         NavigationBarItem(
             selected = currentScreen is RootDestinations.Heart,
             icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-            onClick = { navController.navigate(RootDestinations.Heart) }
+            onClick = { navController.navigate(RootDestinations.Heart, removeIfIsPreceding = false) }
         )
     }
 }
