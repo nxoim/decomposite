@@ -2,16 +2,16 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    alias(libs.plugins.multiplatform)
-    alias(libs.plugins.compose)
-    alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlinx.serialization)
+	alias(libs.plugins.multiplatform)
+	alias(libs.plugins.compose)
+	alias(libs.plugins.compose.compiler)
+	alias(libs.plugins.android.application)
+	alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-    jvm()
-    androidTarget()
+	jvm()
+	androidTarget()
 
 //    macosX64()
 //    macosArm64()
@@ -26,7 +26,7 @@ kotlin {
 //        }
 //    }
 
-    //
+	//
 //    @OptIn(ExperimentalWasmDsl::class)
 //    wasmJs {
 //        moduleName = "app"
@@ -54,99 +54,100 @@ kotlin {
 //        }
 //    }
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    compilerOptions {
+	@OptIn(ExperimentalKotlinGradlePluginApi::class)
+	compilerOptions {
 
-    }
+	}
 
-    composeCompiler {
-        enableStrongSkippingMode = true
-    }
+	composeCompiler {
+		enableStrongSkippingMode = true
+	}
 
-    sourceSets {
-        all {
-            languageSettings {
-                optIn("org.jetbrains.compose.resources.ExperimentalResourceApi")
-            }
-        }
-        commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.material3)
-            implementation(compose.materialIconsExtended)
-            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-            implementation(compose.components.resources)
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(project(":core"))
-        }
+	sourceSets {
+		all {
+			languageSettings {
+				optIn("org.jetbrains.compose.resources.ExperimentalResourceApi")
+			}
+		}
+		commonMain.dependencies {
+			implementation(compose.runtime)
+			implementation(compose.material3)
+			implementation(compose.materialIconsExtended)
+			@OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+			implementation(compose.components.resources)
+			implementation(libs.kotlinx.coroutines.core)
+			implementation(libs.kotlinx.serialization.json)
+			implementation(project(":core"))
+		}
 
-        commonTest.dependencies {
-            implementation(kotlin("test"))
-        }
+		commonTest.dependencies {
+			implementation(kotlin("test"))
+		}
 
-        androidMain.dependencies {
-            implementation(libs.androidx.appcompat)
-            implementation(libs.androidx.activityCompose)
-            implementation(libs.compose.uitooling)
-            implementation(libs.kotlinx.coroutines.android)
-            implementation(project(":core"))
-        }
+		androidMain.dependencies {
+			implementation(libs.androidx.appcompat)
+			implementation(libs.androidx.activityCompose)
+			implementation(libs.compose.uitooling)
+			implementation(libs.kotlinx.coroutines.android)
+			implementation(project(":core"))
+		}
 
-        jvmMain.dependencies {
-            implementation(compose.desktop.common)
-            implementation(compose.desktop.currentOs)
-            implementation(project(":core"))
-        }
-    }
+		jvmMain.dependencies {
+			implementation(compose.desktop.common)
+			implementation(compose.desktop.currentOs)
+			implementation(project(":core"))
+		}
+	}
 }
 
 android {
-    namespace = "com.nxoim.decomposite"
-    compileSdk = 34
+	namespace = "com.nxoim.decomposite"
+	compileSdk = 34
 
-    defaultConfig {
-        minSdk = 24
-        targetSdk = 34
+	defaultConfig {
+		minSdk = 24
+		targetSdk = 34
 
-        applicationId = "com.nxoim.decomposite.androidApp"
-        versionCode = 1
-        versionName = "1.0.0"
-    }
-    sourceSets["main"].apply {
-        manifest.srcFile("src/androidMain/AndroidManifest.xml")
-        res.srcDirs("src/androidMain/resources")
-        resources.srcDirs("src/commonMain/resources")
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
-    }
-    buildTypes {
-        getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
-        }
-    }
+		applicationId = "com.nxoim.decomposite.androidApp"
+		versionCode = 1
+		versionName = "1.0.0"
+	}
+	sourceSets["main"].apply {
+		manifest.srcFile("src/androidMain/AndroidManifest.xml")
+		res.srcDirs("src/androidMain/resources")
+		resources.srcDirs("src/commonMain/resources")
+	}
+	compileOptions {
+		sourceCompatibility = JavaVersion.VERSION_17
+		targetCompatibility = JavaVersion.VERSION_17
+	}
+	buildFeatures {
+		compose = true
+	}
+	composeOptions {
+		kotlinCompilerExtensionVersion = "1.5.3"
+	}
+	buildTypes {
+		getByName("release") {
+			signingConfig = signingConfigs.getByName("debug")
+			isMinifyEnabled = true
+		}
+	}
 }
 dependencies {
-    implementation(project(mapOf("path" to ":core")))
+	implementation(project(mapOf("path" to ":core")))
 }
 
 compose.desktop {
-    application {
-        mainClass = "MainKt"
+	application {
+		mainClass = "MainKt"
 
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
-            packageName = "com.nxoim.decomposite.desktopApp"
-            packageVersion = "1.0.0"
-        }
-    }
+		nativeDistributions {
+			targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
+			packageName = "com.nxoim.decomposite.desktopApp"
+			packageVersion = "1.0.0"
+		}
+	}
 }
 
 //compose.experimental {
