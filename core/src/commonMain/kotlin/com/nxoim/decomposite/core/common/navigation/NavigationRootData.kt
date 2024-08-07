@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
+import com.arkivanov.decompose.DecomposeExperimentFlags
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
@@ -41,7 +42,11 @@ data class NavigationRootData(
 	val viewModelStore: ViewModelStore = defaultComponentContext.instanceKeeper.getOrCreateSimple {
 		ViewModelStore()
 	}
-)
+) {
+	init {
+		DecomposeExperimentFlags.duplicateConfigurationsEnabled = true
+	}
+}
 
 /**
  * Sets up the navigation root. Is used for managing overlays. Contains

@@ -72,7 +72,7 @@ fun <C : Any> NavHost(
 		val screenStackAnimatorScope = key(startingNavControllerInstance) {
 			rememberStackAnimatorScope(
 				stack = { stack.items },
-				itemKey = { it.configuration },
+				itemKey = { it.key },
 				excludedDestinations = { excludedDestinations?.contains(it.configuration) == true },
 				animations = {
 					animations(

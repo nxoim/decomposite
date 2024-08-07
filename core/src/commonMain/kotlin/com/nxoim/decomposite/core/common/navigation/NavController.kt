@@ -139,8 +139,10 @@ class NavController<C : Any>(
 			transformer = { stack ->
 				if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
 					stack.dropLast(1)
+				else if (stack.last() != destination)
+					stack + destination
 				else
-					stack.filterNot { it == destination } + destination
+					stack
 			},
 			onComplete = { _, _ -> onComplete() }
 		)
