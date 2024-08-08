@@ -2,17 +2,24 @@ package com.nxoim.decomposite
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.CanvasBasedWindow
-import com.nxoim.decomposite.core.common.navigation.FallbackNavigationRootImplementation
-import com.nxoim.decomposite.core.common.navigation.NavigationRootData
-import com.nxoim.decomposite.core.common.navigation.NavigationRootProvider
+import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
+import com.nxoim.decomposite.core.wasm.navigation.NavigationRootProvider
+import com.nxoim.decomposite.core.wasm.navigation.defaultNavigationRootData
+import com.nxoim.decomposite.ui.theme.SampleTheme
 
-@OptIn(ExperimentalComposeUiApi::class, FallbackNavigationRootImplementation::class)
+@OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    val navigationRootData = NavigationRootData()
+    val navigationRootData = defaultNavigationRootData()
 
     CanvasBasedWindow(canvasElementId = "ComposeTarget") {
-        NavigationRootProvider(navigationRootData) {
-            App()
+        SampleTheme {
+            @OptIn(ExperimentalDecomposeApi::class)
+            BackGestureProviderContainer(navigationRootData.defaultComponentContext) {
+                NavigationRootProvider(navigationRootData) {
+                    App()
+                }
+            }
         }
     }
 }
