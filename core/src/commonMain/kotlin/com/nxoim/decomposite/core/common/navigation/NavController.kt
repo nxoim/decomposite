@@ -13,6 +13,7 @@ import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.popTo
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.arkivanov.essenty.lifecycle.Lifecycle
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.OnDestinationDisposeEffect
 import com.nxoim.decomposite.core.common.ultils.rememberRetained
@@ -41,43 +42,51 @@ inline fun <reified C : Any> navController(
 	serializer: KSerializer<C>? = serializer(),
 	navStore: NavControllerStore = LocalNavControllerStore.current,
 	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String = navControllerKey<C>(componentContext = componentContext),
+	key: String = navControllerKey<C>(),
 	noinline childFactory: (
 		config: C,
 		childComponentContext: ComponentContext
 	) -> DecomposeChildInstance = { _, childComponentContext ->
 		DefaultChildInstance(childComponentContext)
 	}
-): NavController<C> {
-	OnDestinationDisposeEffect(
-		"${C::class} key $key navController OnDestinationDisposeEffect",
-		componentContext = componentContext,
-		waitForCompositionRemoval = true
-	) {
-		navStore.remove(key, C::class)
-	}
+) = remember(componentContext, key) {
+	// if the existing instance was already destroyed by the time
+	// remember executes - delete it and make a new one
+	navStore
+		.get(key, C::class)
+		?.parentComponentContext
+		?.lifecycle
+		?.state
+		?.let { if (it == Lifecycle.State.DESTROYED) navStore.remove(key, C::class) }
 
-	return remember(componentContext, key) {
-		navStore.getOrCreate(key, C::class) {
-			NavController(
-				startingDestination,
-				serializer,
-				componentContext,
-				key,
-				childFactory
-			)
-		}
+	navStore.getOrCreate(key, C::class) {
+		NavController(
+			startingDestination,
+			serializer,
+			componentContext,
+			key,
+			childFactory
+		)
 	}
 }
+//	.also {
+//		// TODO is this reliable
+//	DisposableEffect(it) {
+//		onDispose {
+//			val lifecycleState = it.parentComponentContext.lifecycle.state
+//			if (lifecycleState == Lifecycle.State.DESTROYED) navStore.remove(key, C::class)
+//		}
+//	}
+//}
+
 
 // During navigation a component context might get recreated (specifically
 // when coming back to a component that's currently being removed from the
 // stack animator), and if we do not create a new key for the new component context -
 // navigation stops working in the component
 inline fun <reified C : Any> navControllerKey(
-	additionalKey: Any = "",
-	componentContext: ComponentContext
-) = "${C::class}$additionalKey${componentContext}"
+	additionalKey: Any = ""
+) = "${C::class}$additionalKey"
 
 /**
  * Generic navigation controller. Contains a stack for overlays and a stack for screens.
@@ -86,7 +95,7 @@ inline fun <reified C : Any> navControllerKey(
 class NavController<C : Any>(
 	startingDestination: C,
 	serializer: KSerializer<C>? = null,
-	componentContext: ComponentContext,
+	val parentComponentContext: ComponentContext,
 	val key: String,
 	childFactory: (
 		config: C,
@@ -94,10 +103,10 @@ class NavController<C : Any>(
 	) -> DecomposeChildInstance = { _, childComponentContext ->
 		DefaultChildInstance(childComponentContext)
 	}
-) : ComponentContext by componentContext {
+) {
 	val controller = StackNavigation<C>()
 
-	val screenStack = childStack(
+	val screenStack = parentComponentContext.childStack(
 		source = controller,
 		serializer = serializer,
 		initialConfiguration = startingDestination,
