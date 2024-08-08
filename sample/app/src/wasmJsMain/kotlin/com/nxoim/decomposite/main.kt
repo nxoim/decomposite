@@ -1,21 +1,25 @@
 package com.nxoim.decomposite
 
-import androidx.compose.material3.Text
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.CanvasBasedWindow
-import com.nxoim.decomposite.core.common.navigation.navigationRootDataProvider
-import org.koin.core.context.startKoin
-import org.koin.dsl.module
+import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
+import com.nxoim.decomposite.core.wasm.navigation.NavigationRootProvider
+import com.nxoim.decomposite.core.wasm.navigation.defaultNavigationRootData
+import com.nxoim.decomposite.ui.theme.SampleTheme
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    startKoin { modules(module { navigationRootDataProvider() }) }
+    val navigationRootData = defaultNavigationRootData()
 
     CanvasBasedWindow(canvasElementId = "ComposeTarget") {
-        runCatching {
-            App()
-        }.onFailure {
-            Text(it.message ?: "Unknown error")
+        SampleTheme {
+            @OptIn(ExperimentalDecomposeApi::class)
+            BackGestureProviderContainer(navigationRootData.defaultComponentContext) {
+                NavigationRootProvider(navigationRootData) {
+                    App()
+                }
+            }
         }
     }
 }
