@@ -1,0 +1,35 @@
+name: Create Release on PR Merge
+
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Get the PR title
+      run: |
+        PR_TITLE=$(jq -r .pull_request.title < $GITHUB_EVENT_PATH)
+        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "${{ env.PR_TITLE }}"
+        name: ${{ env.PR_TITLE }}
+        body: |
+          This release was automatically generated from PR #${{ github.event.pull_request.number }}.
+        draft: false
