@@ -28,9 +28,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "v${{ github.run_number }}"
+        tag_name: "${{ env.PR_TITLE }}"
         name: ${{ env.PR_TITLE }}
         body: |
           This release was automatically generated from PR #${{ github.event.pull_request.number }}.
         draft: false
-        prerelease: false
