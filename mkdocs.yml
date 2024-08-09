@@ -16,7 +16,7 @@ nav:
     - Starting Page: index.md
 
   - Api:
-    - Home: api/jekyll/index.md
+    - Home: api/index.html
 
   # Configuration
 theme:
@@ -46,7 +46,6 @@ theme:
 # Plugins
 plugins:
   - search
-  - mkdocstrings
   - minify:
       minify_html: true
 

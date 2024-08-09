@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build_api_docs:
-    name: Build Dokka (Jekyll)
+    name: Build Dokka (HTML)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,13 +30,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build api documentation
-        run: ./gradlew dokkaJekyll
+        run: ./gradlew dokkaHtml
         
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: apidocs
-          path: core/build/dokka/
+          path: core/build/dokka/html
 
   build_mkdoc:
     runs-on: ubuntu-latest
@@ -55,7 +55,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install mkdocs mkdocs-material
         pip install mkdocs-minify-plugin
-        pip install 'mkdocstrings[kotlin]'
 
     - name: Build the MkDocs site
       run: |
