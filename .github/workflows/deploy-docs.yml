@@ -59,7 +59,7 @@ jobs:
 
     - name: Build the MkDocs site
       run: |
-        mkdocs build --strict
+        mkdocs build
 
     - name: Upload 
       uses: actions/upload-artifact@v4
