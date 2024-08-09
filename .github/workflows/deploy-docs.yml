@@ -27,6 +27,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install mkdocs mkdocs-material
         pip install mkdocs-minify-plugin
+        pip install 'mkdocstrings[kotlin]'
 
     - name: Build the MkDocs site
       run: |
