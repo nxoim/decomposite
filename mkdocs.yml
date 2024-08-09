@@ -15,6 +15,9 @@ nav:
   - Home:
     - Starting Page: index.md
 
+  - Api:
+    - Home: api/jekyll/index.md
+
   # Configuration
 theme:
   name: 'material'
