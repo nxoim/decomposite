@@ -8,7 +8,7 @@
 (i dont have apple's devices)
 
 # What?
-Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, custom extensions like animations, etc.
+Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, custom extensions like animations, etc. You can try the sample app at https://nxoim.github.io/decomposite/wasm-sample
 
 # Why?
 There was existing multiplatform tooling, but it was kinda raw for my taste, so I started learning and experimenting by making DSLs based on it and this is the result.
