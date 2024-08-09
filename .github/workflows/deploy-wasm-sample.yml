@@ -49,4 +49,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: "${{steps.download.outputs.download-path}}/wasm-sample"
+          publish_dir: ${{steps.download.outputs.download-path}}
+          destination_dir: wasm-sample
