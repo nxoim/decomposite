@@ -29,9 +29,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build static files
-        run: ./gradlew :sample:app:wasmJsBrowserDistribution
-
+      - name: Build api documentation
+        run: ./gradlew dokkaJekyll
+        
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -77,7 +77,7 @@ jobs:
           name: artifacts
           path: public
           
-      - name: Deploy to GitHub Pages
+      - name: Deploy MkDoc to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -94,7 +94,7 @@ jobs:
           name: api-docs
           path: public
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy API documentation
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
