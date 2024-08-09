@@ -15,7 +15,7 @@ nav:
   - Home:
     - Starting Page: index.md
 
-  - Api:
+  - API:
     - Home: api/index.html
 
   # Configuration
