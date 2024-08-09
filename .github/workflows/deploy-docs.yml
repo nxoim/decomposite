@@ -39,6 +39,7 @@ jobs:
           path: core/build/dokka/html
 
   build_mkdoc:
+    name: Build MKDoc
     runs-on: ubuntu-latest
 
     steps:
