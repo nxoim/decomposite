@@ -35,8 +35,8 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: api-docs
-          path: core/build/dokka/core
+          name: apidocs
+          path: core/build/dokka/
 
   build_mkdoc:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
     - name: Upload 
       uses: actions/upload-artifact@v4
       with:
-          name: artifacts
+          name: mkdocstuff
           path: ./site
 
   deploy_mkdoc:
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/download-artifact@v4
         id: download
         with:
-          name: artifacts
+          name: mkdocstuff
           path: public
           
       - name: Deploy MkDoc to GitHub Pages
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/download-artifact@v4
         id: download
         with:
-          name: api-docs
+          name: apidocs
           path: public
 
       - name: Deploy API documentation
