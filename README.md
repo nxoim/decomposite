@@ -2,12 +2,13 @@
 
 ![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
 ![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
+![badge-wasm](https://img.shields.io/badge/Platform-wasm-purple)
 ![badge-iOS](https://img.shields.io/badge/Platform-iOS-lightgray)(?)
 ![badge-macOS](https://img.shields.io/badge/Platform-macOS-purple)(?)
-(i dont have apple's devices) Some time in the future WASM/JS and maybe WASI.
+(i dont have apple's devices)
 
 # What?
-Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, custom extensions like animations, etc.
+Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, custom extensions like animations, etc. You can try the sample app at https://nxoim.github.io/decomposite/wasm-sample
 
 # Why?
 There was existing multiplatform tooling, but it was kinda raw for my taste, so I started learning and experimenting by making DSLs based on it and this is the result.
@@ -41,7 +42,7 @@ class YourActivity : ComponentActivity() {
     	super.onCreate(savedInstanceState)
 
         // default component context is included with the decompose library
-        val navigationRootData = NavigationRootData(defaultComponentContext())
+        val navigationRootData = defaultNavigationRootData()
 
         setContent {
             NavigationRootProvider(navigationRootData) { YourContent() }
@@ -55,7 +56,7 @@ Check out [the android sample](https://github.com/nxoim/decomposite/blob/update/
 On everything else:
 ```kotlin
 // outside compose
-val navigationRootData = NavigationRootData()
+val navigationRootData = defaultNavigationRootData()
 
 // ...
 
@@ -127,7 +128,7 @@ Back gestures on other platforms:
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
         // initialize this at the root of your app
-        val navigationRootData = NavigationRootData()
+        val navigationRootData = defaultNavigationRootData()
 
         Window(
             title = "Decomposite",
