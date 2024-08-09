@@ -67,7 +67,7 @@ jobs:
           name: artifacts
           path: ./site
 
-  deploy-mkdoc:
+  deploy_mkdoc:
     needs: [build_mkdoc, build_api_docs]
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +85,7 @@ jobs:
           destination_dir: docs
 
   deploy-api-docs:
-    needs: build
+    needs: deploy_mkdoc
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
