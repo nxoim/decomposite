@@ -1,0 +1,95 @@
+site_name: Decompose
+site_url: https://decomposite.nxoim.com/docs
+site_author: nxoim
+site_description: >-
+  Compose Multiplatform router-style navigation library, based on Decompose, with custom animation system and additional utilities
+
+# Repository
+repo_name: nxoim/decomposite
+repo_url: https://github.com/nxoim/decomposite
+edit_uri: ""
+
+
+# Page tree
+nav:
+  - Home:
+    - Starting Page: index.md
+
+  # Configuration
+theme:
+  name: 'material'
+
+  # Don't include MkDocs' JavaScript
+  include_search_page: false
+  search_index_only: true
+
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.expand
+  palette:
+    scheme: default
+    primary: indigo
+    accent: indigo
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: media/logo/circle-2.png
+  logo: media/logo/circle-2.png
+  icon:
+    logo: logo
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings
+  - minify:
+      minify_html: true
+
+# Customization
+extra:
+  social:
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
