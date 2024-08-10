@@ -18,6 +18,9 @@ nav:
   - API:
     - Home: api/index.html
 
+  - Web Sample App:
+    - Home: https://decomposite.nxoim.com/wasm-sample/
+
   # Configuration
 theme:
   name: 'material'
