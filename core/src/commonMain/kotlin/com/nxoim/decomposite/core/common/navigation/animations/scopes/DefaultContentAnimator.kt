@@ -101,7 +101,7 @@ class DefaultContentAnimator(
 	)
 
 	override val onRequestAnimationToTarget = OnAnimateToTargetRequest(
-		onStatusUpdate = { backEvent = BackEvent() }
+		onAnimationEndAndStatusUpdate = { backEvent = BackEvent() }
 	) {
 		val initialAnimationVelocity = velocityTracker.calculateVelocity().x
 

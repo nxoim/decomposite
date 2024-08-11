@@ -135,7 +135,7 @@ abstract class ContentAnimatorBase(
 			animationType = AnimationType.None
 		)
 
-		animationToTarget.onStatusUpdate?.invoke(this)
+		animationToTarget.onAnimationEndAndStatusUpdate?.invoke(this)
 	}
 
 	private fun toItemLocation(indexFromTop: Int): ItemLocation = when {
@@ -146,7 +146,7 @@ abstract class ContentAnimatorBase(
 	}
 
 	protected class OnAnimateToTargetRequest(
-		val onStatusUpdate: (suspend CoroutineScope.() -> Unit)? = null,
+		val onAnimationEndAndStatusUpdate: (suspend CoroutineScope.() -> Unit)? = null,
 		val animation: suspend CoroutineScope.() -> Unit
 	)
 
