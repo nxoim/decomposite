@@ -31,7 +31,7 @@ internal fun materialContainerMorphContentAnimator(
 	animationSpec: AnimationSpec<Float> = softSpring(),
 	renderUntil: Int = 1,
 	requireVisibilityInBackstack: Boolean = false,
-	block: MaterialContainerMorphContentAnimatorScope.() -> Modifier
+	block: MaterialContainerMorphContentAnimator.Scope.() -> Modifier
 ) = ContentAnimations(
 	listOf(
 		ContentAnimator(
@@ -40,22 +40,22 @@ internal fun materialContainerMorphContentAnimator(
 			renderUntil = renderUntil,
 			requireVisibilityInBackstack = requireVisibilityInBackstack,
 			animatorScopeFactory = { initialIndex, initialIndexFromTop ->
-				MaterialContainerMorphContentAnimatorScope(
+				MaterialContainerMorphContentAnimator(
 					initialIndex,
 					initialIndexFromTop,
 					animationSpec,
 				)
 			},
-			animationModifier = block as ContentAnimatorScope.() -> Modifier
+			animationModifier = { block(this.Scope()) }
 		)
 	)
 )
 
-internal class MaterialContainerMorphContentAnimatorScope(
+internal class MaterialContainerMorphContentAnimator(
 	private val initialIndex: Int,
 	private val initialIndexFromTop: Int,
 	private val animationSpec: AnimationSpec<Float>
-) : BasicContentAnimatorScope(initialIndex, initialIndexFromTop) {
+) : BasicContentAnimator(initialIndex, initialIndexFromTop) {
 	private val velocityTracker = VelocityTracker()
 
 	// standard progress
@@ -67,13 +67,9 @@ internal class MaterialContainerMorphContentAnimatorScope(
 
 	private var initialSwipeOffset by mutableStateOf(Offset.Zero)
 
-	val animationProgress by animationProgressAnimatable.asState()
-	val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
-	val swipeOffset by swipeOffsetAnimatable.asState()
-	var swipeEdge by mutableStateOf(BackEvent.SwipeEdge.LEFT)
-		private set
+	private var swipeEdge by mutableStateOf(BackEvent.SwipeEdge.LEFT)
 
-	override val animationProgressForScope get() = gestureAnimationProgress
+	override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
 
 	override val onBackGestures = OnGestureActions(
 		onStarted = {
@@ -89,7 +85,7 @@ internal class MaterialContainerMorphContentAnimatorScope(
 		onProgressed = { newBackEvent ->
 			if (animationStatus.location.top) {
 				gestureAnimationProgressAnimatable
-					.snapTo(animationProgress -newBackEvent.progress)
+					.snapTo(animationProgressAnimatable.value -newBackEvent.progress)
 
 				swipeOffsetAnimatable.snapTo(
 					IntOffset(
@@ -101,14 +97,14 @@ internal class MaterialContainerMorphContentAnimatorScope(
 				withFrameMillis { frameTimeMillis ->
 					velocityTracker.addPosition(
 						timeMillis = frameTimeMillis,
-						position = Offset(gestureAnimationProgress, 0f)
+						position = Offset(animationProgressAnimatable.value, 0f)
 					)
 				}
 			}
 		}
 	)
 
-	override val onRequestAnimationToTarget = OnAnimationToTargetRequest {
+	override val onRequestAnimationToTarget = OnAnimateToTargetRequest {
 		// don't need this delay if the item is to be removed, which is when location is outside
 		if (!animationStatus.location.outside) {
 			val gestureProgressAnimation = launch {
@@ -129,5 +125,13 @@ internal class MaterialContainerMorphContentAnimatorScope(
 
 			joinAll(animationProgressAnimation, gestureProgressAnimation)
 		}
+	}
+
+	// exposing some values to the animator creator
+	inner class Scope {
+		val animationProgress by animationProgressAnimatable.asState()
+		val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
+		val swipeOffset by swipeOffsetAnimatable.asState()
+		val swipeEdge get() = this@MaterialContainerMorphContentAnimator.swipeEdge
 	}
 }

@@ -14,7 +14,7 @@ import kotlin.jvm.JvmInline
  */
 @JvmInline
 @Immutable
-value class ContentAnimations(val items: List<ContentAnimator>)
+value class ContentAnimations(val items: List<ContentAnimator<*>>)
 
 /**
  * Represents the animator used by [StackAnimator] to create the animation scope.
@@ -40,15 +40,15 @@ value class ContentAnimations(val items: List<ContentAnimator>)
  * The [animationModifier] parameter provides the animated [Modifier] to the content.
  */
 @Immutable
-data class ContentAnimator(
+data class ContentAnimator<T : ContentAnimatorScope>(
     val key: String,
     val renderUntil: Int,
     val requireVisibilityInBackstack: Boolean,
     val animatorScopeFactory: (
         initialIndex: Int,
         initialIndexFromTop: Int
-    ) -> ContentAnimatorScope,
-    val animationModifier: ContentAnimatorScope.() -> Modifier
+    ) -> T,
+    val animationModifier: T.() -> Modifier
 )
 
 @Stable

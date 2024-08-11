@@ -2,6 +2,7 @@ package com.nxoim.decomposite.core.common.navigation.animations.stack
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
@@ -35,7 +36,10 @@ class AnimationDataRegistry<Key : Any> {
 			scopes = { scopesFromRegistry },
 			modifiers = {
 				source.items.fastMapNotNull {
-					scopesFromRegistry[it.key]?.let { scope -> it.animationModifier(scope) }
+					scopesFromRegistry[it.key]?.let { scope ->
+						// "uNchECkeD cAsT" kotlin compiler L
+						(it.animationModifier as ContentAnimatorScope.() -> Modifier).invoke(scope)
+					}
 				}
 			},
 			renderUntils = { source.items.fastMap { it.renderUntil } },

@@ -14,7 +14,7 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 
-abstract class BasicContentAnimatorScope(
+abstract class BasicContentAnimator(
 	initialIndex: Int,
 	initialIndexFromTop: Int
 ) : ContentAnimatorScope {
@@ -43,7 +43,7 @@ abstract class BasicContentAnimatorScope(
 		private set
 
 	protected abstract val onBackGestures: OnGestureActions
-	protected abstract val onRequestAnimationToTarget: OnAnimationToTargetRequest
+	protected abstract val onRequestAnimationToTarget: OnAnimateToTargetRequest
 
 	final override suspend fun onBackGesture(backGesture: BackGestureEvent) {
 		when (backGesture) {
@@ -126,7 +126,7 @@ abstract class BasicContentAnimatorScope(
 	}
 
 	private suspend fun launchAnimations(
-		animationToTarget: OnAnimationToTargetRequest
+		animationToTarget: OnAnimateToTargetRequest
 	) = coroutineScope {
 		animationToTarget.animation(this)
 
@@ -145,7 +145,7 @@ abstract class BasicContentAnimatorScope(
 		else -> error("Unexpected indexFromTop value: $indexFromTop")
 	}
 
-	protected class OnAnimationToTargetRequest(
+	protected class OnAnimateToTargetRequest(
 		val onStatusUpdate: (suspend CoroutineScope.() -> Unit)? = null,
 		val animation: suspend CoroutineScope.() -> Unit
 	)

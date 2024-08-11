@@ -33,13 +33,12 @@ import kotlinx.coroutines.launch
  * set to false - ALL items will be visible while in backstack as if all animations have [requireVisibilityInBackstack]
  * set to true).
  */
-@Suppress("UNCHECKED_CAST")
 @OptIn(InternalDecomposeApi::class)
 fun contentAnimator(
 	animationSpec: AnimationSpec<Float> = softSpring(),
 	renderUntil: Int = 1,
 	requireVisibilityInBackstack: Boolean = false,
-	block: DefaultContentAnimatorScope.() -> Modifier
+	block: DefaultContentAnimator.Scope.() -> Modifier
 ) = ContentAnimations(
 	listOf(
 		ContentAnimator(
@@ -47,19 +46,20 @@ fun contentAnimator(
 			renderUntil = renderUntil,
 			requireVisibilityInBackstack = requireVisibilityInBackstack,
 			animatorScopeFactory = { initialIndex, initialIndexFromTop ->
-				DefaultContentAnimatorScope(initialIndex, initialIndexFromTop, animationSpec)
+				DefaultContentAnimator(initialIndex, initialIndexFromTop, animationSpec)
 			},
-			animationModifier = block as ContentAnimatorScope.() -> Modifier
+			animationModifier = { block(this.Scope()) }
 		)
 	)
 )
 
+
 @Immutable
-class DefaultContentAnimatorScope(
+class DefaultContentAnimator(
 	private val initialIndex: Int,
 	private val initialIndexFromTop: Int,
 	private val animationSpec: AnimationSpec<Float>
-) : BasicContentAnimatorScope(initialIndex, initialIndexFromTop) {
+) : BasicContentAnimator(initialIndex, initialIndexFromTop) {
 	private val initial get() = index == 0
 
 	private val velocityTracker = VelocityTracker()
@@ -70,21 +70,11 @@ class DefaultContentAnimatorScope(
 	// progress minus gesture progress
 	private val gestureAnimationProgressAnimatable = Animatable(animationProgressAnimatable.value)
 
-	var backEvent by mutableStateOf(BackEvent())
-		private set
+	private var backEvent by mutableStateOf(BackEvent())
 
 	private var initialSwipeOffset by mutableStateOf(Offset.Zero)
 
-	val animationProgress by animationProgressAnimatable.asState()
-	val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
-	override val animationProgressForScope
-		get() = gestureAnimationProgress
-
-	val swipeOffset
-		get() = Offset(
-			initialSwipeOffset.x - backEvent.touchX,
-			initialSwipeOffset.y - backEvent.touchY
-		)
+	override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
 
 	override val onBackGestures = OnGestureActions(
 		onStarted = {
@@ -99,18 +89,18 @@ class DefaultContentAnimatorScope(
 		onProgressed = { newBackEvent ->
 			backEvent = newBackEvent
 			gestureAnimationProgressAnimatable
-				.snapTo(animationProgress - newBackEvent.progress)
+				.snapTo(animationProgressAnimatable.value - newBackEvent.progress)
 
 			withFrameMillis { frameTimeMillis ->
 				velocityTracker.addPosition(
 					timeMillis = frameTimeMillis,
-					position = Offset(gestureAnimationProgress, 0f)
+					position = Offset(gestureAnimationProgressAnimatable.value, 0f)
 				)
 			}
 		},
 	)
 
-	override val onRequestAnimationToTarget = OnAnimationToTargetRequest(
+	override val onRequestAnimationToTarget = OnAnimateToTargetRequest(
 		onStatusUpdate = { backEvent = BackEvent() }
 	) {
 		val initialAnimationVelocity = velocityTracker.calculateVelocity().x
@@ -132,5 +122,17 @@ class DefaultContentAnimatorScope(
 		}
 
 		joinAll(animationProgressAnimation, gestureProgressAnimation)
+	}
+
+	// exposing some values to the animator creator
+	inner class Scope {
+		val animationProgress by animationProgressAnimatable.asState()
+		val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
+		val animmationStatus get() = animationStatus
+		val backEvent get() = this@DefaultContentAnimator.backEvent
+		val swipeOffset get() = Offset(
+			initialSwipeOffset.x - backEvent.touchX,
+			initialSwipeOffset.y - backEvent.touchY
+		)
 	}
 }
