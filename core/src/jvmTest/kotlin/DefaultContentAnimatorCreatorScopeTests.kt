@@ -16,7 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.random.Random
 
-class DefaultContentAnimatorScopeTests {
+class DefaultContentAnimatorCreatorScopeTests {
 	@get:Rule
 	val rule = createComposeRule()
 

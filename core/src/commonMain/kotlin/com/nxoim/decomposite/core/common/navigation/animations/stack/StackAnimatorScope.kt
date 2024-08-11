@@ -14,7 +14,7 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
-import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimator
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.launch
 
@@ -183,7 +183,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 
 @Immutable
 data class AnimationData(
-	val scopes: () -> Map<String, ContentAnimatorScope>,
+	val scopes: () -> Map<String, ContentAnimator>,
 	val modifiers: () -> List<Modifier>,
 	val renderUntils: () -> List<Int>,
 	val requireVisibilityInBackstacks: () -> List<Boolean>,

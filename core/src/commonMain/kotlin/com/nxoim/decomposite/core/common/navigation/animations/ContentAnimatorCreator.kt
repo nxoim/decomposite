@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.contentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
 import kotlin.jvm.JvmInline
@@ -14,7 +14,7 @@ import kotlin.jvm.JvmInline
  */
 @JvmInline
 @Immutable
-value class ContentAnimations(val items: List<ContentAnimator<*>>)
+value class ContentAnimations(val items: List<ContentAnimatorCreator<*>>)
 
 /**
  * Represents the animator used by [StackAnimator] to create the animation scope.
@@ -40,7 +40,7 @@ value class ContentAnimations(val items: List<ContentAnimator<*>>)
  * The [animationModifier] parameter provides the animated [Modifier] to the content.
  */
 @Immutable
-data class ContentAnimator<T : ContentAnimatorScope>(
+data class ContentAnimatorCreator<T : ContentAnimator>(
     val key: String,
     val renderUntil: Int,
     val requireVisibilityInBackstack: Boolean,
@@ -48,7 +48,7 @@ data class ContentAnimator<T : ContentAnimatorScope>(
         initialIndex: Int,
         initialIndexFromTop: Int
     ) -> T,
-    val animationModifier: T.() -> Modifier
+    val animationModifier: (T) -> Modifier
 )
 
 @Stable

@@ -14,7 +14,7 @@ import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.decompose.hashString
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
-import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -41,14 +41,14 @@ fun contentAnimator(
 	block: DefaultContentAnimator.Scope.() -> Modifier
 ) = ContentAnimations(
 	listOf(
-		ContentAnimator(
+		ContentAnimatorCreator(
 			key = animationSpec.hashString() + "DefaultContentAnimator", // 1 instance per animation spec
 			renderUntil = renderUntil,
 			requireVisibilityInBackstack = requireVisibilityInBackstack,
 			animatorScopeFactory = { initialIndex, initialIndexFromTop ->
 				DefaultContentAnimator(initialIndex, initialIndexFromTop, animationSpec)
 			},
-			animationModifier = { block(this.Scope()) }
+			animationModifier = { block(it.Scope()) }
 		)
 	)
 )
@@ -59,7 +59,7 @@ class DefaultContentAnimator(
 	private val initialIndex: Int,
 	private val initialIndexFromTop: Int,
 	private val animationSpec: AnimationSpec<Float>
-) : BasicContentAnimator(initialIndex, initialIndexFromTop) {
+) : ContentAnimatorBase(initialIndex, initialIndexFromTop) {
 	private val initial get() = index == 0
 
 	private val velocityTracker = VelocityTracker()
@@ -128,7 +128,7 @@ class DefaultContentAnimator(
 	inner class Scope {
 		val animationProgress by animationProgressAnimatable.asState()
 		val gestureAnimationProgress by gestureAnimationProgressAnimatable.asState()
-		val animmationStatus get() = animationStatus
+		val animationStatus get() = this@DefaultContentAnimator.animationStatus
 		val backEvent get() = this@DefaultContentAnimator.backEvent
 		val swipeOffset get() = Offset(
 			initialSwipeOffset.x - backEvent.touchX,

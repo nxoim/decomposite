@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.IntOffset
 import com.arkivanov.decompose.InternalDecomposeApi
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
-import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.outside
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
@@ -25,7 +25,6 @@ import kotlin.math.roundToInt
 /**
  * [animationSpec] is still used for the gesture cancellation animation
  */
-@Suppress("UNCHECKED_CAST")
 @OptIn(InternalDecomposeApi::class)
 internal fun materialContainerMorphContentAnimator(
 	animationSpec: AnimationSpec<Float> = softSpring(),
@@ -34,7 +33,7 @@ internal fun materialContainerMorphContentAnimator(
 	block: MaterialContainerMorphContentAnimator.Scope.() -> Modifier
 ) = ContentAnimations(
 	listOf(
-		ContentAnimator(
+		ContentAnimatorCreator(
 			// 1 instance per animation spec per destination
 			key = "MaterialContainerMorphContentAnimatorScope",
 			renderUntil = renderUntil,
@@ -46,7 +45,7 @@ internal fun materialContainerMorphContentAnimator(
 					animationSpec,
 				)
 			},
-			animationModifier = { block(this.Scope()) }
+			animationModifier = { block(it.Scope()) }
 		)
 	)
 )
@@ -55,7 +54,7 @@ internal class MaterialContainerMorphContentAnimator(
 	private val initialIndex: Int,
 	private val initialIndexFromTop: Int,
 	private val animationSpec: AnimationSpec<Float>
-) : BasicContentAnimator(initialIndex, initialIndexFromTop) {
+) : ContentAnimatorBase(initialIndex, initialIndexFromTop) {
 	private val velocityTracker = VelocityTracker()
 
 	// standard progress

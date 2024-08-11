@@ -14,10 +14,10 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 
-abstract class BasicContentAnimator(
+abstract class ContentAnimatorBase(
 	initialIndex: Int,
 	initialIndexFromTop: Int
-) : ContentAnimatorScope {
+) : ContentAnimator {
 	final override var indexFromTop by mutableIntStateOf(initialIndexFromTop)
 		private set
 

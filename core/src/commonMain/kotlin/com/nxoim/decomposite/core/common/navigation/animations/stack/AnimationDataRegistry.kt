@@ -7,12 +7,12 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
-import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimator
 
 @Immutable
 class AnimationDataRegistry<Key : Any> {
 	private val animationDataCache = hashMapOf<Key, AnimationData>()
-	private val scopeRegistry = mutableStateMapOf<Pair<Key, String>, ContentAnimatorScope>()
+	private val scopeRegistry = mutableStateMapOf<Pair<Key, String>, ContentAnimator>()
 
 	fun getOrCreateAnimationData(
 		key: Key,
@@ -38,7 +38,7 @@ class AnimationDataRegistry<Key : Any> {
 				source.items.fastMapNotNull {
 					scopesFromRegistry[it.key]?.let { scope ->
 						// "uNchECkeD cAsT" kotlin compiler L
-						(it.animationModifier as ContentAnimatorScope.() -> Modifier).invoke(scope)
+						(it.animationModifier as ContentAnimator.() -> Modifier).invoke(scope)
 					}
 				}
 			},

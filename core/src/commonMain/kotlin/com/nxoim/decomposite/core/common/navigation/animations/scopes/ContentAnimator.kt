@@ -3,7 +3,7 @@ package com.nxoim.decomposite.core.common.navigation.animations.scopes
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationStatus
-import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimator
+import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 
 /**
@@ -28,9 +28,9 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
  *
  * Note: when several animations with different keys are used for a single item -
  * the first scope is used to provide [animationProgressForScope]. Refer to
- * [ContentAnimator] and [contentAnimator] for more information.
+ * [ContentAnimatorCreator] and [contentAnimator] for more information.
  */
-interface ContentAnimatorScope {
+interface ContentAnimator {
     val indexFromTop: Int
     val index: Int
     val animationStatus: AnimationStatus
