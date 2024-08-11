@@ -70,7 +70,7 @@ internal class MaterialContainerMorphContentAnimator(
 
 	override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
 
-	override val onBackGestures = OnGestureActions(
+	override val onGestureActions = OnGestureActions(
 		onStarted = {
 			// stop all animations
 			animationProgressAnimatable.stop()
@@ -103,7 +103,7 @@ internal class MaterialContainerMorphContentAnimator(
 		}
 	)
 
-	override val onRequestAnimationToTarget = OnAnimateToTargetRequest {
+	override val onAnimateToTargetRequest = OnAnimateToTargetRequest {
 		// don't need this delay if the item is to be removed, which is when location is outside
 		if (!animationStatus.location.outside) {
 			val gestureProgressAnimation = launch {

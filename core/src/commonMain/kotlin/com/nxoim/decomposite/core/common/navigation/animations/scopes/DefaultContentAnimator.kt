@@ -76,7 +76,7 @@ class DefaultContentAnimator(
 
 	override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
 
-	override val onBackGestures = OnGestureActions(
+	override val onGestureActions = OnGestureActions(
 		onStarted = {
 			// stop all animations
 			animationProgressAnimatable.stop()
@@ -100,7 +100,7 @@ class DefaultContentAnimator(
 		},
 	)
 
-	override val onRequestAnimationToTarget = OnAnimateToTargetRequest(
+	override val onAnimateToTargetRequest = OnAnimateToTargetRequest(
 		onAnimationEndAndStatusUpdate = { backEvent = BackEvent() }
 	) {
 		val initialAnimationVelocity = velocityTracker.calculateVelocity().x

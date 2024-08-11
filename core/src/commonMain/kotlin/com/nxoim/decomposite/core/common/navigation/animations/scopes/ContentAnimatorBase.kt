@@ -42,8 +42,8 @@ abstract class ContentAnimatorBase(
 	)
 		private set
 
-	protected abstract val onBackGestures: OnGestureActions
-	protected abstract val onRequestAnimationToTarget: OnAnimateToTargetRequest
+	protected abstract val onGestureActions: OnGestureActions
+	protected abstract val onAnimateToTargetRequest: OnAnimateToTargetRequest
 
 	final override suspend fun onBackGesture(backGesture: BackGestureEvent) {
 		when (backGesture) {
@@ -52,7 +52,7 @@ abstract class ContentAnimatorBase(
 					direction = Direction.Outwards,
 					animationType = AnimationType.Gestures
 				)
-				onBackGestures.onStarted(backGesture.event)
+				onGestureActions.onStarted(backGesture.event)
 			}
 
 			is BackGestureEvent.OnBackProgressed -> {
@@ -63,7 +63,7 @@ abstract class ContentAnimatorBase(
 					direction = Direction.Outwards,
 					animationType = AnimationType.Gestures
 				)
-				onBackGestures.onProgressed(backGesture.event)
+				onGestureActions.onProgressed(backGesture.event)
 			}
 
 			BackGestureEvent.None,
@@ -73,13 +73,13 @@ abstract class ContentAnimatorBase(
 					animationType = AnimationType.PassiveCancelling
 				)
 
-				onBackGestures.onCancelled()
+				onGestureActions.onCancelled()
 
-				launchAnimations(onRequestAnimationToTarget)
+				launchAnimations(onAnimateToTargetRequest)
 			}
 
 			BackGestureEvent.OnBack -> {
-				onBackGestures.onCompleted()
+				onGestureActions.onCompleted()
 
 				updateAnimationStatus(
 					direction = Direction.Outwards,
@@ -108,7 +108,7 @@ abstract class ContentAnimatorBase(
 			animationType = if (newDirection.none) AnimationType.None else AnimationType.Passive
 		)
 
-		launchAnimations(onRequestAnimationToTarget)
+		launchAnimations(onAnimateToTargetRequest)
 	}
 
 	private fun updateAnimationStatus(
