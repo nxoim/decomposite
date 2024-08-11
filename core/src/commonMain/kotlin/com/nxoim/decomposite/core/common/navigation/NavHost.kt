@@ -5,11 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.ComponentContext
@@ -53,8 +50,6 @@ fun <C : Any> NavHost(
 	// when the nav hosts are nested because of forEach loops in stack animator.
 	// maybe related to currentCompositeKeyHash?
 	key(startingNavControllerInstance.key) {
-		var backHandlerEnabled by rememberSaveable { mutableStateOf(false) }
-
 		val stack by startingNavControllerInstance.screenStack.subscribeAsState()
 
 		// this is wrapped in the key because the entire thing needs to
@@ -84,7 +79,6 @@ fun <C : Any> NavHost(
 						)
 					)
 				},
-				onBackstackChange = { empty -> backHandlerEnabled = !empty },
 				animationDataRegistry = createAnimationDataRegistry(
 					startingNavControllerInstance.key,
 					startingNavControllerInstance.parentComponentContext
@@ -98,7 +92,7 @@ fun <C : Any> NavHost(
 			backHandler = startingNavControllerInstance
 				.parentComponentContext
 				.backHandler,
-			enabled = backHandlerEnabled,
+			enabled = stack.items.size > 1,
 			onBack = startingNavControllerInstance::navigateBack
 		)
 
