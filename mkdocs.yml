@@ -14,8 +14,9 @@ edit_uri: ""
 nav:
   - Home:
     - Starting Page: index.md
+    - Web Sample App: https://decomposite.nxoim.com/wasm-sample/
 
-  - Api:
+  - API:
     - Home: api/index.html
 
   # Configuration
@@ -32,9 +33,9 @@ theme:
     - navigation.tabs
     - navigation.expand
   palette:
-    scheme: default
-    primary: indigo
-    accent: indigo
+    scheme: slate
+    primary: black
+    accent: black
   font:
     text: Roboto
     code: Roboto Mono
