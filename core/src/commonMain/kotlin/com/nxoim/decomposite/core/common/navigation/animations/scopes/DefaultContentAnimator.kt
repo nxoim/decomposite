@@ -56,8 +56,8 @@ fun contentAnimator(
 
 @Immutable
 class DefaultContentAnimator(
-	private val initialIndex: Int,
-	private val initialIndexFromTop: Int,
+	initialIndex: Int,
+	initialIndexFromTop: Int,
 	private val animationSpec: AnimationSpec<Float>
 ) : ContentAnimatorBase(initialIndex, initialIndexFromTop) {
 	private val initial get() = index == 0

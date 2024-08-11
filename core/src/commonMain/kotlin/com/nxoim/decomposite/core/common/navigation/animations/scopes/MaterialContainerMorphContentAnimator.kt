@@ -51,8 +51,8 @@ internal fun materialContainerMorphContentAnimator(
 )
 
 internal class MaterialContainerMorphContentAnimator(
-	private val initialIndex: Int,
-	private val initialIndexFromTop: Int,
+	initialIndex: Int,
+	initialIndexFromTop: Int,
 	private val animationSpec: AnimationSpec<Float>
 ) : ContentAnimatorBase(initialIndex, initialIndexFromTop) {
 	private val velocityTracker = VelocityTracker()
