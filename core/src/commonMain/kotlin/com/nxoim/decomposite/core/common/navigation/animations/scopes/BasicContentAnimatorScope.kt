@@ -45,7 +45,7 @@ abstract class BasicContentAnimatorScope(
 	protected abstract val onBackGestures: OnGestureActions
 	protected abstract val onRequestAnimationToTarget: OnAnimationToTargetRequest
 
-	override suspend fun onBackGesture(backGesture: BackGestureEvent) {
+	final override suspend fun onBackGesture(backGesture: BackGestureEvent) {
 		when (backGesture) {
 			is BackGestureEvent.OnBackStarted -> {
 				updateAnimationStatus(
@@ -89,7 +89,7 @@ abstract class BasicContentAnimatorScope(
 		}
 	}
 
-	override suspend fun update(newIndex: Int, newIndexFromTop: Int) {
+	final override suspend fun update(newIndex: Int, newIndexFromTop: Int) {
 		val newDirection = when {
 			newIndexFromTop <= -1 || newIndexFromTop < indexFromTop -> Direction.Outwards
 			newIndexFromTop > indexFromTop -> Direction.Inwards
