@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
 	stack: () -> List<Instance>,
-	onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	itemKey: (Instance) -> Key,
 	excludedDestinations: (Instance) -> Boolean,
 	animations: DestinationAnimationsConfiguratorScope<Instance>.() -> ContentAnimations,
@@ -34,7 +33,6 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
 ) = remember() {
 	StackAnimatorScope(
 		stack,
-		onBackstackChange,
 		itemKey,
 		excludedDestinations,
 		animations,
@@ -50,7 +48,6 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
 @Immutable
 class StackAnimatorScope<Key : Any, Instance : Any>(
 	private val stack: () -> List<Instance>,
-	private val onBackstackChange: (stackEmpty: Boolean) -> Unit,
 	val itemKey: (Instance) -> Key,
 	private val excludedDestinations: (Instance) -> Boolean,
 	private val animations: DestinationAnimationsConfiguratorScope<Instance>.() -> ContentAnimations,
@@ -77,10 +74,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 		// can happen during a configuration change
 		animationDataHandler.removeStaleAnimationDataCache(sourceStack.map(itemKey))
 
-		snapshotFlow(stack).collect { newStackRaw ->
-			onBackstackChange(newStackRaw.size <= 1)
-			stackCacheManager.updateVisibleCachedChildren(newStackRaw)
-		}
+		snapshotFlow(stack).collect(stackCacheManager::updateVisibleCachedChildren)
 	}
 
 	@Composable
