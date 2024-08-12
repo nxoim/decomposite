@@ -7,7 +7,7 @@ import com.nxoim.decomposite.core.common.navigation.animations.AnimationStatus
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationType
 import com.nxoim.decomposite.core.common.navigation.animations.Direction
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation
-import com.nxoim.decomposite.core.common.navigation.animations.scopes.DefaultContentAnimatorScope
+import com.nxoim.decomposite.core.common.navigation.animations.scopes.DefaultContentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
 import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.delay
@@ -16,25 +16,25 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.random.Random
 
-class DefaultContentAnimatorScopeTests {
+class DefaultContentAnimatorCreatorScopeTests {
 	@get:Rule
 	val rule = createComposeRule()
 
 	@Test
 	fun initialItemAnimationStatusCorrect() {
-		val scope = DefaultContentAnimatorScope(0, 0, softSpring())
+		val scope = DefaultContentAnimator(0, 0, softSpring())
 		assert(scope.animationStatus == correctInitialAnimationStatus)
 	}
 
 	@Test
 	fun newItemAnimationStatusCorrect() {
-		val scope = DefaultContentAnimatorScope(1, 0, softSpring())
+		val scope = DefaultContentAnimator(1, 0, softSpring())
 		assert(scope.animationStatus == correctNewAnimationStatus)
 	}
 
 	@Test
 	fun gestureUpdateItemAnimationStatusCorrect() {
-		val scope = DefaultContentAnimatorScope(1, 0, softSpring())
+		val scope = DefaultContentAnimator(1, 0, softSpring())
 
 		rule.setContent {
 			val coroutineScope = rememberCoroutineScope()
@@ -75,7 +75,7 @@ class DefaultContentAnimatorScopeTests {
 	// status data class has a check in the init block
 	@Test
 	fun updateItemAnimationStatusCorrect() {
-		val scope = DefaultContentAnimatorScope(0, 0, softSpring())
+		val scope = DefaultContentAnimator(0, 0, softSpring())
 
 		rule.setContent {
 			val coroutineScope = rememberCoroutineScope()
