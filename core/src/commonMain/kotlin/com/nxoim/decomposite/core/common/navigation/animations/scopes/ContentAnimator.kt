@@ -14,7 +14,7 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
  * the first scope is used to provide [animationProgressForScope]. Refer to
  * [ContentAnimator] and [contentAnimator] for more information.
  */
-interface ContentAnimatorScope {
+interface ContentAnimator {
 	/**
 	 * Represents the index of the item from the top of the stack, with
 	 * 0 being the top. Negative numbers represent an item not existing in the stack while being
