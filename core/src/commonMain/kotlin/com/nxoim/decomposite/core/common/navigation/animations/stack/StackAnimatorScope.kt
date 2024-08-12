@@ -142,18 +142,20 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 			}
 		}
 
-		LaunchedEffect(allowingAnimation, inSourceStack) {
-			animationDataHandler.updateChildAnimPrerequisites(key, allowingAnimation, inSourceStack)
-		}
+		if (allowingAnimation) {
+			LaunchedEffect(allowingAnimation, inSourceStack) {
+				animationDataHandler.updateChildAnimPrerequisites(key, allowingAnimation, inSourceStack)
+			}
 
-		// launch animations if there's changes
-		LaunchedEffect(indexFromTop, index) {
-			animData.scopes().forEach { (_, scope) ->
-				launch {
-					scope.update(
-						newIndex = index,
-						newIndexFromTop = indexFromTop,
-					)
+			// launch animations if there's changes
+			LaunchedEffect(indexFromTop, index) {
+				animData.scopes().forEach { (_, scope) ->
+					launch {
+						scope.update(
+							newIndex = index,
+							newIndexFromTop = indexFromTop,
+						)
+					}
 				}
 			}
 		}
