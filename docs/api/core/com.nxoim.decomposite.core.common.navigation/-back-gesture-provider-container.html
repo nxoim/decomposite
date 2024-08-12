@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>BackGestureProviderContainer</title>
+    <link href="../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+<nav class="navigation" id="navigation-wrapper">
+    <div class="navigation--inner">
+        <div class="navigation-title">
+            <button class="menu-toggle" id="menu-toggle" type="button">toggle menu</button>
+            <div class="library-name">
+                    <a class="library-name--link" href="../../index.html">
+                            core
+                    </a>
+            </div>
+            <div class="library-version">
+            </div>
+        </div>
+        <div class="filter-section" id="filter-section">
+                <button class="platform-tag platform-selector common-like" data-active="" data-filter=":core:dokkaHtml/commonMain">common</button>
+        </div>
+    </div>
+    <div class="navigation-controls">
+        <button class="navigation-controls--btn navigation-controls--theme" id="theme-toggle-button" type="button">switch theme</button>
+        <div class="navigation-controls--btn navigation-controls--search" id="searchBar" role="button">search in API</div>
+    </div>
+</nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="sidebar--inner" id="sideMenu"></div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="member" id="content" pageIds="core::com.nxoim.decomposite.core.common.navigation//BackGestureProviderContainer/#com.arkivanov.decompose.DefaultComponentContext#androidx.compose.ui.Modifier#kotlin.Boolean#kotlin.Boolean#androidx.compose.ui.unit.Dp?#androidx.compose.ui.unit.Dp#kotlin.Float#androidx.compose.ui.unit.Dp#kotlin.Boolean#kotlin.Function0[kotlin.Unit]/PointingToDeclaration//-864720431">
+  <div class="breadcrumbs"><a href="../../index.html">core</a><span class="delimiter">/</span><a href="index.html">com.nxoim.decomposite.core.common.navigation</a><span class="delimiter">/</span><span class="current">BackGestureProviderContainer</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Back</span><wbr></wbr><span>Gesture</span><wbr></wbr><span>Provider</span><wbr></wbr><span><span>Container</span></span></h1>
+  </div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":core:dokkaHtml/commonMain"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/compose/runtime/Composable.html"><span class="token annotation builtin">Composable</span></a></div><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/compose/runtime/Stable.html"><span class="token annotation builtin">Stable</span></a></div></div><span class="token keyword"></span><span class="token keyword">fun </span><a href="-back-gesture-provider-container.html"><span class="token function">BackGestureProviderContainer</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">defaultComponentContext<span class="token operator">: </span><span data-unresolved-link="com.arkivanov.decompose/DefaultComponentContext///PointingToDeclaration/">DefaultComponentContext</span><span class="token punctuation">, </span></span><span class="parameter ">modifier<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/Modifier.html">Modifier</a><span class="token operator"> = </span>Modifier<span class="token punctuation">, </span></span><span class="parameter ">startEdgeEnabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter ">endEdgeEnabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter ">edgeWidth<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/unit/Dp.html">Dp</a><span class="token operator">?</span><span class="token operator"> = </span>16.dp<span class="token punctuation">, </span></span><span class="parameter ">activationOffsetThreshold<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/unit/Dp.html">Dp</a><span class="token operator"> = </span>4.dp<span class="token punctuation">, </span></span><span class="parameter ">progressConfirmationThreshold<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-float/index.html">Float</a><span class="token operator"> = </span><span class="token constant">0.2f</span><span class="token punctuation">, </span></span><span class="parameter ">velocityConfirmationThreshold<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/unit/Dp.html">Dp</a><span class="token operator"> = </span>8.dp<span class="token punctuation">, </span></span><span class="parameter ">blockChildDragInputs<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">true</span><span class="token punctuation">, </span></span><span class="parameter ">content<span class="token operator">: </span><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/compose/runtime/Composable.html"><span class="token annotation builtin">Composable</span></a> </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span></div><p class="paragraph">Handles back gestures on both edges of the screen and drives the provided <span data-unresolved-link="com.arkivanov.essenty.backhandler/BackDispatcher///PointingToDeclaration/">BackDispatcher</span> accordingly.</p><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>default</span><wbr></wbr><span>Component</span><wbr></wbr><span><span>Context</span></span></u></div></span></div><div><div class="title"><p class="paragraph">is used for getting the back dispatcher conveniently.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>modifier</span></span></u></div></span></div><div><div class="title"><p class="paragraph">a <a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/Modifier.html">Modifier</a> to applied to the overlay.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>start</span><wbr></wbr><span>Edge</span><wbr></wbr><span><span>Enabled</span></span></u></div></span></div><div><div class="title"><p class="paragraph">controls whether the start edge is enabled or not, left in LTR mode and right in RTL mode.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>end</span><wbr></wbr><span>Edge</span><wbr></wbr><span><span>Enabled</span></span></u></div></span></div><div><div class="title"><p class="paragraph">controls whether the end edge is enabled or not, right in LTR mode and left in RTL mode.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>edge</span><wbr></wbr><span><span>Width</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the width in <a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/unit/Dp.html">Dp</a> from the screen edge where the gesture first down touch is recognized. When null - use the entire width of the screen.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>activation</span><wbr></wbr><span>Offset</span><wbr></wbr><span><span>Threshold</span></span></u></div></span></div><div><div class="title"><p class="paragraph">a distance threshold in <a href="https://developer.android.com/reference/kotlin/androidx/compose/ui/unit/Dp.html">Dp</a> from the initial touch point in the direction of gesture. The gesture is initiated once this threshold is surpassed.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>progress</span><wbr></wbr><span>Confirmation</span><wbr></wbr><span><span>Threshold</span></span></u></div></span></div><div><div class="title"><p class="paragraph">a threshold of progress that needs to be reached for the gesture to be confirmed once the touch is completed. The gesture is cancelled if the touch is completed without reaching the threshold.</p></div></div></div></div><div class="table-row" data-filterable-current=":core:dokkaHtml/commonMain" data-filterable-set=":core:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>content</span></span></u></div></span></div><div><div class="title"><p class="paragraph">a content to be shown under the overlay.</p></div></div></div></div></div></div></div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2024 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
