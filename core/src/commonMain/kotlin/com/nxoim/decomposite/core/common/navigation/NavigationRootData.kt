@@ -10,12 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import com.arkivanov.decompose.DefaultComponentContext
-import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.statekeeper.StateKeeperDispatcher
 import com.nxoim.decomposite.core.common.navigation.animations.materialContainerMorph
-import com.nxoim.decomposite.core.common.ultils.LocalBackDispatcher
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import com.nxoim.decomposite.core.common.ultils.ScreenShape
@@ -73,9 +71,6 @@ fun CommonNavigationRootProvider(
 	LocalViewModelStore provides navigationRootData.viewModelStore,
 	LocalComponentContext provides navigationRootData.defaultComponentContext,
 	LocalNavigationRoot provides navigationRoot,
-	LocalBackDispatcher provides navigationRootData
-		.defaultComponentContext
-		.backHandler as BackDispatcher,
 	content = {
 		content()
 

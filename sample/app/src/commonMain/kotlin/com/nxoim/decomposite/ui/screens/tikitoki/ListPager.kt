@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.nxoim.decomposite.core.common.navigation.NavController
-import com.nxoim.decomposite.core.common.ultils.noRippleClickable
 import com.nxoim.decomposite.core.common.viewModel.getExistingViewModel
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
@@ -177,3 +178,10 @@ private fun CorrectBottomSheetWindowInsets(): WindowInsets {
 		)
 	}
 }
+
+@Stable
+private fun Modifier.noRippleClickable(onClick: () -> Unit = {}) = this.clickable(
+	indication = null,
+	interactionSource = MutableInteractionSource(),
+	onClick = onClick
+)
