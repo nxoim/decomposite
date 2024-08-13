@@ -40,14 +40,15 @@ abstract class ContentAnimatorBase(
 	)
 		private set
 
+	// methods to override implement in custom scopes
 	open suspend fun onGestureStarted(newBackEvent: BackEvent) { }
 	open suspend fun onGestureProgressed(newBackEvent: BackEvent) { }
 	open suspend fun onGestureCancelled() { }
 	open suspend fun onGestureConfirmed() { }
-
 	open suspend fun onAnimationRequested() { }
 	open fun onAnimationEndedAndStatusUpdated() { }
 
+	// methods managing the internal state
 	final override suspend fun onBackGestureStarted(backEvent: BackEvent) {
 		updateAnimationStatus(
 			direction = Direction.Outwards,
