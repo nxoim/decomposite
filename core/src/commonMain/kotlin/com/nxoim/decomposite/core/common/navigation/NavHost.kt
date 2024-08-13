@@ -20,7 +20,6 @@ import com.nxoim.decomposite.core.common.navigation.animations.stack.AnimationDa
 import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimatorScope
 import com.nxoim.decomposite.core.common.navigation.animations.stack.rememberStackAnimatorScope
-import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -124,32 +123,32 @@ private fun HandleBackGesturesForStackAnimations(
 		backHandler,
 		onBackStarted = {
 			animationsCoroutineScope.launch {
-				stackAnimatorScope.updateGestureDataInScopes(
-					BackGestureEvent.OnBackStarted(it)
-				)
+				stackAnimatorScope
+					.gestureUpdateHandler
+					.dispatchOnStart(it)
 			}
 		},
 		onBackProgressed = {
 			animationsCoroutineScope.launch {
-				stackAnimatorScope.updateGestureDataInScopes(
-					BackGestureEvent.OnBackProgressed(it)
-				)
+				stackAnimatorScope
+					.gestureUpdateHandler
+					.dispatchOnProgressed(it)
 			}
 		},
 		onBackCancelled = {
 			animationsCoroutineScope.launch {
-				stackAnimatorScope.updateGestureDataInScopes(
-					BackGestureEvent.OnBackCancelled
-				)
+				stackAnimatorScope
+					.gestureUpdateHandler
+					.dispatchOnCancelled()
 			}
 		},
 		onBack = {
 			animationsCoroutineScope.launch {
 				onBack()
 
-				stackAnimatorScope.updateGestureDataInScopes(
-					BackGestureEvent.OnBack
-				)
+				stackAnimatorScope
+					.gestureUpdateHandler
+					.dispatchOnCompleted()
 			}
 		}
 	)

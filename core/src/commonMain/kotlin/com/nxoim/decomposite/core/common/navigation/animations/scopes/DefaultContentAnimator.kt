@@ -16,6 +16,7 @@ import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
@@ -76,33 +77,32 @@ class DefaultContentAnimator(
 
 	override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
 
-	override val onGestureActions = OnGestureActions(
-		onStarted = {
-			// stop all animations
-			animationProgressAnimatable.stop()
-			gestureAnimationProgressAnimatable.stop()
+	override suspend fun onGestureStarted(newBackEvent: BackEvent) {
+		// stop all animations
+		animationProgressAnimatable.stop()
+		gestureAnimationProgressAnimatable.stop()
 
-			initialSwipeOffset = Offset(it.touchX, it.touchY)
-			backEvent = it
-			velocityTracker.resetTracking()
-		},
-		onProgressed = { newBackEvent ->
-			backEvent = newBackEvent
-			gestureAnimationProgressAnimatable
-				.snapTo(animationProgressAnimatable.value - newBackEvent.progress)
+		initialSwipeOffset = Offset(newBackEvent.touchX, newBackEvent.touchY)
+		this.backEvent = newBackEvent
+		velocityTracker.resetTracking()
+	}
 
-			withFrameMillis { frameTimeMillis ->
-				velocityTracker.addPosition(
-					timeMillis = frameTimeMillis,
-					position = Offset(gestureAnimationProgressAnimatable.value, 0f)
-				)
-			}
-		},
-	)
+	override suspend fun onGestureProgressed(newBackEvent: BackEvent) {
+		backEvent = newBackEvent
+		gestureAnimationProgressAnimatable
+			.snapTo(animationProgressAnimatable.value - newBackEvent.progress)
 
-	override val onAnimateToTargetRequest = OnAnimateToTargetRequest(
-		onAnimationEndAndStatusUpdate = { backEvent = BackEvent() }
-	) {
+		withFrameMillis { frameTimeMillis ->
+			velocityTracker.addPosition(
+				timeMillis = frameTimeMillis,
+				position = Offset(gestureAnimationProgressAnimatable.value, 0f)
+			)
+		}
+	}
+
+	override fun onAnimationEndedAndStatusUpdated() { backEvent = BackEvent() }
+
+	override suspend fun onAnimationRequested() = coroutineScope {
 		val initialAnimationVelocity = velocityTracker.calculateVelocity().x
 
 		val gestureProgressAnimation = launch {

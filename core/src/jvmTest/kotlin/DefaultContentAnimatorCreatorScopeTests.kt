@@ -9,7 +9,6 @@ import com.nxoim.decomposite.core.common.navigation.animations.Direction
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.DefaultContentAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
-import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.junit.Rule
@@ -41,28 +40,27 @@ class DefaultContentAnimatorCreatorScopeTests {
 
 			remember {
 				coroutineScope.launch {
-					scope.onBackGesture(
-						BackGestureEvent.OnBackStarted(BackEvent(swipeEdge = BackEvent.SwipeEdge.LEFT))
+					scope.onBackGestureStarted(
+						BackEvent(swipeEdge = BackEvent.SwipeEdge.LEFT)
 					)
 					assert(scope.animationStatus.animationType == AnimationType.Gestures)
 					assert(scope.animationStatus.direction == Direction.Outwards)
 					println("onBackStarted passed. preparing to test onBackProgressed")
 
-					scope.onBackGesture(
-						BackGestureEvent.OnBackProgressed(BackEvent(progress = 0.5F))
-					)
+					scope.onBackGestureProgressed(BackEvent(progress = 0.5F))
+
 
 					assert(scope.animationStatus.animationType == AnimationType.Gestures)
 					assert(scope.animationStatus.direction == Direction.Outwards)
 					println("onBackProgressed passed. preparing to test onBackCancelled")
 
-					launch { scope.onBackGesture(BackGestureEvent.OnBackCancelled) }
+					launch { scope.onBackGestureCancelled() }
 					delay(16)
 					assert(scope.animationStatus.animationType == AnimationType.PassiveCancelling)
 					assert(scope.animationStatus.direction == Direction.Inwards)
 					println("onBackCancelled passed. preparing to test onBack")
 
-					scope.onBackGesture(BackGestureEvent.OnBack)
+					scope.onGestureConfirmed()
 					assert(scope.animationStatus.animationType == AnimationType.Passive)
 					assert(scope.animationStatus.direction == Direction.Outwards)
 					println("onBack passed")
