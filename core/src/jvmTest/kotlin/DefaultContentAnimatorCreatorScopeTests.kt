@@ -35,6 +35,8 @@ class DefaultContentAnimatorCreatorScopeTests {
 	fun gestureUpdateItemAnimationStatusCorrect() {
 		val scope = DefaultContentAnimator(1, 0, softSpring())
 
+		rule.mainClock.autoAdvance = false
+		
 		rule.setContent {
 			val coroutineScope = rememberCoroutineScope()
 
