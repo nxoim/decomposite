@@ -39,14 +39,20 @@ import kotlin.math.roundToInt
  * ```kotlin
  * fun MainViewController(
  *     navigationRootData: NavigationRootData,
+ *     screenWidth: CGFloat,
+ *     screenHeight: CGFloat,
  * ) = ComposeUIViewController {
- *     NavigationRootProvider(navigationRootData) {
+ *     NavigationRootProvider(
+ *         navigationRootData,
+ *         screenWidth,
+ *         screenHeight
+ *     ) {
  *         App()
  *     }
  * }
  * ```
  */
-
+@Suppress("unused") // Used in Swift
 @Composable
 fun NavigationRootProvider(
     navigationRootData: NavigationRootData,
@@ -89,12 +95,16 @@ fun NavigationRootProvider(
  * ```swift
  * class RootHolder: ObservableObject {
  *     let appLifecycle: LifecycleRegistry
+ *     private var appStateKeeper = StateKeeperDispatcherKt.StateKeeperDispatcher(savedState: nil)
  *     let navigationRootData: NavigationRootData
  *
  *     init() {
  *         appLifecycle = LifecycleRegistryKt.LifecycleRegistry()
  *
- *         navigationRootData = NavigationRootDataKt.defaultNavigationRootData(lifecycleRegistry: appLifecycle)
+ *         navigationRootData = NavigationRootDataKt.defaultNavigationRootData(
+ *             lifecycleRegistry: appLifecycle,
+ *             stateKeeper: appStateKeeper
+ *         )
  *
  *         LifecycleRegistryExtKt.create(appLifecycle)
  *     }
@@ -102,13 +112,20 @@ fun NavigationRootProvider(
  *     deinit {
  *         LifecycleRegistryExtKt.destroy(appLifecycle)
  *     }
+ *
+ *     func saveStateInStateKeeper(coder: NSCoder) {
+ *         StateKeeperUtilsKt.save(coder: coder, state: appStateKeeper.save())
+ *     }
  * }
  * ```
  */
+@Suppress("unused") // Used in Swift
 fun defaultNavigationRootData(
-    lifecycleRegistry: LifecycleRegistry
+    lifecycleRegistry: LifecycleRegistry,
+    stateKeeper: StateKeeperDispatcher
 ) = NavigationRootData(
     defaultComponentContext = DefaultComponentContext(
-        lifecycle = lifecycleRegistry
+        lifecycle = lifecycleRegistry,
+        stateKeeper = stateKeeper
     )
 )

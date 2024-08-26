@@ -40,6 +40,7 @@ kotlin {
             export(libs.decompose)
             export(libs.decompose.extensions)
             export(libs.essenty.lifecycle)
+            export(libs.essenty.stateKeeper)
         }
     }
 
@@ -57,6 +58,7 @@ kotlin {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
+                implementation(libs.kotlinx.serialization.json)
                 api(libs.decompose)
                 api(libs.decompose.extensions)
                 api(libs.essenty.lifecycle)
@@ -80,10 +82,6 @@ kotlin {
             dependencies {
                 implementation(libs.compose.uiTestJunit4)
             }
-        }
-
-        iosMain.dependencies {
-            api(libs.essenty.lifecycle)
         }
 
         commonTest.dependencies {
