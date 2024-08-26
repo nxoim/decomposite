@@ -7,21 +7,18 @@ import com.nxoim.decomposite.core.common.navigation.FallbackNavigationRootImplem
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.ios.navigation.NavigationRootProvider
 import com.nxoim.decomposite.ui.theme.SampleTheme
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGFloat
+import platform.UIKit.UIScreen
 
-@OptIn(ExperimentalDecomposeApi::class)
+@OptIn(ExperimentalDecomposeApi::class, ExperimentalForeignApi::class)
 fun MainViewController(
-    navigationRootData: NavigationRootData,
-    screenWidth: CGFloat,
-    screenHeight: CGFloat,
+    navigationRootData: NavigationRootData
 ) = ComposeUIViewController {
     BackGestureProviderContainer(navigationRootData.defaultComponentContext) {
         SampleTheme {
-            NavigationRootProvider(
-                navigationRootData,
-                screenWidth,
-                screenHeight
-            ) {
+            NavigationRootProvider(navigationRootData) {
                 App()
             }
         }

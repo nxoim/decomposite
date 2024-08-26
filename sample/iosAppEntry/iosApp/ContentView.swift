@@ -7,9 +7,7 @@ struct ComposeView: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> UIViewController {
         return MainViewControllerKt.MainViewController(
-            navigationRootData: delegate.rootHolder.navigationRootData,
-            screenWidth: UIScreen.main.bounds.width,
-            screenHeight: UIScreen.main.bounds.height
+            navigationRootData: delegate.rootHolder.navigationRootData
         )
     }
 

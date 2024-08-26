@@ -17,6 +17,7 @@ import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import com.nxoim.decomposite.core.common.ultils.ScreenShape
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import kotlinx.cinterop.write
 import platform.CoreGraphics.CGFloat
 import platform.Foundation.NSCoder
@@ -38,30 +39,35 @@ import kotlin.math.roundToInt
  * ```kotlin
  * fun MainViewController(
  *     navigationRootData: NavigationRootData,
- *     screenWidth: CGFloat,
- *     screenHeight: CGFloat,
  * ) = ComposeUIViewController {
- *     NavigationRootProvider(
- *         navigationRootData,
- *         screenWidth,
- *         screenHeight
- *     ) {
+ *     NavigationRootProvider(navigationRootData) {
  *         App()
  *     }
  * }
  * ```
  */
-@NonRestartableComposable
+
 @Composable
 fun NavigationRootProvider(
     navigationRootData: NavigationRootData,
-    screenWidth: CGFloat,
-    screenHeight: CGFloat,
     content: @Composable () -> Unit
 ) {
+    var screenWidth: Int? = null
+    var screenHeight: Int? = null
+
+    @OptIn(ExperimentalForeignApi::class)
+    remember {
+        UIScreen.mainScreen.bounds.useContents {
+            screenWidth = this.size.width.toInt()
+            screenHeight = this.size.height.toInt()
+        }
+    }
+
     val screenInformation = ScreenInformation(
-        widthPx = screenWidth.roundToInt(),
-        heightPx = screenHeight.roundToInt(),
+        widthPx = screenWidth
+            ?: error("Reported screen width is null. Something wrong happened in Kotlin Swift interop"),
+        heightPx = screenHeight
+            ?: error("Reported screen height is null. Something wrong happened in Kotlin Swift interop"),
         screenShape = ScreenShape(
             path = null,
             corners = null
