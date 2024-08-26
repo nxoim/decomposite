@@ -4,7 +4,7 @@
 ![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
 ![badge-wasm](https://img.shields.io/badge/Platform-wasm-purple)
 ![badge-iOS](https://img.shields.io/badge/Platform-iOS-lightgray)
-![badge-macOS](https://img.shields.io/badge/Platform-macOS-purple)(?)
+![badge-macOS](https://img.shields.io/badge/Platform-macOS-purple)(macOS through JVM)
 
 # What?
 Router style navigation library with Decompose used as a base with some features on top, like view model store, overlays, custom extensions like animations, etc. You can try the sample app at https://decomposite.nxoim.com/wasm-sample
