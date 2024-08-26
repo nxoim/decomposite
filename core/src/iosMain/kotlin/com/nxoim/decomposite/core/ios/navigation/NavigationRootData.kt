@@ -57,7 +57,7 @@ fun NavigationRootProvider(
 
     @OptIn(ExperimentalForeignApi::class)
     remember {
-        UIScreen.mainScreen.bounds.useContents {
+        UIScreen.mainScreen.nativeBounds.useContents {
             screenWidth = this.size.width.toInt()
             screenHeight = this.size.height.toInt()
         }
