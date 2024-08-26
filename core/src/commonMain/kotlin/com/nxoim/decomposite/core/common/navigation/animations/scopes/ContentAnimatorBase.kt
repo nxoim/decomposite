@@ -14,6 +14,53 @@ import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 
+/**
+ * A base class for creating custom content animators. This class handles common state management
+ * and animation logic, reducing boilerplate code and ensuring consistent animation behavior.
+ *
+ * It manages the animation state, handles back gestures, and provides a mechanism for
+ * launching and controlling animations.
+ *
+ * Example:
+ * ```kotlin
+ * class SimpleContentAnimator(
+ *     initialIndex: Int,
+ *     initialIndexFromTop: Int
+ * ) : ContentAnimatorBase(initialIndex, initialIndexFromTop) {
+ *     // animated value that uses the index from top as a target.
+ *     // -1 = not in stack
+ *     // 0 = at the very top of the stack, visible content
+ *     // 1 = in the back of the stack
+ * 	   private val gestureAnimationProgressAnimatable = Animatable(initialIndexFromTop.toFloat())
+ *
+ *     // take the back gesture progress and animate the value
+ *     override val onGestureActions = OnGestureActions(
+ *         onProgress = { newBackEvent ->
+ *             gestureAnimationProgressAnimatable
+ * 				.snapTo(indexFromTop - newBackEvent.progress)
+ *         }
+ *     )
+ *
+ *     // animate to a value when stack changes or gesture is cancelled
+ *     override val onAnimateToTargetRequest = OnAnimateToTargetRequest {
+ *         gestureAnimationProgressAnimatable.animateTo(indexFromTop.toFloat())
+ *     }
+ *
+ * 	   // provide a value for the StackAnimator to make an AnimatedVisibilityScope
+ *     override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
+ *
+ *     // expose values to the animator creator, to be used in the animated modifier
+ *     inner class Scope() {
+ *         val animationProgress by gestureAnimationProgressAnimatable.asState()
+ *     }
+ * }
+ * ```
+ * @param initialIndex The initial index of the item in the stack.
+ * @param initialIndexFromTop The initial index of the item from the top of the stack, with 0 being the top.
+ *
+ * @property onGestureActions Actions to be performed when a back gesture occurs.
+ * @property onAnimateToTargetRequest Request to animate to a specific target.
+ */
 abstract class ContentAnimatorBase(
 	initialIndex: Int,
 	initialIndexFromTop: Int
@@ -45,6 +92,11 @@ abstract class ContentAnimatorBase(
 	protected abstract val onGestureActions: OnGestureActions
 	protected abstract val onAnimateToTargetRequest: OnAnimateToTargetRequest
 
+	/**
+	 * Handles back gestures and updates the animation state accordingly.
+	 *
+	 * @param backGesture The back gesture event.
+	 */
 	final override suspend fun onBackGesture(backGesture: BackGestureEvent) {
 		when (backGesture) {
 			is BackGestureEvent.OnBackStarted -> {
@@ -89,6 +141,12 @@ abstract class ContentAnimatorBase(
 		}
 	}
 
+	/**
+	 * Updates the animation data and triggers the animation to the new target.
+	 *
+	 * @param newIndex The new index of the item in the stack.
+	 * @param newIndexFromTop The new index of the item from the top of the stack.
+	 */
 	final override suspend fun update(newIndex: Int, newIndexFromTop: Int) {
 		val newDirection = when {
 			newIndexFromTop <= -1 || newIndexFromTop < indexFromTop -> Direction.Outwards
@@ -145,11 +203,26 @@ abstract class ContentAnimatorBase(
 		else -> error("Unexpected indexFromTop value: $indexFromTop")
 	}
 
+	/**
+	 * Represents a request to animate to a specific target.
+	 *
+	 * @param onAnimationEndAndStatusUpdate An optional function to be
+	 * called after the animation ends and the status is updated.
+	 * @param animation The animation function to be executed.
+	 */
 	protected class OnAnimateToTargetRequest(
 		val onAnimationEndAndStatusUpdate: (suspend CoroutineScope.() -> Unit)? = null,
 		val animation: suspend CoroutineScope.() -> Unit
 	)
 
+	/**
+	 * Represents the actions to be performed when a back gesture occurs.
+	 *
+	 * @param onStarted Action to be performed when the back gesture starts.
+	 * @param onProgressed Action to be performed as the back gesture progresses.
+	 * @param onCancelled Action to be performed when the back gesture is cancelled.
+	 * @param onCompleted Action to be performed when the back gesture is completed.
+	 */
 	protected class OnGestureActions(
 		val onStarted: suspend (BackEvent) -> Unit = { },
 		val onProgressed: suspend (BackEvent) -> Unit = { },

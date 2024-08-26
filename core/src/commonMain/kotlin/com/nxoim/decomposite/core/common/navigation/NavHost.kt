@@ -27,14 +27,31 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 /**
- * Sets up stack animators for overlays and contained content and
- * manages back gestures for the animations. Animations are passed down using
- * [CompositionLocalProvider] for other navigation hosts to consume.
+ * Sets up a stack animator and manages back gestures for the animations.
+ * Provides each destination with [ComponentContext] via [LocalComponentContext].
+ * Animations are passed down using [CompositionLocalProvider] for other NavHosts to consume.
  *
- * [router] is a typical router where you declare the content of each destination.
+ * **Example:**
  *
- * @param excludedDestinations allows to specify what destinations should not be
- * rendered and animated.
+ * ```kotlin
+ * @Composable
+ * fun MyScreen(navController: NavController<String>) {
+ *     NavHost(
+ * 	       startingNavControllerInstance = navController,
+ * 		   animations = { cleanSlideAndFade() }
+ * 	    ) { destination ->
+ * 		    when (destination) {
+ * 			    // handle destinations here
+ * 		   }
+ * 	    }
+ * }
+ * ```
+ *
+ * @param startingNavControllerInstance The [NavController] instance for the navigation host.
+ * @param modifier An optional modifier for the host container.
+ * @param excludedDestinations A list of destinations that should not be rendered or animated.
+ * @param animations A lambda configuring the animations for the stack. Defaults to `cleanSlideAndFade()`.
+ * @param router A composable function that receives the current destination and renders the corresponding content.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Composable
