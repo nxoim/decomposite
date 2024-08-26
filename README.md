@@ -128,10 +128,12 @@ Back gestures on other platforms:
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
         // initialize this at the root of your app
+        val windowState = rememberWindowState()
         val navigationRootData = defaultNavigationRootData()
 
         Window(
             title = "Decomposite",
+            state = windowState,
             onCloseRequest = ::exitApplication,
         ) {
             window.minimumSize = Dimension(350, 600)
@@ -151,7 +153,9 @@ fun main() = application {
                     // detect the gestures
                     BackGestureProviderContainer(
                         navigationRootData.defaultComponentContext,
-                        content = { NavigationRootProvider(navigationRootData) { App() } }
+                        content = {
+                            NavigationRootProvider(navigationRootData, windowState) { App() } 
+                        }
                     )
                 }
             }
