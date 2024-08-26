@@ -3,8 +3,12 @@ package com.nxoim.decomposite.core.jvm.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.WindowState
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.nxoim.decomposite.core.common.navigation.CommonNavigationRootProvider
 import com.nxoim.decomposite.core.common.navigation.InternalNavigationRootApi
 import com.nxoim.decomposite.core.common.navigation.NavControllerStore
@@ -19,7 +23,11 @@ import com.nxoim.decomposite.core.common.viewModel.ViewModelStore
  * Collects the max window size for animations.
  */
 @Composable
-fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {
+fun FrameWindowScope.NavigationRootProvider(
+    navigationRootData: NavigationRootData,
+    windowState: WindowState,
+    content: @Composable () -> Unit
+) {
     val screenInformation = ScreenInformation(
         widthPx = window.maximumSize.width,
         heightPx = window.maximumSize.height,
@@ -27,6 +35,12 @@ fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootDa
             path = null,
             corners = null
         )
+    )
+
+    LifecycleController(
+        lifecycleRegistry = navigationRootData.defaultComponentContext.lifecycle as LifecycleRegistry,
+        windowState = windowState,
+        windowInfo = LocalWindowInfo.current
     )
 
     @OptIn(InternalNavigationRootApi::class)
@@ -53,15 +67,17 @@ fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootDa
  * Example:
  * ```kotlin
  * fun main() = application {
+ *     val windowState = rememberWindowState()
  *     val navigationRootData = defaultNavigationRootData()
  *
  *     Window(
  *         title = "Example",
+ *         state = windowState,
  *         onCloseRequest = ::exitApplication,
  *     ) {
  *         SampleTheme {
  *             Surface {
- *                 NavigationRootProvider(navigationRootData) { App() }
+ *                 NavigationRootProvider(navigationRootData, windowState) { App() }
  *             }
  *         }
  *     }
