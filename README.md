@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
+`com.github.nxoim.decompoite:decomposite`  [![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
 
 ![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
 ![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
@@ -127,10 +127,12 @@ Back gestures on other platforms:
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
         // initialize this at the root of your app
+        val windowState = rememberWindowState()
         val navigationRootData = defaultNavigationRootData()
 
         Window(
             title = "Decomposite",
+            state = windowState,
             onCloseRequest = ::exitApplication,
         ) {
             window.minimumSize = Dimension(350, 600)
@@ -150,7 +152,9 @@ fun main() = application {
                     // detect the gestures
                     BackGestureProviderContainer(
                         navigationRootData.defaultComponentContext,
-                        content = { NavigationRootProvider(navigationRootData) { App() } }
+                        content = {
+                            NavigationRootProvider(navigationRootData, windowState) { App() } 
+                        }
                     )
                 }
             }

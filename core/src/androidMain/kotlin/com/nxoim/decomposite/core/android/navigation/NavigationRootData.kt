@@ -11,21 +11,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
+import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.retainedComponent
 import com.nxoim.decomposite.core.common.navigation.CommonNavigationRootProvider
 import com.nxoim.decomposite.core.common.navigation.InternalNavigationRootApi
+import com.nxoim.decomposite.core.common.navigation.NavControllerStore
 import com.nxoim.decomposite.core.common.navigation.NavigationRoot
 import com.nxoim.decomposite.core.common.navigation.NavigationRootData
 import com.nxoim.decomposite.core.common.ultils.ScreenInformation
 import com.nxoim.decomposite.core.common.ultils.ScreenShape
 import com.nxoim.decomposite.core.common.ultils.ScreenShapeCorners
+import com.nxoim.decomposite.core.common.viewModel.ViewModelStore
 
 /**
- * Android specific navigation root provider. Collects the screen size and shape for animations.
- * Uses [CommonNavigationRootProvider].
+ * Android specific [NavigationRoot] and [NavigationRootData] provider.
+ * Collects the screen size and shape for animations.
  */
-@NonRestartableComposable
 @Composable
 fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {
     val windowManager = (LocalView.current.context as Activity).window.context
@@ -73,9 +75,39 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
 }
 
 /**
- * Creates a default platform-specific instance of [NavigationRootData].
+ * Creates an Android specific root of the app for back gesture handling,
+ * storing view models, and navigation controller instances. **[ComponentContext]
+ * is retained using [retainedComponent]**.
  *
- * Initialize this outside of setContent and provide to [NavigationRootProvider].
+ * [NavigationRootData] is responsible for setting up the root context for navigation and
+ * state management within the application. It provides access to essential
+ * components like the [ViewModelStore], [NavControllerStore], and the default
+ * [ComponentContext].
+ *
+ * [ViewModelStore] by default is wrapped into the default component context's instance keeper.
+ *
+ * Initialize this outside of setContent.
+ *
+ * Example:
+ * ```kotlin
+ * class AppActivity : ComponentActivity() {
+ *     override fun onCreate(savedInstanceState: Bundle?) {
+ *         super.onCreate(savedInstanceState)
+ *
+ *         val navigationRootData = defaultNavigationRootData()
+ *
+ *         setContent {
+ *             enableEdgeToEdge()
+ *
+ *             SampleTheme {
+ *                 Surface {
+ *                     NavigationRootProvider(navigationRootData) { App() }
+ *                 }
+ *             }
+ *         }
+ *     }
+ * }
+ * ```
  */
 fun ComponentActivity.defaultNavigationRootData() = retainedComponent {
     NavigationRootData(
