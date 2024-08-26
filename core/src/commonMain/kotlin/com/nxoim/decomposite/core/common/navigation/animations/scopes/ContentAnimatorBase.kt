@@ -10,6 +10,8 @@ import com.nxoim.decomposite.core.common.navigation.animations.AnimationType
 import com.nxoim.decomposite.core.common.navigation.animations.Direction
 import com.nxoim.decomposite.core.common.navigation.animations.Direction.Companion.none
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation
+import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 
 abstract class ContentAnimatorBase(
@@ -40,52 +42,51 @@ abstract class ContentAnimatorBase(
 	)
 		private set
 
-	// methods to override implement in custom scopes
-	open suspend fun onGestureStarted(newBackEvent: BackEvent) { }
-	open suspend fun onGestureProgressed(newBackEvent: BackEvent) { }
-	open suspend fun onGestureCancelled() { }
-	open suspend fun onGestureConfirmed() { }
-	open suspend fun onAnimationRequested() { }
-	open fun onAnimationEndedAndStatusUpdated() { }
+	protected abstract val onGestureActions: OnGestureActions
+	protected abstract val onAnimateToTargetRequest: OnAnimateToTargetRequest
 
-	// methods managing the internal state
-	final override suspend fun onBackGestureStarted(backEvent: BackEvent) {
-		updateAnimationStatus(
-			direction = Direction.Outwards,
-			animationType = AnimationType.Gestures
-		)
-		onGestureStarted(backEvent)
-	}
+	final override suspend fun onBackGesture(backGesture: BackGestureEvent) {
+		when (backGesture) {
+			is BackGestureEvent.OnBackStarted -> {
+				updateAnimationStatus(
+					direction = Direction.Outwards,
+					animationType = AnimationType.Gestures
+				)
+				onGestureActions.onStarted(backGesture.event)
+			}
 
-	final override suspend fun onBackGestureProgressed(backEvent: BackEvent) {
-		// an animation can be kinda cancelled (see AnimationType.PassiveCancelling)
-		// meaning the direction and type might be updated to none
-		// while a gesture is in progress. this makes sure that doesn't happen
-		updateAnimationStatus(
-			direction = Direction.Outwards,
-			animationType = AnimationType.Gestures
-		)
-		onGestureProgressed(backEvent)
-	}
+			is BackGestureEvent.OnBackProgressed -> {
+				// an animation can be kinda cancelled (see AnimationType.PassiveCancelling)
+				// meaning the direction and type might be updated to none
+				// while a gesture is in progress. this makes sure that doesn't happen
+				updateAnimationStatus(
+					direction = Direction.Outwards,
+					animationType = AnimationType.Gestures
+				)
+				onGestureActions.onProgressed(backGesture.event)
+			}
 
-	final override suspend fun onBackGestureCancelled() {
-		updateAnimationStatus(
-			direction = Direction.Inwards,
-			animationType = AnimationType.PassiveCancelling
-		)
+			BackGestureEvent.None,
+			BackGestureEvent.OnBackCancelled -> {
+				updateAnimationStatus(
+					direction = Direction.Inwards,
+					animationType = AnimationType.PassiveCancelling
+				)
 
-		onGestureCancelled()
+				onGestureActions.onCancelled()
 
-		launchAnimations()
-	}
+				launchAnimations(onAnimateToTargetRequest)
+			}
 
-	final override suspend fun onBackGestureConfirmed() {
-		updateAnimationStatus(
-			direction = Direction.Outwards,
-			animationType = AnimationType.Passive
-		)
+			BackGestureEvent.OnBack -> {
+				onGestureActions.onCompleted()
 
-		onGestureConfirmed()
+				updateAnimationStatus(
+					direction = Direction.Outwards,
+					animationType = AnimationType.Passive
+				)
+			}
+		}
 	}
 
 	final override suspend fun update(newIndex: Int, newIndexFromTop: Int) {
@@ -107,7 +108,7 @@ abstract class ContentAnimatorBase(
 			animationType = if (newDirection.none) AnimationType.None else AnimationType.Passive
 		)
 
-		launchAnimations()
+		launchAnimations(onAnimateToTargetRequest)
 	}
 
 	private fun updateAnimationStatus(
@@ -124,15 +125,17 @@ abstract class ContentAnimatorBase(
 		)
 	}
 
-	private suspend fun launchAnimations() = coroutineScope {
-		onAnimationRequested()
+	private suspend fun launchAnimations(
+		animationToTarget: OnAnimateToTargetRequest
+	) = coroutineScope {
+		animationToTarget.animation(this)
 
 		updateAnimationStatus(
 			direction = Direction.None,
 			animationType = AnimationType.None
 		)
 
-		onAnimationEndedAndStatusUpdated()
+		animationToTarget.onAnimationEndAndStatusUpdate?.invoke(this)
 	}
 
 	private fun toItemLocation(indexFromTop: Int): ItemLocation = when {
@@ -141,4 +144,16 @@ abstract class ContentAnimatorBase(
 		indexFromTop > 0 -> ItemLocation.Back(indexFromTop)
 		else -> error("Unexpected indexFromTop value: $indexFromTop")
 	}
+
+	protected class OnAnimateToTargetRequest(
+		val onAnimationEndAndStatusUpdate: (suspend CoroutineScope.() -> Unit)? = null,
+		val animation: suspend CoroutineScope.() -> Unit
+	)
+
+	protected class OnGestureActions(
+		val onStarted: suspend (BackEvent) -> Unit = { },
+		val onProgressed: suspend (BackEvent) -> Unit = { },
+		val onCancelled: suspend () -> Unit = { },
+		val onCompleted: suspend () -> Unit = { }
+	)
 }

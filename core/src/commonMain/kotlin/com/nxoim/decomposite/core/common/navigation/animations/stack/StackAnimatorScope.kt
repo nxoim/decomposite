@@ -15,6 +15,7 @@ import androidx.compose.ui.util.fastMap
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimations
 import com.nxoim.decomposite.core.common.navigation.animations.DestinationAnimationsConfiguratorScope
 import com.nxoim.decomposite.core.common.navigation.animations.scopes.ContentAnimator
+import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.launch
 
 
@@ -53,7 +54,7 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 	private val allowBatchRemoval: Boolean,
 	val animationDataRegistry: AnimationDataRegistry<Key>
 ) {
-	private val animationDataHandler = AnimationDataHandler(animationDataRegistry)
+	val animationDataHandler = AnimationDataHandler(animationDataRegistry)
 	private val stackCacheManager = StackCacheManager(
 		initialStack = stack(),
 		itemKey = itemKey,
@@ -65,7 +66,8 @@ class StackAnimatorScope<Key : Any, Instance : Any>(
 	val sourceStack get() = stackCacheManager.sourceStack
 	val visibleCachedChildren = stackCacheManager.visibleCachedChildren
 
-	val gestureUpdateHandler = animationDataHandler.GestureUpdateHandler()
+	suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) =
+		animationDataHandler.updateGestureDataInScopes(backGestureData)
 
 	suspend fun observeAndUpdateAnimatorData() {
 		// check on startup if there's animation data left for nonexistent children, which

@@ -18,17 +18,19 @@ kotlin {
 //    macosX64()
 //    macosArm64()
 
-//    listOf(
-//        iosX64(),
-//        iosArm64(),
-//        iosSimulatorArm64(),
-//    ).forEach { target ->
-//        target.binaries.framework {
-//            baseName = "decomposite"
-//        }
-//    }
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+            export(project(":core"))
+            export(libs.essenty.lifecycle)
+        }
+    }
 
-    //
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         moduleName = "composeApp"
@@ -46,22 +48,6 @@ kotlin {
         }
         binaries.executable()
     }
-
-//    iosX64()
-//    iosArm64()
-//    iosSimulatorArm64()
-//
-//    cocoapods {
-//        version = "1.0.0"
-//        summary = "Compose application framework"
-//        homepage = "empty"
-//        ios.deploymentTarget = "11.0"
-//        podfile = project.file("../iosApp/Podfile")
-//        framework {
-//            baseName = "ComposeApp"
-//            isStatic = true
-//        }
-//    }
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
@@ -86,11 +72,15 @@ kotlin {
             implementation(compose.components.resources)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            implementation(project(":core"))
+            api(project(":core"))
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
+        }
+
+        iosMain.dependencies {
+            api(libs.essenty.lifecycle)
         }
 
         androidMain.dependencies {
@@ -98,7 +88,6 @@ kotlin {
             implementation(libs.androidx.activityCompose)
             implementation(libs.compose.uitooling)
             implementation(libs.kotlinx.coroutines.android)
-            implementation(project(":core"))
         }
 
         jvmMain.dependencies {

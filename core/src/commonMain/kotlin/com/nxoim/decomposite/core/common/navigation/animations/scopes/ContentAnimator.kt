@@ -2,9 +2,9 @@ package com.nxoim.decomposite.core.common.navigation.animations.scopes
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
-import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationStatus
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
+import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 
 /**
  * Base for the content animator scope implementations. Describes the bare minimum
@@ -36,9 +36,6 @@ interface ContentAnimator {
     val animationStatus: AnimationStatus
     val animationProgressForScope: Float
 
-    suspend fun onBackGestureStarted(backEvent: BackEvent)
-    suspend fun onBackGestureProgressed(backEvent: BackEvent)
-    suspend fun onBackGestureCancelled()
-    suspend fun onBackGestureConfirmed()
+    suspend fun onBackGesture(backGesture: BackGestureEvent): Any
     suspend fun update(newIndex: Int, newIndexFromTop: Int)
 }

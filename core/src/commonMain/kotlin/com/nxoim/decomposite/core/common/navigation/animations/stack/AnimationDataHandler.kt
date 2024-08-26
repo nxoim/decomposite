@@ -1,7 +1,7 @@
 package com.nxoim.decomposite.core.common.navigation.animations.stack
 
 import androidx.compose.runtime.Immutable
-import com.arkivanov.essenty.backhandler.BackEvent
+import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -33,58 +33,15 @@ class AnimationDataHandler<Key : Any>(
 		childAnimPrerequisites[key] = ChildAnimPrerequisites(allowAnimation, inStack)
 	}
 
-	inner class GestureUpdateHandler {
-		suspend inline fun dispatchOnStart(
-			newBackEvent: BackEvent
-		) = withContext(currentCoroutineContext()) {
+	suspend inline fun updateGestureDataInScopes(backGestureData: BackGestureEvent) {
+		withContext(currentCoroutineContext()) {
 			animationDataRegistry.forEach { (configuration, animationData) ->
 				val prerequisites = childAnimPrerequisites[configuration]
 					?: ChildAnimPrerequisites(allowAnimation = false, inStack = false)
 
 				if (prerequisites.inStack && prerequisites.allowAnimation) {
 					animationData.scopes().forEach { (_, scope) ->
-						launch { scope.onBackGestureStarted(newBackEvent) }
-					}
-				}
-			}
-		}
-
-		suspend inline fun dispatchOnProgressed(
-			newBackEvent: BackEvent
-		) = withContext(currentCoroutineContext()) {
-			animationDataRegistry.forEach { (configuration, animationData) ->
-				val prerequisites = childAnimPrerequisites[configuration]
-					?: ChildAnimPrerequisites(allowAnimation = false, inStack = false)
-
-				if (prerequisites.inStack && prerequisites.allowAnimation) {
-					animationData.scopes().forEach { (_, scope) ->
-						launch { scope.onBackGestureProgressed(newBackEvent) }
-					}
-				}
-			}
-		}
-
-		suspend inline fun dispatchOnCancelled() = withContext(currentCoroutineContext()) {
-			animationDataRegistry.forEach { (configuration, animationData) ->
-				val prerequisites = childAnimPrerequisites[configuration]
-					?: ChildAnimPrerequisites(allowAnimation = false, inStack = false)
-
-				if (prerequisites.inStack && prerequisites.allowAnimation) {
-					animationData.scopes().forEach { (_, scope) ->
-						launch { scope.onBackGestureCancelled() }
-					}
-				}
-			}
-		}
-
-		suspend inline fun dispatchOnCompleted() = withContext(currentCoroutineContext()) {
-			animationDataRegistry.forEach { (configuration, animationData) ->
-				val prerequisites = childAnimPrerequisites[configuration]
-					?: ChildAnimPrerequisites(allowAnimation = false, inStack = false)
-
-				if (prerequisites.inStack && prerequisites.allowAnimation) {
-					animationData.scopes().forEach { (_, scope) ->
-						launch { scope.onBackGestureConfirmed() }
+						launch { scope.onBackGesture(backGestureData) }
 					}
 				}
 			}

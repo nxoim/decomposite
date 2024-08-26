@@ -18,7 +18,6 @@ import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCr
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.outside
 import com.nxoim.decomposite.core.common.navigation.animations.ItemLocation.Companion.top
 import com.nxoim.decomposite.core.common.navigation.animations.softSpring
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -71,39 +70,40 @@ internal class MaterialContainerMorphContentAnimator(
 
 	override val animationProgressForScope by gestureAnimationProgressAnimatable.asState()
 
-	override suspend fun onGestureStarted(newBackEvent: BackEvent) {
-		// stop all animations
-		animationProgressAnimatable.stop()
-		gestureAnimationProgressAnimatable.stop()
-		swipeOffsetAnimatable.stop()
+	override val onGestureActions = OnGestureActions(
+		onStarted = {
+			// stop all animations
+			animationProgressAnimatable.stop()
+			gestureAnimationProgressAnimatable.stop()
+			swipeOffsetAnimatable.stop()
 
-		initialSwipeOffset = Offset(newBackEvent.touchX, newBackEvent.touchY)
-		swipeEdge = newBackEvent.swipeEdge
-		velocityTracker.resetTracking()
-	}
+			initialSwipeOffset = Offset(it.touchX, it.touchY)
+			swipeEdge = it.swipeEdge
+			velocityTracker.resetTracking()
+		},
+		onProgressed = { newBackEvent ->
+			if (animationStatus.location.top) {
+				gestureAnimationProgressAnimatable
+					.snapTo(animationProgressAnimatable.value -newBackEvent.progress)
 
-	override suspend fun onGestureProgressed(newBackEvent: BackEvent) {
-		if (animationStatus.location.top) {
-			gestureAnimationProgressAnimatable
-				.snapTo(animationProgressAnimatable.value -newBackEvent.progress)
-
-			swipeOffsetAnimatable.snapTo(
-				IntOffset(
-					(newBackEvent.touchX - initialSwipeOffset.x).roundToInt(),
-					(newBackEvent.touchY - initialSwipeOffset.y).roundToInt()
+				swipeOffsetAnimatable.snapTo(
+					IntOffset(
+						(newBackEvent.touchX - initialSwipeOffset.x).roundToInt(),
+						(newBackEvent.touchY - initialSwipeOffset.y).roundToInt()
+					)
 				)
-			)
 
-			withFrameMillis { frameTimeMillis ->
-				velocityTracker.addPosition(
-					timeMillis = frameTimeMillis,
-					position = Offset(animationProgressAnimatable.value, 0f)
-				)
+				withFrameMillis { frameTimeMillis ->
+					velocityTracker.addPosition(
+						timeMillis = frameTimeMillis,
+						position = Offset(animationProgressAnimatable.value, 0f)
+					)
+				}
 			}
 		}
-	}
+	)
 
-	override suspend fun onAnimationRequested() = coroutineScope {
+	override val onAnimateToTargetRequest = OnAnimateToTargetRequest {
 		// don't need this delay if the item is to be removed, which is when location is outside
 		if (!animationStatus.location.outside) {
 			val gestureProgressAnimation = launch {

@@ -13,3 +13,13 @@ sample/iosApp/iosApp.xcworkspace/*
 sample/iosApp/iosApp.xcodeproj/*
 !sample/iosApp/iosApp.xcodeproj/project.pbxproj
 shared/shared.podspec
+xcuserdata/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+
+/sample/iosAppEntry/iosAppEntry.xcodeproj/project.xcworkspace/
+/sample/iosAppEntry/iosAppEntry.xcodeproj/project.xcworkspace/xcuserdata/
+/sample/iosAppEntry/iosAppEntry.xcodeproj/xcuserdata/

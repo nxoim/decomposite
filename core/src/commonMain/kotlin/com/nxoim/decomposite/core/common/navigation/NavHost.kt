@@ -3,10 +3,10 @@ package com.nxoim.decomposite.core.common.navigation
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastMap
 import com.arkivanov.decompose.ComponentContext
@@ -20,14 +20,11 @@ import com.nxoim.decomposite.core.common.navigation.animations.stack.AnimationDa
 import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimator
 import com.nxoim.decomposite.core.common.navigation.animations.stack.StackAnimatorScope
 import com.nxoim.decomposite.core.common.navigation.animations.stack.rememberStackAnimatorScope
+import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 import com.nxoim.decomposite.core.common.ultils.BackGestureHandler
 import com.nxoim.decomposite.core.common.ultils.LocalComponentContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 /**
  * Sets up stack animators for overlays and contained content and
@@ -120,45 +117,39 @@ private fun HandleBackGesturesForStackAnimations(
 	enabled: Boolean,
 	onBack: () -> Unit
 ) {
-	val channel = remember { Channel<suspend () -> Unit>(capacity = CONFLATED) }
-
-	LaunchedEffect(Unit) {
-		withContext(currentCoroutineContext() + SupervisorJob()) {
-			for (action in channel) { action.invoke() }
-		}
-	}
+	val animationsCoroutineScope = rememberCoroutineScope()
 
 	BackGestureHandler(
 		enabled = enabled,
 		backHandler,
 		onBackStarted = {
-			channel.trySend {
-				stackAnimatorScope
-					.gestureUpdateHandler
-					.dispatchOnStart(it)
+			animationsCoroutineScope.launch {
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBackStarted(it)
+				)
 			}
 		},
 		onBackProgressed = {
-			channel.trySend {
-				stackAnimatorScope
-					.gestureUpdateHandler
-					.dispatchOnProgressed(it)
+			animationsCoroutineScope.launch {
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBackProgressed(it)
+				)
 			}
 		},
 		onBackCancelled = {
-			channel.trySend {
-				stackAnimatorScope
-					.gestureUpdateHandler
-					.dispatchOnCancelled()
+			animationsCoroutineScope.launch {
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBackCancelled
+				)
 			}
 		},
 		onBack = {
-			channel.trySend {
+			animationsCoroutineScope.launch {
 				onBack()
 
-				stackAnimatorScope
-					.gestureUpdateHandler
-					.dispatchOnCompleted()
+				stackAnimatorScope.updateGestureDataInScopes(
+					BackGestureEvent.OnBack
+				)
 			}
 		}
 	)

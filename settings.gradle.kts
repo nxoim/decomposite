@@ -1,7 +1,7 @@
 rootProject.name = "Decomposite"
 
 include(":core")
-include(":sample:app")
+include(":sample:composeApp")
 
 pluginManagement {
     repositories {

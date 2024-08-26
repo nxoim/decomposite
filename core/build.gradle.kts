@@ -34,7 +34,11 @@ kotlin {
         iosSimulatorArm64(),
     ).forEach { target ->
         target.binaries.framework {
-            baseName = "decomposite"
+            baseName = "Decomposite"
+            isStatic = true
+            export(libs.decompose)
+            export(libs.decompose.extensions)
+            export(libs.essenty.lifecycle)
         }
     }
 
@@ -54,6 +58,8 @@ kotlin {
                 implementation(compose.foundation)
                 api(libs.decompose)
                 api(libs.decompose.extensions)
+                api(libs.essenty.lifecycle)
+                api(libs.essenty.stateKeeper)
             }
         }
         val androidMain by getting {
@@ -73,6 +79,10 @@ kotlin {
             dependencies {
                 implementation(libs.compose.uiTestJunit4)
             }
+        }
+
+        iosMain.dependencies {
+            api(libs.essenty.lifecycle)
         }
 
         commonTest.dependencies {
