@@ -55,9 +55,6 @@ import kotlinx.coroutines.coroutineScope
  * ```
  * @param initialIndex The initial index of the item in the stack.
  * @param initialIndexFromTop The initial index of the item from the top of the stack, with 0 being the top.
- *
- * @property onGestureActions Actions to be performed when a back gesture occurs.
- * @property onAnimateToTargetRequest Request to animate to a specific target.
  */
 abstract class ContentAnimatorBase(
 	initialIndex: Int,
@@ -88,11 +85,54 @@ abstract class ContentAnimatorBase(
 		private set
 
 	// methods to override implement in custom scopes
+	/**
+	 * Represents the back gesture beginning.
+	 */
 	open suspend fun onGestureStarted(newBackEvent: BackEvent) { }
+	/**
+	 * Represents the back gesture progressing.
+	 */
 	open suspend fun onGestureProgressed(newBackEvent: BackEvent) { }
+	/**
+	 * Represents the back gesture being cancelled .
+	 */
 	open suspend fun onGestureCancelled() { }
+	/**
+	 * Represents the back gesture being confirmed.
+	 */
 	open suspend fun onGestureConfirmed() { }
+	/**
+	 * Represents the animation being requested. Animate your values
+	 * here.
+	 * Example:
+	 * ```kotlin
+	 * 	private val animationProgressAnimatable = Animatable(if (initial) 0f else -1f)
+	 * 	private val gestureAnimationProgressAnimatable = Animatable(animationProgressAnimatable.value)
+	 *
+	 * 	override suspend fun onAnimationRequested() = coroutineScope {
+	 * 		val initialAnimationVelocity = velocityTracker.calculateVelocity().x
+	 *
+	 * 		val gestureProgressAnimation = launch {
+	 * 			gestureAnimationProgressAnimatable.animateTo(
+	 * 				targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat()
+	 * 			)
+	 * 		}
+	 *
+	 * 		val animationProgressAnimation = launch {
+	 * 			animationProgressAnimatable.animateTo(
+	 * 				targetValue = (indexFromTop.coerceAtLeast(-1)).toFloat()
+	 * 			)
+	 * 		}
+	 *
+	 * 		joinAll(animationProgressAnimation, gestureProgressAnimation)
+	 * 	}
+	 * ```
+	 */
 	open suspend fun onAnimationRequested() { }
+
+	/**
+	 * This gets executed after the animation ends and [animationStatus] gets updated.
+	 */
 	open fun onAnimationEndedAndStatusUpdated() { }
 
 	// methods managing the internal state
@@ -136,7 +176,8 @@ abstract class ContentAnimatorBase(
 	}
 
 	/**
-	 * Updates the animation data and triggers the animation to the new target.
+	 * Updates the animation data and triggers
+	 * the animation to the new target.
 	 *
 	 * @param newIndex The new index of the item in the stack.
 	 * @param newIndexFromTop The new index of the item from the top of the stack.
