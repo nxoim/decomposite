@@ -28,7 +28,6 @@ import com.nxoim.decomposite.core.common.viewModel.ViewModelStore
  * Android specific [NavigationRoot] and [NavigationRootData] provider.
  * Collects the screen size and shape for animations.
  */
-@NonRestartableComposable
 @Composable
 fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {
     val windowManager = (LocalView.current.context as Activity).window.context

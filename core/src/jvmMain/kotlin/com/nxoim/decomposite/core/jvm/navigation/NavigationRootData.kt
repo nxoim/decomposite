@@ -18,7 +18,6 @@ import com.nxoim.decomposite.core.common.viewModel.ViewModelStore
  * JVM specific [NavigationRoot] and [NavigationRootData] provider.
  * Collects the max window size for animations.
  */
-@NonRestartableComposable
 @Composable
 fun FrameWindowScope.NavigationRootProvider(navigationRootData: NavigationRootData, content: @Composable () -> Unit) {
     val screenInformation = ScreenInformation(
