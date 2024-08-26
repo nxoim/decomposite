@@ -1,4 +1,4 @@
-[![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
+`com.github.nxoim.decompoite:decomposite`  [![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
 
 ![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
 ![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
