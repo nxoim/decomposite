@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
+import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.instancekeeper.getOrCreateSimple
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
@@ -23,11 +24,23 @@ import kotlin.math.roundToInt
 
 
 /**
- * Creates the root of the app for back gesture handling,
- * storing view models, and navigation controller instances. View model store by default
- * is wrapped into default component context's instance keeper.
+ * Creates the root of the app for back gesture handling, storing view models, and
+ * navigation controller instances.
  *
- * Initialize this outside of setContent.
+ * [ViewModelStore] by default is wrapped into the default component context's instance keeper.
+ *
+ * Initialize this outside of composition (application on JVM, setContent on Android, etc.).
+ *
+ * This class is responsible for setting up the root context for navigation and
+ * state management within the application. It provides access to essential
+ * components like the `ViewModelStore`, `NavControllerStore`, and the default
+ * [ComponentContext].
+ *
+ * Each platform is expected to provide the default implementation of [NavigationRootData].
+ *
+ * @property defaultComponentContext The default component context for the application.
+ * @property navStore The store for managing navigation controllers.
+ * @property viewModelStore The store for managing view models.
  */
 @Immutable
 data class NavigationRootData(
@@ -42,8 +55,13 @@ data class NavigationRootData(
 )
 
 /**
- * Sets up the navigation root. Is used for managing overlays. Contains
- * information about the screen for some animations, like [materialContainerMorph].
+ * This class provides a root scope within the composition for managing overlays
+ * and providing UI-related context such as screen size and shape for things like [materialContainerMorph].
+ *
+ * Each platform is expected to provide a platform implementation of the [NavigationRootProvider]
+ * to provide accurate screen information.
+ *
+ * @property screenInformation Information about the screen, such as size and shape.
  */
 @Immutable
 class NavigationRoot(val screenInformation: ScreenInformation) {
@@ -57,8 +75,8 @@ class NavigationRoot(val screenInformation: ScreenInformation) {
 }
 
 /**
- * Provides navigation controller and view model stores, default component context, navigation
- * root for overlays, and the back dispatcher vis [CompositionLocalProvider], displays overlays.
+ * Provides navigation controller and view model stores, default component context, navigation root for overlays,
+ * and the back dispatcher via [CompositionLocalProvider], displays overlays.
  */
 @InternalNavigationRootApi
 @Composable
@@ -79,9 +97,10 @@ fun CommonNavigationRootProvider(
 )
 
 /**
- * Fallback implementation of a navigation root provider. Uses BoxWithConstraints to provide
- * the screen size, which is possibly incorrect on some platforms. Please use a platform
- * implementation. You are welcome to open an issue or PR.
+ * Fallback implementation of a navigation root provider. Uses [BoxWithConstraints]
+ * to provide the screen size, which is possibly incorrect on some platforms.
+ * Please use a platform implementation. You are welcome to open an issue or
+ * PR if you have any suggestions.
  */
 @FallbackNavigationRootImplementation
 @Composable

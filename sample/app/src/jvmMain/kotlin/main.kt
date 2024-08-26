@@ -1,9 +1,11 @@
 
 import androidx.compose.material3.Surface
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.nxoim.decomposite.App
 import com.nxoim.decomposite.core.common.navigation.BackGestureProviderContainer
@@ -15,10 +17,12 @@ import java.awt.Dimension
 @OptIn(ExperimentalDecomposeApi::class)
 fun main() = application {
     // initialize this at the root of your app
+    val windowState = rememberWindowState()
     val navigationRootData = defaultNavigationRootData()
 
     Window(
         title = "Decomposite",
+        state = windowState,
         onCloseRequest = ::exitApplication,
     ) {
         window.minimumSize = Dimension(350, 600)
@@ -39,7 +43,11 @@ fun main() = application {
                 BackGestureProviderContainer(
                     navigationRootData.defaultComponentContext,
                     edgeWidth = (window.size.width / LocalDensity.current.density).dp,
-                    content = { NavigationRootProvider(navigationRootData) { App() } }
+                    content = {
+                        NavigationRootProvider(navigationRootData, windowState) {
+                            App()
+                        }
+                    }
                 )
             }
         }

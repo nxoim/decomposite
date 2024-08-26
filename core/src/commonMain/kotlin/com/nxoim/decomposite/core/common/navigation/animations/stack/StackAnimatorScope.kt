@@ -20,6 +20,37 @@ import kotlinx.coroutines.launch
 
 /**
  * Creates an instance of a [StackAnimatorScope]. It manages instance caching and animations.
+ *
+ * Example:
+ * ```kotlin
+ * @Composable
+ * fun MyScreen(someNavigator: SomeNavigator) {
+ *     val stackInstance by someNavigator.stackStateFlow.collectAsState()
+ *
+ *     val stackAnimatorScope = rememberStackAnimatorScope(
+ *         stack = { stackInstance.items },
+ *         itemKey = { it },
+ *         animations = { cleanSlideAndFade() }
+ *     )
+ *
+ *     StackAnimator(stackAnimatorScope) { destination ->
+ *         when (destination) {
+ *             // handle destinations here
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * @param stack A lambda providing the list of items in the stack. The list must
+ * be observable by the compose runtime and be/derive from a compose [State].
+ * @param itemKey A lambda providing a unique key for each item in the stack.
+ * Keys must not appear twice in the stack. Each displayed item must have a unique key.
+ * Key duplicates will cause the compose state restoration mechanisms to crash.
+ * @param excludedDestinations A lambda specifying destinations that should not be rendered and animated.
+ * @param animations A lambda configuring the animations for the stack.
+ * @param allowBatchRemoval Whether to allow batch removal of items from the stack.
+ * @param animationDataRegistry A registry for caching animation data. On android
+ * should be retained to save state across recompositions.
  */
 @Composable
 fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
@@ -43,6 +74,17 @@ fun <Key : Any, Instance : Any> rememberStackAnimatorScope(
 /**
  * Manages the children's animation state and modifiers. Creates instances of animator scopes
  * avoiding duplicates.
+ *
+ * @param stack A lambda providing the list of items in the stack. The list must
+ * be observable by the compose runtime and be/derive from a compose [State].
+ * @param itemKey A lambda providing a unique key for each item in the stack.
+ * Keys must not appear twice in the stack. Each displayed item must have a unique key.
+ * Key duplicates will cause the compose state restoration mechanisms to crash.
+ * @param excludedDestinations A lambda specifying destinations that should not be rendered and animated.
+ * @param animations A lambda configuring the animations for the stack.
+ * @param allowBatchRemoval Whether to allow batch removal of items from the stack.
+ * @param animationDataRegistry A registry for caching animation data. On android
+ * should be retained to save state across recompositions.
  */
 @Immutable
 class StackAnimatorScope<Key : Any, Instance : Any>(

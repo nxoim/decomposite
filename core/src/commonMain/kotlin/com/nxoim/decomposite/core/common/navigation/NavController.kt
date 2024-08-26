@@ -26,15 +26,13 @@ import kotlin.jvm.JvmInline
  * for sharing the same instance between multiple calls of [navController].
  *
  * Is basically a decompose component that replicates the functionality of a generic
- * navigation controller. The instance is not retained, therefore on configuration changes
- * components will die and get recreated. By default inherits parent's [ComponentContext].
+ * navigation controller. The instance is retained by default.
  *
- * [childFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
- *
- * [key] is used for identifying [childStack]'s during serialization and instances in
+ * @param [childFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
+ * @param [key] is used for identifying [childStack]'s during serialization and instances in
  * [NavControllerStore], which means keys MUST be unique.
- *
- * On death removes itself from the [NavControllerStore] right after the composition's death.
+ * @param [startingDestination] is the first destination in the stack.
+ * @param [serializer] is used for preserving the state in case of process death.
  */
 @Composable
 inline fun <reified C : Any> navController(
@@ -89,7 +87,14 @@ inline fun <reified C : Any> navControllerKey(
 ) = "${C::class}$additionalKey"
 
 /**
- * Generic navigation controller. Contains a stack for overlays and a stack for screens.
+ * Is basically a decompose component that replicates the functionality of a generic
+ * navigation controller.
+ *
+ * @param [childFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
+ * @param [key] is used for identifying [childStack]'s during serialization and instances in
+ * [NavControllerStore], which means keys MUST be unique.
+ * @param [startingDestination] is the first destination in the stack.
+ * @param [serializer] is used for preserving the state in case of process death.
  */
 @Immutable
 class NavController<C : Any>(
