@@ -5,7 +5,6 @@ import androidx.compose.animation.SharedTransitionScope
 import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationStatus
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
-import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 
 /**
  * Base for the content animator scope implementations. Describes the bare minimum
