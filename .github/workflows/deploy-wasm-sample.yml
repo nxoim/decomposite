@@ -27,13 +27,13 @@ jobs:
         run: chmod +x gradlew    
 
       - name: Build static files
-        run:  ./gradlew :sample:app:wasmJsBrowserDistribution
+        run:  ./gradlew :sample:composeApp:wasmJsBrowserDistribution
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts
-          path: sample/app/build/dist/wasmJs/productionExecutable
+          path: sample/composeApp/build/dist/wasmJs/productionExecutable
   deploy:
     needs: build_web
     permissions:

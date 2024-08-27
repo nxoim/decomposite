@@ -35,7 +35,12 @@ kotlin {
         iosSimulatorArm64(),
     ).forEach { target ->
         target.binaries.framework {
-            baseName = "decomposite"
+            baseName = "Decomposite"
+            isStatic = true
+            export(libs.decompose)
+            export(libs.decompose.extensions)
+            export(libs.essenty.lifecycle)
+            export(libs.essenty.stateKeeper)
         }
     }
 
@@ -53,8 +58,11 @@ kotlin {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.foundation)
+                implementation(libs.kotlinx.serialization.json)
                 api(libs.decompose)
                 api(libs.decompose.extensions)
+                api(libs.essenty.lifecycle)
+                api(libs.essenty.stateKeeper)
             }
         }
         val androidMain by getting {
