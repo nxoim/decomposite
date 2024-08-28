@@ -1,6 +1,7 @@
 package com.nxoim.decomposite.ui.screens.heart
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -25,7 +26,7 @@ import com.nxoim.decomposite.ui.screens.heart.home.HeartHomeScreen
 fun HeartNavHost() {
     val heartNavController = navController<HeartDestinations>(HeartDestinations.Home)
 
-    Scaffold(topBar = { HeartTopAppBar(heartNavController) }) { scaffoldPadding ->
+    Scaffold(topBar = { HeartTopAppBar(heartNavController) }, bottomBar = { Spacer(Modifier) }) { scaffoldPadding ->
         NavHost(
             heartNavController,
             Modifier.padding(scaffoldPadding),

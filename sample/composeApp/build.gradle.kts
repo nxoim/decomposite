@@ -96,7 +96,6 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.common)
             implementation(compose.desktop.currentOs)
-            implementation(project(":core"))
         }
     }
 }
@@ -107,35 +106,35 @@ android {
 
     defaultConfig {
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
 
         applicationId = "com.nxoim.decomposite.androidApp"
         versionCode = 1
         versionName = "1.0.0"
     }
+
     sourceSets["main"].apply {
         manifest.srcFile("src/androidMain/AndroidManifest.xml")
         res.srcDirs("src/androidMain/resources")
         resources.srcDirs("src/commonMain/resources")
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
-    }
+
     buildTypes {
         getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-}
-dependencies {
-    implementation(project(mapOf("path" to ":core")))
 }
 
 compose.desktop {
@@ -149,8 +148,3 @@ compose.desktop {
         }
     }
 }
-
-//compose.experimental {
-//    web.application {}
-//}
-
