@@ -1,6 +1,5 @@
 package com.nxoim.decomposite.core.common.navigation
 
-import androidx.compose.animation.core.animate
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -182,94 +181,87 @@ fun Modifier.backGestureDetector(
 
     var dispatchingGestures: Boolean? = null
 
-    coroutineScope {
-        detectHorizontalDragGestures(
-            onDragStart = { offset ->
-                edge = when {
-                    !rightEdgeEnabled -> SwipeEdge.LEFT
-                    !leftEdgeEnabled -> SwipeEdge.RIGHT
-                    else -> if (offset.x < (size.width / 2)) SwipeEdge.LEFT else SwipeEdge.RIGHT
-                }
+    detectHorizontalDragGestures(
+        onDragStart = { offset ->
+            edge = when {
+                !rightEdgeEnabled -> SwipeEdge.LEFT
+                !leftEdgeEnabled -> SwipeEdge.RIGHT
+                else -> if (offset.x < (size.width / 2)) SwipeEdge.LEFT else SwipeEdge.RIGHT
+            }
 
-                // reset swipe state variables.
-                totalDistanceSwipedPx = 0f
-                progress = 0f
-                velocityPx = 0f
-                dispatchingGestures = null
+            // reset swipe state variables.
+            totalDistanceSwipedPx = 0f
+            progress = 0f
+            velocityPx = 0f
+            dispatchingGestures = null
 
-                // check if we should dispatch gestures based on the starting position and enabled edges.
-                dispatchingGestures = if (edge == SwipeEdge.LEFT) {
-                    if (leftEdgeEnabled)
-                        offset.x <= triggerWidth
-                    else
-                        return@detectHorizontalDragGestures
+            // check if we should dispatch gestures based on the starting position and enabled edges.
+            dispatchingGestures = if (edge == SwipeEdge.LEFT) {
+                if (leftEdgeEnabled)
+                    offset.x <= triggerWidth
+                else
+                    return@detectHorizontalDragGestures
+            } else {
+                if (rightEdgeEnabled)
+                    size.width - offset.x <= triggerWidth
+                else
+                    return@detectHorizontalDragGestures
+            }
+
+            if (dispatchingGestures == true) {
+                onStart(
+                    BackEvent(
+                        progress = progress.coerceIn(0f, 1f),
+                        swipeEdge = edge,
+                        touchX = offset.x,
+                        touchY = offset.y
+                    )
+                )
+            }
+        },
+        onHorizontalDrag = { change, _ ->
+            velocityPx = if (edge == SwipeEdge.LEFT) {
+                change.positionChange().x
+            } else {
+                -change.positionChange().x
+            }
+
+            // stop dispatching gestures if the threshold is exceeded in the wrong direction.
+            if (totalDistanceSwipedPx < 0) dispatchingGestures = false
+
+            if (dispatchingGestures == true) {
+                if (totalDistanceSwipedPx < activationOffsetThreshold.value * density) {
+                    totalDistanceSwipedPx += velocityPx
                 } else {
-                    if (rightEdgeEnabled)
-                        size.width - offset.x <= triggerWidth
-                    else
-                        return@detectHorizontalDragGestures
-                }
+                    progress += (velocityPx / size.width)
 
-                if (dispatchingGestures == true) {
-                    onStart(
+                    onProgress(
                         BackEvent(
                             progress = progress.coerceIn(0f, 1f),
                             swipeEdge = edge,
-                            touchX = offset.x,
-                            touchY = offset.y
+                            touchX = change.position.x,
+                            touchY = change.position.y
                         )
                     )
                 }
-            },
-            onHorizontalDrag = { change, _ ->
-                velocityPx = if (edge == SwipeEdge.LEFT) {
-                    change.positionChange().x
-                } else {
-                    -change.positionChange().x
-                }
-
-                // stop dispatching gestures if the threshold is exceeded in the wrong direction.
-                if (totalDistanceSwipedPx < 0) dispatchingGestures = false
-
-                if (dispatchingGestures == true) {
-                    if (totalDistanceSwipedPx < activationOffsetThreshold.value * density) {
-                        totalDistanceSwipedPx += velocityPx
-                    } else {
-                        progress += (velocityPx / size.width)
-
-                        onProgress(
-                            BackEvent(
-                                progress = progress.coerceIn(0f, 1f),
-                                swipeEdge = edge,
-                                touchX = change.position.x,
-                                touchY = change.position.y
-                            )
-                        )
-                    }
-                }
-            },
-            onDragEnd = {
-                if (dispatchingGestures == true) {
-                    val velocityThresholdMet = velocityPx / density >= velocityConfirmationThreshold.value
-                    val progressThresholdMet = progress >= progressConfirmationThreshold
-
-                    if (velocityThresholdMet || progressThresholdMet)
-                        onCancel()
-                    else
-                        onConfirm()
-                }
-            },
-            onDragCancel = {
-                if (dispatchingGestures == true) {
-                    onCancel()
-
-                    launch {
-                        animate(progress, 0f) { value, _ -> progress = value }
-                    }
-                }
             }
-        )
-    }
+        },
+        onDragEnd = {
+            if (dispatchingGestures == true) {
+                val velocityThresholdMet =
+                    velocityPx / density >= velocityConfirmationThreshold.value
+                val progressThresholdMet = progress >= progressConfirmationThreshold
+
+                if (velocityThresholdMet || progressThresholdMet)
+                    onCancel()
+                else
+                    onConfirm()
+            }
+        },
+        onDragCancel = {
+            if (dispatchingGestures == true) onCancel()
+        }
+    )
 }
 
 /**
