@@ -2,9 +2,9 @@ package com.nxoim.decomposite.core.common.navigation.animations.scopes
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
+import com.arkivanov.essenty.backhandler.BackEvent
 import com.nxoim.decomposite.core.common.navigation.animations.AnimationStatus
 import com.nxoim.decomposite.core.common.navigation.animations.ContentAnimatorCreator
-import com.nxoim.decomposite.core.common.ultils.BackGestureEvent
 
 /**
  * Base for the content animator scope implementations. Describes the bare minimum
@@ -50,14 +50,29 @@ interface ContentAnimator {
 	 */
 	val animationProgressForScope: Float
 
-	/**
-	 * Represents the user's actions and should not⚠️ be used to manipulate the stack
-	 */
-	suspend fun onBackGesture(backGesture: BackGestureEvent): Any
-
-	/**
-	 * Updates the animation data in the scope and starts animations.
-	 */
-	suspend fun update(newIndex: Int, newIndexFromTop: Int)
+    /**
+     * Represents the back gesture beginning.
+     * Should not⚠️ be used to manipulate the stack
+     */
+    suspend fun onBackGestureStarted(backEvent: BackEvent)
+    /**
+     * Represents the back gesture progressing.
+     * Should not⚠️ be used to manipulate the stack
+     */
+    suspend fun onBackGestureProgressed(backEvent: BackEvent)
+    /**
+     * Represents the back gesture being cancelled .
+     * Should not⚠️ be used to manipulate the stack
+     */
+    suspend fun onBackGestureCancelled()
+    /**
+     * Represents the back gesture being confirmed.
+     * Should not⚠️ be used to manipulate the stack
+     */
+    suspend fun onBackGestureConfirmed()
+    /**
+     * Represents the change of the item in the stack.
+     * Should not⚠️ be used to manipulate the stack
+     */
+    suspend fun update(newIndex: Int, newIndexFromTop: Int)
 }
-
