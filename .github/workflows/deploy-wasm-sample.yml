@@ -2,6 +2,8 @@ name: Deploy WASM sample app
 
 on:
   pull_request:
+    branches:
+      - master
     types:
       - closed
 
