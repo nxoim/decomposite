@@ -2,7 +2,9 @@ package com.nxoim.decomposite.core.ios.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.backhandler.BackDispatcher
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
@@ -37,18 +39,8 @@ import kotlin.math.roundToInt
  *
  * Example:
  * ```kotlin
- * fun MainViewController(
- *     navigationRootData: NavigationRootData,
- *     screenWidth: CGFloat,
- *     screenHeight: CGFloat,
- * ) = ComposeUIViewController {
- *     NavigationRootProvider(
- *         navigationRootData,
- *         screenWidth,
- *         screenHeight
- *     ) {
- *         App()
- *     }
+ * fun MainViewController(navigationRootData: NavigationRootData) = ComposeUIViewController {
+ *     NavigationRootProvider(navigationRootData) { App() }
  * }
  * ```
  */
@@ -58,21 +50,23 @@ fun NavigationRootProvider(
     navigationRootData: NavigationRootData,
     content: @Composable () -> Unit
 ) {
-    var screenWidth: Int? = null
-    var screenHeight: Int? = null
-
     @OptIn(ExperimentalForeignApi::class)
-    remember {
-        UIScreen.mainScreen.nativeBounds.useContents {
-            screenWidth = this.size.width.toInt()
-            screenHeight = this.size.height.toInt()
+    val screen by rememberUpdatedState(
+        object {
+            var width: Int? = null
+            var height: Int? = null
+        }.apply {
+            UIScreen.mainScreen.nativeBounds.useContents {
+                width = this.size.width.toInt()
+                height = this.size.height.toInt()
+            }
         }
-    }
+    )
 
     val screenInformation = ScreenInformation(
-        widthPx = screenWidth
+        widthPx = screen.width
             ?: error("Reported screen width is null. Something wrong happened in Kotlin Swift interop"),
-        heightPx = screenHeight
+        heightPx = screen.height
             ?: error("Reported screen height is null. Something wrong happened in Kotlin Swift interop"),
         screenShape = ScreenShape(
             path = null,

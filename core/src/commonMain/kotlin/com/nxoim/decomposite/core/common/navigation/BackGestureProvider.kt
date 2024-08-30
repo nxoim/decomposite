@@ -253,9 +253,9 @@ fun Modifier.backGestureDetector(
                 val progressThresholdMet = progress >= progressConfirmationThreshold
 
                 if (velocityThresholdMet || progressThresholdMet)
-                    onCancel()
-                else
                     onConfirm()
+                else
+                    onCancel()
             }
         },
         onDragCancel = {
