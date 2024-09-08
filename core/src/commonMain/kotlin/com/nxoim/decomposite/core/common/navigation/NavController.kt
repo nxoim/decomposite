@@ -1,6 +1,7 @@
 package com.nxoim.decomposite.core.common.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,7 +91,7 @@ inline fun <reified C : Any> navControllerKey(
  * Is basically a decompose component that replicates the functionality of a generic
  * navigation controller.
  *
- * @param [childFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
+ * @param [destinationFactory] allows for creating custom children instances that implement [DecomposeChildInstance].
  * @param [key] is used for identifying [childStack]'s during serialization and instances in
  * [NavControllerStore], which means keys MUST be unique.
  * @param [startingDestination] is the first destination in the stack.
@@ -102,25 +103,25 @@ class NavController<C : Any>(
 	serializer: KSerializer<C>? = null,
 	val parentComponentContext: ComponentContext,
 	val key: String,
-	childFactory: (
+	destinationFactory: (
 		config: C,
-		childComponentContext: ComponentContext
-	) -> DecomposeChildInstance = { _, childComponentContext ->
-		DefaultChildInstance(childComponentContext)
+		destinationComponentContext: ComponentContext
+	) -> DecomposeChildInstance = { _, destinationComponentContext ->
+		DefaultChildInstance(destinationComponentContext)
 	}
 ) {
 	val controller = StackNavigation<C>()
 
-	val screenStack = parentComponentContext.childStack(
+	val destinationStack = parentComponentContext.childStack(
 		source = controller,
 		serializer = serializer,
 		initialConfiguration = startingDestination,
-		key = "screenStack $key",
+		key = "destinationStack $key",
 		handleBackButton = true,
-		childFactory = childFactory
+		childFactory = destinationFactory
 	)
 
-	val currentScreen by screenStack.let {
+	val currentDestination by destinationStack.let {
 		val state = mutableStateOf(it.value.active.configuration)
 
 		it.subscribe { newState -> state.value = newState.active.configuration }
@@ -165,7 +166,7 @@ class NavController<C : Any>(
 		destination: C,
 		onComplete: (Boolean) -> Unit = { }
 	) {
-		val indexOfDestination = screenStack.backStack
+		val indexOfDestination = destinationStack.backStack
 			.indexOfFirst { it.configuration == destination }
 
 		controller.popTo(indexOfDestination, onComplete)

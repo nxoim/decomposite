@@ -54,7 +54,7 @@ fun RootNavHost() {
 fun GlobalSampleNavBar(
     navController: NavController<RootDestinations>
 ) {
-    val currentScreen = navController.currentScreen
+    val currentScreen = navController.currentDestination
 
     NavigationBar {
         NavigationBarItem(

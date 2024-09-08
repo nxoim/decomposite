@@ -52,7 +52,7 @@ fun HeartNavHost() {
 private fun HeartTopAppBar(
     navController: NavController<HeartDestinations>
 ) {
-    val currentScreen =  navController.currentScreen
+    val currentScreen =  navController.currentDestination
 
     TopAppBar(
         title = { Text("Heart") },

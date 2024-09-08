@@ -38,9 +38,9 @@ import kotlinx.coroutines.withContext
  *
  * ```kotlin
  * @Composable
- * fun MyScreen(navController: NavController<String>) {
+ * fun MyScreen(navController: NavController<Destinations>) {
  *     NavHost(
- * 	       startingNavControllerInstance = navController,
+ * 	       navController,
  * 		   animations = { cleanSlideAndFade() }
  * 	    ) { destination ->
  * 		    when (destination) {
@@ -50,7 +50,7 @@ import kotlinx.coroutines.withContext
  * }
  * ```
  *
- * @param startingNavControllerInstance The [NavController] instance for the navigation host.
+ * @param navController The [NavController] instance for the navigation host.
  * @param modifier An optional modifier for the host container.
  * @param excludedDestinations A list of destinations that should not be rendered or animated.
  * @param animations A lambda configuring the animations for the stack. Defaults to `cleanSlideAndFade()`.
@@ -59,7 +59,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalCoroutinesApi::class)
 @Composable
 fun <C : Any> NavHost(
-	startingNavControllerInstance: NavController<C>,
+	navController: NavController<C>,
 	modifier: Modifier = Modifier,
 	excludedDestinations: List<C>? = null,
 	animations: DestinationAnimationsConfiguratorScope<C>.() -> ContentAnimations =
@@ -69,8 +69,8 @@ fun <C : Any> NavHost(
 	// a key is needed because theres some caching issues with animations
 	// when the nav hosts are nested because of forEach loops in stack animator.
 	// maybe related to currentCompositeKeyHash?
-	key(startingNavControllerInstance.key) {
-		val stack by startingNavControllerInstance.screenStack.subscribeAsState()
+	key(navController.key) {
+		val stack by navController.destinationStack.subscribeAsState()
 
 		// this is wrapped in the key because the entire thing needs to
 		// recompose when the nav controller instance gets updated,
@@ -84,7 +84,7 @@ fun <C : Any> NavHost(
 		//
 		// im not sure why stack.items in the lambda doesn't get updated
 		// during that change
-		val screenStackAnimatorScope = key(startingNavControllerInstance) {
+		val screenStackAnimatorScope = key(navController) {
 			rememberStackAnimatorScope(
 				stack = { stack.items },
 				itemKey = { it.configuration },
@@ -100,20 +100,19 @@ fun <C : Any> NavHost(
 					)
 				},
 				animationDataRegistry = createAnimationDataRegistry(
-					startingNavControllerInstance.key,
-					startingNavControllerInstance.parentComponentContext
+					navController.key,
+					navController.parentComponentContext
 				)
 			)
 		}
 
-
 		HandleBackGesturesForStackAnimations(
 			stackAnimatorScope = screenStackAnimatorScope,
-			backHandler = startingNavControllerInstance
+			backHandler = navController
 				.parentComponentContext
 				.backHandler,
 			enabled = stack.items.size > 1,
-			onBack = startingNavControllerInstance::navigateBack
+			onBack = navController::navigateBack
 		)
 
 		StackAnimator(

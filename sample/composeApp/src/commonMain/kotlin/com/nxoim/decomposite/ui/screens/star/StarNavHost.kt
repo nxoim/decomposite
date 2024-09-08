@@ -61,7 +61,7 @@ fun StarNavHost() {
 fun StarTopAppBar(
     navController: NavController<StarDestinations>
 ) {
-    val currentScreen = navController.currentScreen
+    val currentScreen = navController.currentDestination
 
     TopAppBar(
         title = { Text("Star") },
