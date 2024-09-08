@@ -37,46 +37,49 @@ import kotlin.jvm.JvmInline
  */
 @Composable
 inline fun <reified C : Any> navController(
-	startingDestination: C,
-	serializer: KSerializer<C>? = serializer(),
-	navStore: NavControllerStore = LocalNavControllerStore.current,
-	componentContext: ComponentContext = LocalComponentContext.current,
-	key: String = navControllerKey<C>(),
-	noinline childFactory: (
-		config: C,
-		childComponentContext: ComponentContext
-	) -> DecomposeChildInstance = { _, childComponentContext ->
-		DefaultChildInstance(childComponentContext)
-	}
+    startingDestination: C,
+    serializer: KSerializer<C>? = serializer(),
+    navStore: NavControllerStore = LocalNavControllerStore.current,
+    componentContext: ComponentContext = LocalComponentContext.current,
+    key: String = navControllerKey<C>(),
+    noinline childFactory: (
+        config: C,
+        childComponentContext: ComponentContext
+    ) -> DecomposeChildInstance = { _, childComponentContext ->
+        DefaultChildInstance(childComponentContext)
+    }
 ) = remember(componentContext, key) {
-	// if the existing instance was already destroyed by the time
-	// remember executes - delete it and make a new one
-	navStore
-		.get(key, C::class)
-		?.parentComponentContext
-		?.lifecycle
-		?.state
-		?.let { if (it == Lifecycle.State.DESTROYED) navStore.remove(key, C::class) }
+    // if the existing instance was already destroyed by the time
+    // remember executes - delete it and make a new one
+    navStore
+        .get(key, C::class)
+        ?.parentComponentContext
+        ?.lifecycle
+        ?.state
+        ?.let { if (it == Lifecycle.State.DESTROYED) navStore.remove(key, C::class) }
 
-	navStore.getOrCreate(key, C::class) {
-		NavController(
-			startingDestination,
-			serializer,
-			componentContext,
-			key,
-			childFactory
-		)
-	}
+    navStore.getOrCreate(key, C::class) {
+        NavController(
+            startingDestination,
+            serializer,
+            componentContext,
+            key,
+            childFactory
+        )
+    }
+}.also {
+    // The instance is removed from the store during composition, but the change
+    // is not immediately reflected (using keys in remember). Even though the instance
+    // is destroyed, it needs to remain available for as long as the composition requires it
+    DisposableEffect(it) {
+        onDispose {
+            val lifecycleState = it.parentComponentContext.lifecycle.state
+            if (lifecycleState == Lifecycle.State.DESTROYED) navStore.remove(key, C::class).also {
+                println("removed $key")
+            }
+        }
+    }
 }
-//	.also {
-//		// TODO is this reliable
-//	DisposableEffect(it) {
-//		onDispose {
-//			val lifecycleState = it.parentComponentContext.lifecycle.state
-//			if (lifecycleState == Lifecycle.State.DESTROYED) navStore.remove(key, C::class)
-//		}
-//	}
-//}
 
 
 // During navigation a component context might get recreated (specifically
@@ -84,7 +87,7 @@ inline fun <reified C : Any> navController(
 // stack animator), and if we do not create a new key for the new component context -
 // navigation stops working in the component
 inline fun <reified C : Any> navControllerKey(
-	additionalKey: Any = ""
+    additionalKey: Any = ""
 ) = "${C::class}$additionalKey"
 
 /**
@@ -99,111 +102,111 @@ inline fun <reified C : Any> navControllerKey(
  */
 @Immutable
 class NavController<C : Any>(
-	startingDestination: C,
-	serializer: KSerializer<C>? = null,
-	val parentComponentContext: ComponentContext,
-	val key: String,
-	destinationFactory: (
-		config: C,
-		destinationComponentContext: ComponentContext
-	) -> DecomposeChildInstance = { _, destinationComponentContext ->
-		DefaultChildInstance(destinationComponentContext)
-	}
+    startingDestination: C,
+    serializer: KSerializer<C>? = null,
+    val parentComponentContext: ComponentContext,
+    val key: String,
+    destinationFactory: (
+        config: C,
+        destinationComponentContext: ComponentContext
+    ) -> DecomposeChildInstance = { _, destinationComponentContext ->
+        DefaultChildInstance(destinationComponentContext)
+    }
 ) {
-	val controller = StackNavigation<C>()
+    val controller = StackNavigation<C>()
 
-	val destinationStack = parentComponentContext.childStack(
-		source = controller,
-		serializer = serializer,
-		initialConfiguration = startingDestination,
-		key = "destinationStack $key",
-		handleBackButton = true,
-		childFactory = destinationFactory
-	)
+    val destinationStack = parentComponentContext.childStack(
+        source = controller,
+        serializer = serializer,
+        initialConfiguration = startingDestination,
+        key = "destinationStack $key",
+        handleBackButton = true,
+        childFactory = destinationFactory
+    )
 
-	val currentDestination by destinationStack.let {
-		val state = mutableStateOf(it.value.active.configuration)
+    val currentDestination by destinationStack.let {
+        val state = mutableStateOf(it.value.active.configuration)
 
-		it.subscribe { newState -> state.value = newState.active.configuration }
+        it.subscribe { newState -> state.value = newState.active.configuration }
 
-		return@let state
-	}
+        return@let state
+    }
 
-	/**
-	 * Navigates to a destination. If a destination exists already - moves it to the top instead
-	 * of adding a new entry. If the [removeIfIsPreceding] is enabled (is by default) and
-	 * the requested [destination] precedes the current one in the stack -
-	 * navigate back instead.
-	 */
-	fun navigate(
-		destination: C,
-		// removes the current entry if requested navigation to the preceding one
-		removeIfIsPreceding: Boolean = true,
-		onComplete: () -> Unit = { }
-	) {
-		controller.navigate(
-			transformer = { stack ->
-				if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
-					stack.dropLast(1)
-				else
-					stack.filterNot { it == destination } + destination
-			},
-			onComplete = { _, _ -> onComplete() }
-		)
-	}
+    /**
+     * Navigates to a destination. If a destination exists already - moves it to the top instead
+     * of adding a new entry. If the [removeIfIsPreceding] is enabled (is by default) and
+     * the requested [destination] precedes the current one in the stack -
+     * navigate back instead.
+     */
+    fun navigate(
+        destination: C,
+        // removes the current entry if requested navigation to the preceding one
+        removeIfIsPreceding: Boolean = true,
+        onComplete: () -> Unit = { }
+    ) {
+        controller.navigate(
+            transformer = { stack ->
+                if (removeIfIsPreceding && stack.size > 1 && stack[stack.lastIndex - 1] == destination)
+                    stack.dropLast(1)
+                else
+                    stack.filterNot { it == destination } + destination
+            },
+            onComplete = { _, _ -> onComplete() }
+        )
+    }
 
-	/**
-	 * Navigates back in this(!) nav controller.
-	 */
-	fun navigateBack(onComplete: (Boolean) -> Unit = { }) {
-		controller.pop(onComplete)
-	}
+    /**
+     * Navigates back in this(!) nav controller.
+     */
+    fun navigateBack(onComplete: (Boolean) -> Unit = { }) {
+        controller.pop(onComplete)
+    }
 
-	/**
-	 * Removes destinations that, in the stack, are after the provided one.
-	 */
-	fun navigateBackTo(
-		destination: C,
-		onComplete: (Boolean) -> Unit = { }
-	) {
-		val indexOfDestination = destinationStack.backStack
-			.indexOfFirst { it.configuration == destination }
+    /**
+     * Removes destinations that, in the stack, are after the provided one.
+     */
+    fun navigateBackTo(
+        destination: C,
+        onComplete: (Boolean) -> Unit = { }
+    ) {
+        val indexOfDestination = destinationStack.backStack
+            .indexOfFirst { it.configuration == destination }
 
-		controller.popTo(indexOfDestination, onComplete)
-	}
+        controller.popTo(indexOfDestination, onComplete)
+    }
 
-	/**
-	 * Removes a destination.
-	 */
-	fun close(destination: C, onComplete: () -> Unit = { }) = controller
-		.navigate(
-			transformer = { stack -> stack.filterNot { it == destination } },
-			onComplete = { _, _ -> onComplete() }
-		)
+    /**
+     * Removes a destination.
+     */
+    fun close(destination: C, onComplete: () -> Unit = { }) = controller
+        .navigate(
+            transformer = { stack -> stack.filterNot { it == destination } },
+            onComplete = { _, _ -> onComplete() }
+        )
 
-	/**
-	 * Replaces the current destination with the provided one.
-	 */
-	fun replaceCurrent(
-		withDestination: C,
-		onComplete: () -> Unit = { }
-	) = controller
-		.replaceCurrent(withDestination) { onComplete() }
+    /**
+     * Replaces the current destination with the provided one.
+     */
+    fun replaceCurrent(
+        withDestination: C,
+        onComplete: () -> Unit = { }
+    ) = controller
+        .replaceCurrent(withDestination) { onComplete() }
 
-	/**
-	 * Replaces all destinations with the provided one.
-	 */
-	fun replaceAll(
-		vararg destination: C,
-		onComplete: () -> Unit = { }
-	) = controller
-		.replaceAll(*destination) { onComplete() }
+    /**
+     * Replaces all destinations with the provided one.
+     */
+    fun replaceAll(
+        vararg destination: C,
+        onComplete: () -> Unit = { }
+    ) = controller
+        .replaceAll(*destination) { onComplete() }
 }
 
 @JvmInline
 @Immutable
 value class DefaultChildInstance(
-	override val componentContext: ComponentContext
+    override val componentContext: ComponentContext
 ) : DecomposeChildInstance
 
 /**
@@ -211,5 +214,5 @@ value class DefaultChildInstance(
  * [OnDestinationDisposeEffect], [LocalComponentContext].
  */
 interface DecomposeChildInstance {
-	val componentContext: ComponentContext
+    val componentContext: ComponentContext
 }
