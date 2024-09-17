@@ -26,7 +26,7 @@ jobs:
           export GPG_TTY=$(tty)
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          
+
       - name: Build and publish to Maven (local)
         env:
           ORG_GRADLE_PROJECT_signingKey: |
@@ -36,3 +36,15 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
           GPG_TTY: ${{ env.GPG_TTY }}
         run: ./gradlew publish
+
+      - name: Zip the build repository
+        run: |
+          zip -r core-repo.zip core/build/repo
+
+      - name: Upload to Sonatype
+        run: |
+          curl --request POST \
+            --verbose \
+            --header "Authorization: Bearer $(echo -n '${{ secrets.SONATYPE_USERNAME }}:${{ secrets.SONATYPE_PASSWORD }}' | base64)" \
+            --form bundle=@core-repo.zip \
+            https://central.sonatype.com/api/v1/publisher/upload
