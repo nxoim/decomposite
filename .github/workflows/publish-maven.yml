@@ -27,7 +27,7 @@ jobs:
 
       - name: Set up GPG trust
         run: |
-          KEY_ID=$(gpg --list-keys --keyid-format LONG | grep "^pub" | sed -E 's/^.* ([0-9A-F]{16}).*/\1/')
+          KEY_ID=$(gpg --list-keys --keyid-format LONG | awk '/pub/{print $2}' | cut -d'/' -f2)
           echo "$KEY_ID:6:" | gpg --import-ownertrust
 
       - name: Build and publish to Maven (local)
