@@ -30,6 +30,7 @@ jobs:
 
       - name: Sign all published artifacts
         run: |
+          export GPG_TTY=$(tty)
           ./gradlew signing
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
