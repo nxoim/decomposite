@@ -22,8 +22,8 @@ jobs:
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }
 
       - name: Configure GPG for loopback pinentry mode
         run: |
