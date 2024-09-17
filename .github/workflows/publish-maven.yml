@@ -20,10 +20,12 @@ jobs:
           java-version: '17'
 
       - name: Import GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --import
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.gnupg/
+          printf "$GPG_SIGNING_KEY" | base64 --decode > ~/.gnupg/private.key
+          gpg --import ~/.gnupg/private.key
 
       - name: Configure GPG for loopback pinentry mode
         run: |
