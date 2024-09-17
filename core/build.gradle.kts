@@ -137,6 +137,7 @@ publishing {
 
             pom {
                 this.description = "Navigation library for Compose Multiplatform projects"
+                this.url = "https://github.com/nxoim/Decomposite"
 
                 licenses {
                     license {
@@ -155,7 +156,6 @@ publishing {
                 }
 
                 scm {
-                    url = "https://github.com/nxoim/Decomposite"
                     connection = "scm:git:git://github.com/nxoim/Decomposite.git"
                     developerConnection = "scm:git:ssh://git@github.com/nxoim/Decomposite.git"
                 }
