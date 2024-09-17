@@ -139,6 +139,8 @@ publishing {
                 this.description = "Navigation library for Compose Multiplatform projects"
                 this.url = "https://github.com/nxoim/Decomposite"
 
+                this.packaging = "jar"
+
                 licenses {
                     license {
                         name.set("APACHE LICENSE, VERSION 2.0")
