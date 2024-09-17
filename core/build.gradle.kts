@@ -28,8 +28,8 @@ kotlin {
         browser()
     }
 
-    macosX64()
-    macosArm64()
+//    macosX64()
+//    macosArm64()
 
     listOf(
         iosX64(),
