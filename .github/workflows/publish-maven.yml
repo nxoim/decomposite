@@ -25,12 +25,18 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
+      - name: Configure GPG for loopback pinentry mode
+        run: |
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpg-connect-agent reloadagent /bye
+
       - name: Build and publish to Maven (local)
         run: ./gradlew publish
 
       - name: Sign all published artifacts
         run: |
-          export GPG_TTY=$(tty)
           ./gradlew signing
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
