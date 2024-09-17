@@ -39,7 +39,7 @@ jobs:
 
       - name: Zip the build repository
         run: |
-          cd build/repo
+          cd core/build/repo
           zip -r decomposite.zip com
 
       - name: Upload to Sonatype
