@@ -23,6 +23,7 @@ jobs:
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
           echo "default-key $(gpg --list-keys --keyid-format LONG | grep 'pub' | awk '{print $2}' | cut -d '/' -f 2)" >> ~/.gnupg/gpg.conf
+          export GPG_TTY=$(tty)
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           
