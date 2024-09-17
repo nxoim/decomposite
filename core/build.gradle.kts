@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+import org.jetbrains.kotlin.load.kotlin.signatures
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -10,6 +11,7 @@ plugins {
     alias(libs.plugins.maven.publish)
     alias(libs.plugins.binary.compatibility.validator)
     alias(libs.plugins.dokka)
+    id("signing")
 }
 
 kotlin {
@@ -124,35 +126,52 @@ android {
     }
 }
 
-mavenPublishing {
-//    publishToMavenCentral(SonatypeHost.DEFAULT)
-    // or when publishing to https://s01.oss.sonatype.org
-//    publishToMavenCentral(SonatypeHost.S01, automaticRelease = true)
-//    signAllPublications()
-    coordinates("com.nxoim", "decomposite", "0.0.1")
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["kotlin"])
 
-    pom {
-        name.set(project.name)
+            groupId = "com.nxoim"
+            artifactId = "decomposite"
+            version = "0.2.1.0-test-deployment"
 
-        url.set("https://github.com/nxoim/Decomposite")
-        licenses {
-            license {
-                name.set("APACHE LICENSE, VERSION 2.0")
-                url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                distribution.set("https://www.apache.org/licenses/LICENSE-2.0")
+            pom {
+                this.description = "Navigation library for Compose Multiplatform projects"
+
+                licenses {
+                    license {
+                        name.set("APACHE LICENSE, VERSION 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        distribution.set("https://www.apache.org/licenses/LICENSE-2.0")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("nxoim")
+                        name.set("nxoim")
+                        url.set("https://github.com/nxoim/")
+                    }
+                }
+
+                scm {
+                    url = "https://github.com/nxoim/Decomposite"
+                    connection = "scm:git:git://github.com/nxoim/Decomposite.git"
+                    developerConnection = "scm:git:ssh://git@github.com/nxoim/Decomposite.git"
+                }
             }
-        }
-        developers {
-            developer {
-                id.set("nxoim")
-                name.set("nxoim")
-                url.set("https://github.com/nxoim/")
-            }
-        }
-        scm {
-            url.set("https://github.com/nxoim/Decomposite")
-            connection.set("scm:git:git://github.com/nxoim/Decomposite.git")
-            developerConnection.set("scm:git:ssh://git@github.com/nxoim/Decomposite.git")
         }
     }
+
+    repositories {
+        maven {
+            name = "local"
+            url = uri("$buildDir/repo")
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications["maven"])
 }
