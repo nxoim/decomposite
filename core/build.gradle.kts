@@ -156,6 +156,7 @@ publishing {
                 }
 
                 scm {
+                    url = "https://github.com/nxoim/Decomposite"
                     connection = "scm:git:git://github.com/nxoim/Decomposite.git"
                     developerConnection = "scm:git:ssh://git@github.com/nxoim/Decomposite.git"
                 }
