@@ -21,15 +21,18 @@ jobs:
 
       - name: Import GPG key
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "default-key $(gpg --list-keys --keyid-format LONG | grep 'pub' | awk '{print $2}' | cut -d '/' -f 2)" >> ~/.gnupg/gpg.conf
+          export GPG_TTY=$(tty)
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
+          
       - name: Build and publish to Maven (local)
-        run: ./gradlew publish
-
-      - name: Sign all published artifacts
-        run: |
-          ./gradlew signing
         env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          ORG_GRADLE_PROJECT_signingKey: |
+            -----BEGIN PGP PRIVATE KEY BLOCK-----
+            ${{ secrets.GPG_PRIVATE_KEY }}
+            -----END PGP PRIVATE KEY BLOCK-----
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_TTY: ${{ env.GPG_TTY }}
+        run: ./gradlew publish
