@@ -25,11 +25,6 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      - name: Set up GPG trust
-        run: |
-          KEY_ID=$(gpg --list-keys --keyid-format LONG | awk '/pub/{print $2}' | cut -d'/' -f2)
-          echo "$KEY_ID:6:" | gpg --import-ownertrust
-
       - name: Build and publish to Maven (local)
         run: ./gradlew publish
 
