@@ -47,5 +47,5 @@ jobs:
           curl --request POST \
             --verbose \
             --header "Authorization: Bearer $(echo -n '${{ secrets.SONATYPE_USERNAME }}:${{ secrets.SONATYPE_PASSWORD }}' | base64)" \
-            --form bundle=@decomposite.zip \
+            --form bundle=@core/build/repo/decomposite.zip \
             https://central.sonatype.com/api/v1/publisher/upload
