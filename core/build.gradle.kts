@@ -128,14 +128,14 @@ android {
     }
 }
 
-group = "com.nxoim.decomposite"
+group = "com.nxoim"
 description = "Navigation library for Compose Multiplatform projects"
 version = "0.2.1.0-test-deployment2"
 
 publishing {
     publications {
-        create<MavenPublication>("maven") {
-            this.groupId = "com.nxoim"
+        withType<MavenPublication> {
+            this.groupId = project.group.toString()
             this.artifactId = "decomposite"
             this.version = project.version.toString()
 
@@ -180,5 +180,5 @@ signing {
         findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
         findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
     )
-    sign(publishing.publications.findByName("maven"))
+    sign(publishing.publications)
 }
