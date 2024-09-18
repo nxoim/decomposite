@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.com.intellij.ide.plugins.ActionDescriptorName
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 import org.jetbrains.kotlin.load.kotlin.signatures
+import org.jetbrains.kotlin.utils.sure
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -179,5 +180,5 @@ signing {
         findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
         findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
     )
-    sign(publishing.publications["maven"])
+    sign(project.publishing.publications)
 }
