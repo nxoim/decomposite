@@ -180,7 +180,5 @@ signing {
         findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
         findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
     )
-    project.publishing.publications.forEach {
-        sign(it)
-    }
+    sign(tasks["maven"])
 }
