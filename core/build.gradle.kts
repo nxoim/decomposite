@@ -128,14 +128,14 @@ android {
     }
 }
 
-group = "com.nxoim"
+group = "com.nxoim.decomposite"
 description = "Navigation library for Compose Multiplatform projects"
 version = "0.2.1.0-test-deployment2"
 
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            this.groupId = group.toString()
+            this.groupId = "com.nxoim"
             this.artifactId = "decomposite"
             this.version = project.version.toString()
 
@@ -170,7 +170,7 @@ publishing {
 
     repositories {
         maven {
-            url = uri("$buildDir/repo")
+            url = uri(layout.buildDirectory.dir("repo"))
         }
     }
 }
