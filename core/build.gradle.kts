@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.com.intellij.ide.plugins.ActionDescriptorName
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 import org.jetbrains.kotlin.load.kotlin.signatures
@@ -126,20 +127,20 @@ android {
     }
 }
 
+group = "com.nxoim"
+description = "Navigation library for Compose Multiplatform projects"
+version = "0.2.1.0-test-deployment2"
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            from(components["kotlin"])
-
-            groupId = "com.nxoim"
-            artifactId = "decomposite"
-            version = "0.2.1.0-test-deployment"
+            this.groupId = group.toString()
+            this.artifactId = "decomposite"
+            this.version = project.version.toString()
 
             pom {
-                this.description = "Navigation library for Compose Multiplatform projects"
-                this.url = "https://github.com/nxoim/Decomposite"
-
-                this.packaging = "jar"
+                this.description = project.description.toString()
+                this.url = "https://github.com/nxoim/decomposite"
 
                 licenses {
                     license {
@@ -158,9 +159,9 @@ publishing {
                 }
 
                 scm {
-                    url = "https://github.com/nxoim/Decomposite"
-                    connection = "scm:git:git://github.com/nxoim/Decomposite.git"
-                    developerConnection = "scm:git:ssh://git@github.com/nxoim/Decomposite.git"
+                    url = "https://github.com/nxoim/decomposite"
+                    connection = "scm:git:git://github.com/nxoim/decomposite.git"
+                    developerConnection = "scm:git:ssh://git@github.com/nxoim/decomposite.git"
                 }
             }
         }
@@ -168,7 +169,6 @@ publishing {
 
     repositories {
         maven {
-            name = "local"
             url = uri("$buildDir/repo")
         }
     }
