@@ -39,12 +39,13 @@ jobs:
 
       - name: Zip the build repository
         run: |
-          zip -r core-repo.zip core/build/repo
+          cd core/build/repo
+          zip -r decomposite.zip com
 
       - name: Upload to Sonatype
         run: |
           curl --request POST \
             --verbose \
             --header "Authorization: Bearer $(echo -n '${{ secrets.SONATYPE_USERNAME }}:${{ secrets.SONATYPE_PASSWORD }}' | base64)" \
-            --form bundle=@core-repo.zip \
+            --form bundle=@core/build/repo/decomposite.zip \
             https://central.sonatype.com/api/v1/publisher/upload
