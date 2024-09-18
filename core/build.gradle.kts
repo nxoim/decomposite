@@ -180,5 +180,7 @@ signing {
         findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
         findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
     )
-    sign(project.publishing.publications)
+    project.publishing.publications.forEach {
+        sign(it)
+    }
 }
