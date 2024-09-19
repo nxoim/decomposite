@@ -1,8 +1,5 @@
-import org.jetbrains.kotlin.com.intellij.ide.plugins.ActionDescriptorName
+
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
-import org.jetbrains.kotlin.load.kotlin.signatures
-import org.jetbrains.kotlin.utils.sure
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -25,7 +22,7 @@ kotlin {
 //        browser()
 //    }
 
-    @OptIn(ExperimentalWasmDsl::class)
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
         browser()
     }
@@ -132,45 +129,49 @@ group = "com.nxoim"
 description = "Navigation library for Compose Multiplatform projects"
 version = "0.2.1.0-test-deployment2"
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            this.groupId = project.group.toString()
-            this.artifactId = "decomposite"
-            this.version = project.version.toString()
+// stupid ass gradle bullshit omfg
+//region Fix Gradle warning about signing tasks using publishing task outputs without explicit dependencies
+// <https://youtrack.jetbrains.com/issue/KT-46466>
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    val signingTasks = tasks.withType<Sign>()
+    mustRunAfter(signingTasks)
+}
+//endregion
 
-            pom {
-                this.description = project.description.toString()
-                this.url = "https://github.com/nxoim/decomposite"
+mavenPublishing {
+    coordinates(group.toString(), "decomposite", version.toString())
+    pom {
+        name.set("decomposite")
+        description.set("Navigation library for Compose Multiplatform projects")
+        url.set("https://github.com/nxoim/decomposite")
 
-                licenses {
-                    license {
-                        name.set("APACHE LICENSE, VERSION 2.0")
-                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                        distribution.set("https://www.apache.org/licenses/LICENSE-2.0")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("nxoim")
-                        name.set("nxoim")
-                        url.set("https://github.com/nxoim/")
-                    }
-                }
-
-                scm {
-                    url = "https://github.com/nxoim/decomposite"
-                    connection = "scm:git:git://github.com/nxoim/decomposite.git"
-                    developerConnection = "scm:git:ssh://git@github.com/nxoim/decomposite.git"
-                }
+        licenses {
+            license {
+                name.set("APACHE LICENSE, VERSION 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0")
             }
+        }
+
+        developers {
+            developer {
+                id.set("nxoim")
+                name.set("nxoim")
+                url.set("https://github.com/nxoim/")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/nxoim/decomposite")
+            connection.set("scm:git:git://github.com/nxoim/decomposite.git")
+            developerConnection.set("scm:git:ssh://git@github.com/nxoim/decomposite.git")
         }
     }
 
-    repositories {
-        maven {
-            url = uri(layout.buildDirectory.dir("repo"))
+    publishing {
+        repositories {
+            maven {
+                url = uri(layout.buildDirectory.dir("repo"))
+            }
         }
     }
 }
@@ -180,5 +181,6 @@ signing {
         findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
         findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
     )
-    sign(publishing.publications.findByName("maven"))
+
+    sign(publishing.publications)
 }
