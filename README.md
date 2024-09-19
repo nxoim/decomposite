@@ -1,4 +1,5 @@
-`com.github.nxoim.decompoite:decomposite`  [![](https://jitpack.io/v/nxoim/decomposite.svg)](https://jitpack.io/#nxoim/decomposite)
+`com.nxoim:decomposite`  ![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https://repo.maven.apache.org/maven2/com/nxoim/decomposite/maven-metadata.xml)
+
 
 ![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
 ![badge-JVM](https://img.shields.io/badge/Platform-JVM-orange)
@@ -27,9 +28,9 @@ Uhm...
 - Automatically create navigation controller instances upon the creation of nav hosts that are retrievable by just calling navController, again, kind of like view models
 
 # Examples/Getting Started
-In your version catalog add the "com.github.nxoim.decomposite:decomposite" artifact. In your toml file that would be:
+In your version catalog add the "com.nxoim:decomposite" artifact. In your toml file that would be:
 ```
-decomposite = { module = "com.github.nxoim.decomposite:decomposite", version.ref = "version" }
+decomposite = { module = "con.nxoim:decomposite", version.ref = "version" }
 ```
 
 First you have to set up the app by creating a root of the app. This root sets up stores for view models and nav controllers, overlay stuff, and provides the root component context.
