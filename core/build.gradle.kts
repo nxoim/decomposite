@@ -177,10 +177,7 @@ mavenPublishing {
 }
 
 signing {
-    useInMemoryPgpKeys(
-        findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
-        findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
-    )
+    useGpgCmd()
 
     sign(publishing.publications)
 }
