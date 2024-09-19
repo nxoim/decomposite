@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-14
 
     steps:
-      - name: Checkout code
+      - name: Checkout from the tag
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -23,13 +23,13 @@ jobs:
 
       - name: Import GPG key
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "default-key $(gpg --list-keys --keyid-format LONG | grep 'pub' | awk '{print $2}' | cut -d '/' -f 2)" >> ~/.gnupg/gpg.conf
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import -q
+          echo "default-key $(gpg -q --list-keys --keyid-format LONG | grep 'pub' | awk '{print $2}' | cut -d '/' -f 2)" >> ~/.gnupg/gpg.conf
           export GPG_TTY=$(tty)
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      - name: Build and publish to Maven (local)
+      - name: Build and publish to Maven locally
         env:
           ORG_GRADLE_PROJECT_signingKey: |
             -----BEGIN PGP PRIVATE KEY BLOCK-----
@@ -39,12 +39,12 @@ jobs:
           GPG_TTY: ${{ env.GPG_TTY }}
         run: ./gradlew publish
 
-      - name: Zip the build repository
+      - name: Zip the release
         run: |
           cd core/build/repo
           zip -r decomposite.zip com
 
-      - name: Upload to Sonatype
+      - name: Stage release on Maven Central
         run: |
           curl --request POST \
             --verbose \
