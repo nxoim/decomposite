@@ -17,21 +17,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
+      - name: Checkout the code
+        uses: actions/checkout@v3
 
-    - name: Get the PR title
-      run: |
-        PR_TITLE=$(jq -r .pull_request.title < $GITHUB_EVENT_PATH)
-        echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+      - name: Get artifactVersion from gradle.properties
+        run: |
+          ARTIFACT_VERSION=$(grep '^artifactVersion=' gradle.properties | cut -d'=' -f2)
+          echo "ARTIFACT_VERSION=$ARTIFACT_VERSION" >> $GITHUB_ENV
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: "${{ env.PR_TITLE }}"
-        name: ${{ env.PR_TITLE }}
-        body: |
-          This release was automatically generated from PR #${{ github.event.pull_request.number }}.
-        draft: false
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ env.ARTIFACT_VERSION }}"
+          name: ${{ env.ARTIFACT_VERSION }}
+          body: |
+            This release was automatically generated from PR #${{ github.event.pull_request.number }}.
+          draft: false

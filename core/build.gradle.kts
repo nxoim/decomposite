@@ -127,7 +127,7 @@ android {
 
 group = "com.nxoim"
 description = "Navigation library for Compose Multiplatform projects"
-version = "0.2.1.0-test-deployment2"
+version = findProperty("artifactVersion").toString()
 
 // stupid ass gradle bullshit omfg
 //region Fix Gradle warning about signing tasks using publishing task outputs without explicit dependencies
