@@ -134,7 +134,7 @@ version = "0.2.1.0-test-deployment2"
 
 publishing {
     publications {
-        withType<MavenPublication> {
+        create<MavenPublication>("maven") {
             this.groupId = project.group.toString()
             this.artifactId = "decomposite"
             this.version = project.version.toString()
@@ -180,5 +180,5 @@ signing {
         findProperty("signingKey")?.toString() ?: System.getenv("GPG_PRIVATE_KEY"),
         findProperty("signingPassword")?.toString() ?: System.getenv("GPG_PASSPHRASE")
     )
-    sign(publishing.publications)
+    sign(publishing.publications.findByName("maven"))
 }
