@@ -35,11 +35,11 @@ jobs:
             -----END PGP PRIVATE KEY BLOCK-----
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
           GPG_TTY: ${{ env.GPG_TTY }}
-        run: ./gradlew publish
+        run: ./gradlew publishToMavenLocal
 
       - name: Zip the build repository
         run: |
-          cd core/build/repo
+          cd .m2/repository
           zip -r decomposite.zip com
 
       - name: Upload to Sonatype
