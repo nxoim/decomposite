@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/master'
+#    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
