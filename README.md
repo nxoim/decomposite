@@ -30,7 +30,7 @@ Uhm...
 # Examples/Getting Started
 In your version catalog add the "com.nxoim:decomposite" artifact. In your toml file that would be:
 ```
-decomposite = { module = "con.nxoim:decomposite", version.ref = "version" }
+decomposite = { module = "com.nxoim:decomposite", version.ref = "version" }
 ```
 
 First you have to set up the app by creating a root of the app. This root sets up stores for view models and nav controllers, overlay stuff, and provides the root component context.
