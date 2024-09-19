@@ -1,14 +1,11 @@
 name: Create Release on PR Merge
 
 on:
-#  pull_request:
-#    branches:
-#      - master
-#    types:
-#      - closed
-  push:
+  pull_request:
     branches:
-      - maven-setup
+      - master
+    types:
+      - closed
 
 permissions:
   contents: write
@@ -16,7 +13,7 @@ permissions:
 
 jobs:
   release:
-#    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/master'
+    if: github.event.pull_request.merged == true && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
