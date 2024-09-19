@@ -1,4 +1,4 @@
-name: Publish to Maven Local
+name: Build and stage tagged release on Maven Central
 
 on:
   push:
@@ -39,15 +39,19 @@ jobs:
           GPG_TTY: ${{ env.GPG_TTY }}
         run: ./gradlew publish
 
+      - name: Get tag name
+        id: get_tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Zip the release
         run: |
           cd core/build/repo
-          zip -r decomposite.zip com
+          zip -r "decomposite-$TAG_NAME.zip" com
 
       - name: Stage release on Maven Central
         run: |
           curl --request POST \
             --verbose \
             --header "Authorization: Bearer $(echo -n '${{ secrets.SONATYPE_USERNAME }}:${{ secrets.SONATYPE_PASSWORD }}' | base64)" \
-            --form bundle=@core/build/repo/decomposite.zip \
+            --form bundle=@core/build/repo/decomposite-$TAG_NAME.zip \
             https://central.sonatype.com/api/v1/publisher/upload
