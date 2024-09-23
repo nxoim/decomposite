@@ -1,4 +1,4 @@
-`com.nxoim:decomposite`  ![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https://repo.maven.apache.org/maven2/com/nxoim/decomposite/maven-metadata.xml)
+`com.nxoim:decomposite`  [![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https://repo.maven.apache.org/maven2/com/nxoim/decomposite/maven-metadata.xml)](https://central.sonatype.com/artifact/com.nxoim/decomposite)
 
 
 ![badge-Android](https://img.shields.io/badge/Platform-Android-brightgreen)
