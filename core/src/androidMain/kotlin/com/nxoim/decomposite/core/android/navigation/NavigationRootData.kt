@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntSize
@@ -57,11 +58,17 @@ fun NavigationRootProvider(navigationRootData: NavigationRootData, content: @Com
     else
         LocalContext.current.resources.displayMetrics.let { IntSize(it.widthPixels, it.heightPixels) }
 
+    val shape = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        insets?.displayShape?.path?.asComposePath()
+    } else {
+        null
+    }
+
     val screenInformation = ScreenInformation(
         widthPx = screenSize.width,
         heightPx = screenSize.height,
         screenShape = ScreenShape(
-            path = null,
+            path = shape,
             corners = screenCorners
         )
     )
